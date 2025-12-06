@@ -1,0 +1,156 @@
+
+
+theory Equ = Main + Terms + Fresh + PreEqu:
+
+lemma equ_refl: 
+  "nabla\<turnstile>t\<approx>t"
+apply(induct_tac t)
+apply(auto simp add: ds_def)
+done
+
+
+lemma 
+  equ_sym:    "nabla\<turnstile>t1\<approx>t2 \<Longrightarrow> nabla\<turnstile>t2\<approx>t1" and
+  equ_trans:  "\<lbrakk>nabla\<turnstile>t1\<approx>t2;nabla\<turnstile>t2\<approx>t3\<rbrakk> \<Longrightarrow> nabla\<turnstile>t1\<approx>t3" and
+  equ_add_pi: "nabla\<turnstile>t1\<approx>t2 \<Longrightarrow> nabla\<turnstile>swap pi t1\<approx>swap pi t2"
+apply(insert big)
+apply(best)+
+done
+
+
+lemma equ_dec_pi: 
+  "nabla\<turnstile>swap pi t1\<approx>swap pi t2\<Longrightarrow>nabla\<turnstile>t1\<approx>t2"
+apply(drule_tac pi="(rev pi)" in equ_add_pi)
+apply(subgoal_tac "nabla\<turnstile>swap (rev pi) (swap pi t2)\<approx>t2")
+apply(drule_tac  "t1.0"="swap (rev pi) (swap pi t1)" and
+                 "t2.0"="swap (rev pi) (swap pi t2)" and 
+                 "t3.0"="t2" in equ_trans)
+apply(assumption)
+apply(subgoal_tac "nabla\<turnstile>t1\<approx>swap (rev pi) (swap pi t1)")
+apply(drule_tac  "t1.0"="t1" and
+                 "t2.0"="swap (rev pi) (swap pi t1)" and 
+                 "t3.0"="t2" in equ_trans)
+apply(assumption)+
+apply(rule equ_sym)
+apply(rule rev_pi_pi_equ)
+apply(rule rev_pi_pi_equ)
+done
+
+lemma equ_involutive_left: 
+  "nabla\<turnstile>swap (rev pi) (swap pi t1)\<approx>t2 = nabla\<turnstile>t1\<approx>t2"
+apply(auto)
+apply(subgoal_tac "nabla \<turnstile> t1\<approx> swap (rev pi) (swap pi t1)")
+apply(drule_tac  "t2.0"="swap (rev pi) (swap pi t1)" and
+                 "t1.0"="t1" and "t3.0"="t2" in equ_trans)
+apply(assumption)+
+apply(rule equ_sym)
+apply(rule rev_pi_pi_equ)
+apply(subgoal_tac "nabla \<turnstile> swap (rev pi) (swap pi t1)\<approx>t1")
+apply(drule_tac  "t1.0"="swap (rev pi) (swap pi t1)" and
+                 "t2.0"="t1" and "t3.0"="t2" in equ_trans)
+apply(assumption)+
+apply(rule rev_pi_pi_equ)
+done
+
+lemma equ_pi_to_left: 
+  "nabla\<turnstile>swap (rev pi) t1\<approx>t2 = nabla\<turnstile>t1\<approx> swap pi t2"
+apply(auto)
+apply(rule_tac pi="rev pi" in equ_dec_pi)
+apply(rule equ_sym)
+apply(simp only: equ_involutive_left)
+apply(rule equ_sym)
+apply(assumption)
+apply(drule_tac pi="rev pi" in equ_add_pi)
+apply(drule equ_sym)
+apply(simp only: equ_involutive_left)
+apply(drule equ_sym)
+apply(assumption)
+done
+
+lemma equ_pi_to_right: 
+  "nabla\<turnstile>t1\<approx>swap (rev pi) t2 = nabla\<turnstile>swap pi t1\<approx>t2"
+apply(auto)
+apply(rule_tac pi="rev pi" in equ_dec_pi)
+apply(simp only: equ_involutive_left)
+apply(drule_tac pi="rev pi" in equ_add_pi)
+apply(simp only: equ_involutive_left)
+done
+
+lemma equ_involutive_right: 
+  "nabla\<turnstile>t1\<approx>swap (rev pi) (swap pi t2) = nabla\<turnstile>t1\<approx>t2"
+apply(simp only: swap_append[THEN sym])
+apply(simp only: equ_pi_to_left[THEN sym])
+apply(simp)
+apply(simp only: swap_append)
+apply(simp only: equ_involutive_left)
+done
+
+lemma equ_pi1_pi2_add: 
+  "(\<forall>a\<in> ds pi1 pi2. nabla\<turnstile>a\<sharp>t)\<longrightarrow>(nabla\<turnstile>swap pi1 t \<approx> swap pi2 t)"
+apply(rule impI)
+apply(simp only: equ_pi_to_right[THEN sym])
+apply(simp only: swap_append[THEN sym])
+apply(rule equ_pi_right[THEN spec, THEN mp])
+apply(auto)
+apply(simp only: ds_rev)
+done
+
+lemma pi_right_equ: "(nabla\<turnstile>t \<approx> swap pi t)\<longrightarrow>(\<forall>a\<in> ds [] pi. nabla\<turnstile>a\<sharp>t)"
+apply(insert  pi_right_equ_help)
+apply(best)
+done
+
+lemma equ_pi1_pi2_dec:  
+  "(nabla\<turnstile>swap pi1 t \<approx> swap pi2 t)\<longrightarrow>(\<forall>a\<in> ds pi1 pi2. nabla\<turnstile>a\<sharp>t)"
+apply(rule impI)
+apply(simp only: equ_pi_to_right[THEN sym])
+apply(simp only: swap_append[THEN sym])
+apply(drule pi_right_equ[THEN mp])
+apply(simp only: ds_rev)
+done
+
+lemma equ_weak: 
+  "nabla1\<turnstile>t1\<approx>t2\<longrightarrow>(nabla1\<union>nabla2)\<turnstile>t1\<approx>t2"
+apply(rule impI)
+apply(erule equ.induct)
+apply(auto simp add: fresh_weak)
+done
+
+(* no term can be equal to one of its proper subterm *)
+lemma psub_trm_not_equ: 
+  "\<forall> t2\<in>psub_trms t1. (\<not>(\<exists> pi. (nabla\<turnstile>t1\<approx>swap pi t2)))"
+apply(induct t1)
+apply(auto)
+apply(simp add: equ_pi_to_left[THEN sym])
+apply(ind_cases "nabla \<turnstile> Abst (swapas (rev pi) list) (swap (rev pi) trm) \<approx> t2")
+apply(simp_all)
+apply(drule abst_psub_trms)
+apply(drule_tac x="t2a" in bspec)
+apply(simp)
+apply(simp add: equ_pi_to_left[THEN sym] swap_append[THEN sym])
+apply(drule_tac x="rev (((swapas (rev pi) list, b) # rev pi))" in spec)
+apply(simp)
+apply(drule abst_psub_trms)
+apply(drule_tac x="t2a" in bspec)
+apply(simp)
+apply(simp)
+apply(simp add: equ_pi_to_left[THEN sym])
+apply(ind_cases "nabla \<turnstile> Paar (swap (rev pi) trm1) (swap (rev pi) trm2) \<approx> t2")
+apply(simp)
+apply(drule paar_psub_trms)
+apply(best)
+apply(simp add: equ_pi_to_left[THEN sym])
+apply(ind_cases "nabla \<turnstile> Paar (swap (rev pi) trm1) (swap (rev pi) trm2) \<approx> t2")
+apply(simp)
+apply(drule paar_psub_trms)
+apply(best)
+apply(simp add: equ_pi_to_left[THEN sym])
+apply(ind_cases "nabla \<turnstile> Func list (swap (rev pi) trm) \<approx> t2")
+apply(simp_all)
+apply(drule func_psub_trms)
+apply(best)
+done
+
+
+
+end 
