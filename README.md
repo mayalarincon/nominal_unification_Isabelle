@@ -22,5 +22,6 @@ https://doi.org/10.1016/j.entcs.2016.06.005
 
 Zoom link:
 https://us02web.zoom.us/launch/edl?muid=500787ed-fffa-4cba-81f0-63ca100fec5b
-Meeting ID: 845 3653 6475
-Passcode: 043434
+* Meeting ID: 845 3653 6475
+* Passcode: 043434
+* Meetings started on 4/12/2025, 8:00 am Brasília / 11:00 am London 
