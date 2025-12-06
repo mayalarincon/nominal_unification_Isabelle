@@ -2,8 +2,12 @@
 This repository contains data of the project of updating Christian Urban's Isabelle formalisation of nominal syntactyc unification.  The original files are in the directory nomu. 
 
 
+C. Urban's proposed steps:
 
-
+- Step 1: Get the whole formalisation to compile again (should be easier now having SH)
+- Step 2: Have a look at the equivalence proof (at the time it was a fiddly proof by cases....not sure whether SH can dispose of most of them). This would need to be eventually an Isar proof.
+- Step 3: The unification algorithm is defined as a rewrite system following textbooks, but it should be defined as a function. This has been done with the simple first-order unification algorithm (in the AFP or main repo)
+- Step 4: Some text
 
 
 REFERENCES
