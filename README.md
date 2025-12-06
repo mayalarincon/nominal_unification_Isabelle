@@ -6,9 +6,10 @@ C. Urban's proposed steps:
 
 - Step 1: Get the whole formalisation to compile again (should be easier now having SH)
 - Step 2: Have a look at the equivalence proof (at the time it was a fiddly proof by cases....not sure whether SH can dispose of most of them). This would need to be eventually an Isar proof.
-- Step 3: The unification algorithm is defined as a rewrite system following textbooks, but it should be defined as a function. This has been done with the simple first-order unification algorithm (in the AFP or main repo)
+- Step 3: The unification algorithm is defined as a rewrite system following textbooks, but it should be defined as a function. This has been done with the simple first-order unification algorithm (in the AFP or main repo).
 - Step 4: Some text
 
+For Step 3, Rocha Oliveira'a PVS formalisation approach is of interest: This formalisation is based on a natural notion of nominal α-equivalence, avoiding in this way the use of the intermediate auxiliary weak α-relation. The procedure is specified as a functional algorithm.    
 
 REFERENCES
 
