@@ -1,6 +1,10 @@
 
 
-theory Equ = Main + Terms + Fresh + PreEqu:
+theory Equ
+
+imports Main  Terms  Fresh  PreEqu
+
+begin
 
 lemma equ_refl: 
   "nabla\<turnstile>t\<approx>t"

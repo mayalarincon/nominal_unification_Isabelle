@@ -1,6 +1,10 @@
 
 
-theory Substs = Main + Terms + PreEqu + Equ:
+theory Substs
+
+imports Main  Terms  PreEqu  Equ
+
+begin
 
 (* substitutions *)
 

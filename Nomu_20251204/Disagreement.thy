@@ -10,11 +10,10 @@ begin
 defs   
   ds_def: "ds xs ys  \<equiv>  { a . a \<in> (atms xs \<union> atms ys) \<and> (swapas xs a \<noteq> swapas ys a) }"*)
 
-locale test = 
-  fixes ds :: "(string \<times> string) list \<Rightarrow> (string \<times> string) list \<Rightarrow> string set"
-  assumes  ds_def: "ds xs ys  \<equiv>  { a . a \<in> (atms xs \<union> atms ys) \<and> (swapas xs a \<noteq> swapas ys a) }"
+definition  ds :: "(string \<times> string) list \<Rightarrow> (string \<times> string) list \<Rightarrow> string set" where
+  ds_def: "ds xs ys  \<equiv>  { a . a \<in> (atms xs \<union> atms ys) \<and> (swapas xs a \<noteq> swapas ys a) }"
 
-begin
+
 
 lemma 
   ds_elem: "\<lbrakk>swapas pi a\<noteq>a\<rbrakk>\<Longrightarrow>a\<in>ds [] pi"
@@ -47,7 +46,7 @@ apply(drule a_not_in_atms)+
 apply(simp)
 apply(drule a_not_in_atms)
 apply(simp)
-apply(drule swapas_pi_ineq_a[THEN mp])
+apply(drule swapas_pi_ineq_a)
 apply(assumption)
   done
 
@@ -58,7 +57,7 @@ lemma ds_cancel_pi_left:
 apply(simp only: ds_def)
 apply(auto)
 apply(simp_all add: swapas_append)
-apply(rule a_ineq_swapas_pi[THEN mp], clarify, drule a_not_in_atms, simp)+
+apply(rule a_ineq_swapas_pi, clarify, drule a_not_in_atms, simp)+
 done
 
 
@@ -68,7 +67,7 @@ lemma ds_cancel_pi_right:
 apply(simp only: ds_def)
 apply(auto)
 apply(simp_all add: swapas_append)
-apply(rule a_ineq_swapas_pi[THEN mp],clarify,
+apply(rule a_ineq_swapas_pi,clarify,
       drule a_not_in_atms,drule a_not_in_atms,simp)+
   done
 
@@ -88,7 +87,7 @@ apply(simp only: ds_def)
 apply(case_tac "b=a")
 apply(auto)
 apply(rule swapas_pi_in_atms)
-apply(drule a_ineq_swapas_pi[THEN mp])
+apply(drule a_ineq_swapas_pi)
 apply(assumption)
 apply(drule sym)
 apply(drule swapas_rev_pi_a)
@@ -107,7 +106,7 @@ lemma ds_cancel_pi_front:
 apply(simp only: ds_def)
 apply(auto)
 apply(simp_all add: swapas_append)
-apply(rule swapas_pi_ineq_a[THEN mp], clarify, drule a_not_in_atms, simp)+
+apply(rule swapas_pi_ineq_a, clarify, drule a_not_in_atms, simp)+
 apply(drule swapas_rev_pi_a, simp)+
 done
 
@@ -116,7 +115,7 @@ lemma ds_rev_pi_pi:
 apply(simp only: ds_def)
 apply(auto)
 apply(simp_all add: swapas_append)
-apply(drule a_ineq_swapas_pi[THEN mp], assumption)+
+apply(drule a_ineq_swapas_pi, assumption)+
 done
 
 lemma ds_rev: 
@@ -144,7 +143,6 @@ apply(simp only: ds_def)
 apply(auto)
   done
 
-end
 
 (* disagreement set as list *)
 
@@ -153,11 +151,9 @@ fun flatten :: "(string \<times> string)list \<Rightarrow> string list" where
 "flatten []     = []" |
 "flatten (x#xs) = (fst x)#(snd x)#(flatten xs)"
 
-locale test2 = test +
-  fixes ds_list :: "(string \<times> string)list \<Rightarrow> (string \<times> string)list \<Rightarrow> string list"
-  assumes ds_list_def: "ds_list pi1 pi2 \<equiv> remdups ([x. x <- (flatten (pi1@pi2)), x\<in>ds pi1 pi2])"
+definition ds_list :: "(string \<times> string)list \<Rightarrow> (string \<times> string)list \<Rightarrow> string list" where
+  ds_list_def: "ds_list pi1 pi2 \<equiv> remdups ([x. x <- (flatten (pi1@pi2)), x\<in>ds pi1 pi2])"
 
-begin
 
 lemma set_flatten_eq_atms: 
   "set (flatten pi) = atms pi"
@@ -174,6 +170,6 @@ apply(simp add: set_flatten_eq_atms)
 apply(simp add: ds_def)
   done
 
-end
+
 
 end

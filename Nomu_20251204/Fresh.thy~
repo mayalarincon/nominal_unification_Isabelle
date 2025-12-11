@@ -1,92 +1,99 @@
 theory Fresh
 
-imports Main Swap Terms Disagreement
+imports Swap Terms Disagreement
 
 begin
 
-types fresh_envs = "(string \<times> string)set"
+type_synonym fresh_envs = "(string \<times> string) set"
 
-consts 
-  fresh :: "(fresh_envs \<times> string \<times> trm) set"
-syntax 
+
+(*locale test3 =
+  fixes fresh :: "(fresh_envs \<times> string \<times> trm) set"
+
+begin *)
+
+(*abbreviation "fresh_judge nabla a t fresh \<equiv> (nabla,a,t) \<in> fresh" 
+
+notation "fresh_judge" (" _ \<turnstile> _ \<sharp> _" [80,80,80] 80) *)
+
+(*syntax 
   "_fresh_judge" :: "fresh_envs \<Rightarrow> string \<Rightarrow> trm \<Rightarrow> bool" (" _ \<turnstile> _ \<sharp> _" [80,80,80] 80)
-translations 
-  "nabla \<turnstile> a \<sharp> t"  \<rightleftharpoons> "(nabla,a,t) \<in> fresh"
+translations
+  "nabla \<turnstile> a \<sharp> t"  \<rightleftharpoons> "(nabla,a,t) \<in> fresh"*)
 
-inductive fresh  
-intros
-  fresh_abst_ab[intro!]: "\<lbrakk>(nabla\<turnstile>a\<sharp>t); a\<noteq>b\<rbrakk> \<Longrightarrow> (nabla\<turnstile>a\<sharp>Abst b t)"
-  fresh_abst_aa[intro!]: "(nabla\<turnstile>a\<sharp>Abst a t)"
-  fresh_unit[intro!]:    "(nabla\<turnstile>a\<sharp>Unit)"
-  fresh_atom[intro!]:    "a\<noteq>b \<Longrightarrow> (nabla\<turnstile>a\<sharp>Atom b)"
-  fresh_susp[intro!]:    "(swapas (rev pi) a,X)\<in>nabla \<Longrightarrow> (nabla\<turnstile>a\<sharp>Susp pi X)"
-  fresh_paar[intro!]:    "\<lbrakk>(nabla\<turnstile>a\<sharp>t1);(nabla\<turnstile>a\<sharp>t2)\<rbrakk> \<Longrightarrow> (nabla\<turnstile>a\<sharp>Paar t1 t2)"
-  fresh_func[intro!]:    "(nabla\<turnstile>a\<sharp>t) \<Longrightarrow> (nabla\<turnstile>a\<sharp>Func F t)"
+inductive fresh :: "fresh_envs \<Rightarrow> string \<Rightarrow> trm \<Rightarrow> bool" (" _ \<turnstile> _ \<sharp> _" [80,80,80] 80) 
+  where
+  fresh_abst_ab[intro!]: "\<lbrakk>nabla \<turnstile> a \<sharp> t; a\<noteq>b\<rbrakk> \<Longrightarrow> nabla \<turnstile> a \<sharp> Abst b t" |
+  fresh_abst_aa[intro!]: "nabla \<turnstile> a \<sharp> Abst a t" |
+  fresh_unit[intro!]:    "nabla \<turnstile> a \<sharp> Unit" |
+  fresh_atom[intro!]:    "a \<noteq> b \<Longrightarrow> nabla \<turnstile> a \<sharp> Atom b" |
+  fresh_susp[intro!]:    "(swapas (rev pi) a,X) \<in> nabla \<Longrightarrow> nabla \<turnstile> a \<sharp> Susp pi X" |
+  fresh_paar[intro!]:    "\<lbrakk>nabla \<turnstile> a \<sharp> t1; nabla \<turnstile> a \<sharp> t2\<rbrakk> \<Longrightarrow> nabla \<turnstile> a \<sharp> Paar t1 t2" |
+  fresh_func[intro!]:    "nabla \<turnstile> a \<sharp> t \<Longrightarrow> nabla \<turnstile> a \<sharp> Func F t"
 
-lemma fresh_atom_elim[elim!]: "(nabla\<turnstile>a\<sharp>Atom b) \<Longrightarrow> a\<noteq>b"
-apply(ind_cases "(nabla \<turnstile>a\<sharp>Atom b)")
-apply(auto)
-done
-lemma fresh_susp_elim[elim!]: "(nabla\<turnstile>a\<sharp>Susp pi X) \<Longrightarrow> (swapas (rev pi) a,X)\<in>nabla"
-apply(ind_cases "(nabla\<turnstile>a\<sharp>Susp pi X)")
-apply(auto)
-done
-lemma fresh_paar_elim[elim!]: "(nabla\<turnstile>a\<sharp>Paar t1 t2) \<Longrightarrow> (nabla\<turnstile>a\<sharp>t1)\<and>(nabla \<turnstile>a\<sharp>t2)"
-apply(ind_cases "(nabla\<turnstile>a\<sharp>Paar t1 t2)")
-apply(auto)
-done
-lemma fresh_func_elim[elim!]: "(nabla\<turnstile>a\<sharp>Func F t) \<Longrightarrow> (nabla\<turnstile>a\<sharp>t)"
-apply(ind_cases "nabla\<turnstile>a\<sharp>Func F t")
-apply(auto)
-done
-lemma fresh_abst_ab_elim[elim!]: "\<lbrakk>nabla\<turnstile>a\<sharp>Abst b t;a\<noteq>b\<rbrakk> \<Longrightarrow> (nabla\<turnstile>a\<sharp>t)"
-apply(ind_cases "nabla\<turnstile>a\<sharp>Abst b t", auto)
-done
+inductive_cases Fresh_elims:
+  "nabla \<turnstile> a \<sharp> Abst b t"
+  "nabla \<turnstile> a \<sharp> Unit"
+  "nabla \<turnstile> a \<sharp> Atom b"
+  "nabla \<turnstile> a \<sharp> Susp pi X"
+  "nabla \<turnstile> a \<sharp> Paar t1 t2"
+  "nabla \<turnstile> a \<sharp> Func F t"
 
-lemma fresh_swap_left: "(nabla\<turnstile>a\<sharp>swap pi t) \<longrightarrow> (nabla\<turnstile>swapas (rev pi) a\<sharp>t)"
-apply(induct t)
-apply(simp_all)
--- Abst
-apply(rule impI)
-apply(case_tac "swapas (rev pi) a = list")
-apply(force)
-apply(force dest!: fresh_abst_ab_elim)
---Susp
-apply(force dest!: fresh_susp_elim simp add: swapas_append[THEN sym]) 
---Unit
-apply(force)
---Atom
-apply(force dest!: fresh_atom_elim)
---Paar
-apply(force dest!: fresh_paar_elim)
--- Func
-apply(force dest!: fresh_func_elim)
-done
+lemma fresh_swap_eqvt: 
+  assumes "nabla \<turnstile> a \<sharp> t"
+  shows "nabla \<turnstile> swapas pi a \<sharp> swap pi t"
+using assms
+  apply(induct arbitrary: pi rule: fresh.induct)
+  apply(auto simp add: swapas_append dest: swapas_rev_pi_a)
+done  
 
-lemma fresh_swap_right: "(nabla\<turnstile>swapas (rev pi) a\<sharp>t) \<longrightarrow> (nabla\<turnstile>a\<sharp>swap pi t)"
-apply(induct t)
-apply(simp_all)
--- Abst
-apply(rule impI)
-apply(case_tac "a = swapas pi list")
-apply(force)
-apply(force dest!: fresh_abst_ab_elim)
---Susp
-apply(force dest!: fresh_susp_elim simp add: swapas_append[THEN sym])
---Unit
-apply(force)
---Atom
-apply(force dest!: fresh_atom_elim)
---Paar
-apply(force dest!: fresh_paar_elim)
--- Func
-apply(force dest!: fresh_func_elim)
-done
+lemma fresh_swap_left: 
+  assumes "nabla \<turnstile> a \<sharp> swap pi t"
+  shows "nabla \<turnstile> swapas (rev pi) a \<sharp> t"
+  using assms
+proof(induct t arbitrary: a pi)
+  case (Abst x1 t)
+  have "nabla \<turnstile> a \<sharp> swap pi (Abst x1 t)" by fact
+  then have "(nabla \<turnstile> a \<sharp> swap pi t \<and> a \<noteq> swapas pi x1) \<or> (a = swapas pi x1)"
+    by (metis Fresh_elims(1) swap.simps(4))
+  moreover {
+    assume as: "nabla \<turnstile> a \<sharp> swap pi t \<and> a \<noteq> swapas pi x1" 
+    have "nabla \<turnstile> swapas (rev pi) a \<sharp> Abst x1 t"
+      using Abst.hyps as by auto 
+  }
+  moreover {
+    assume as: "a = swapas pi x1"
+    then have "nabla \<turnstile> swapas (rev pi) a \<sharp> Abst x1 t"
+      by (simp add: fresh_abst_aa)      
+  } 
+  ultimately show "nabla \<turnstile> swapas (rev pi) a \<sharp> Abst x1 t" 
+    by (metis) 
+next
+  case (Susp x1 x2)
+  have "nabla \<turnstile> a \<sharp> swap pi (Susp x1 x2)" by fact
+  have "(swapas (rev x1) (swapas (rev pi) a), x2) \<in> nabla"
+    by (metis Fresh_elims(4) Susp rev_append swap.simps(3) swapas_append) 
+  then show "nabla \<turnstile> swapas (rev pi) a \<sharp> Susp x1 x2"
+    by (simp add: fresh_susp)
+next
+  case (Atom x)
+  have "nabla \<turnstile> a \<sharp> swap pi (Atom x)" by fact
+  then have "swapas pi x \<noteq> a" by (auto elim: Fresh_elims)
+  then have "x \<noteq> swapas (rev pi) a" using swapas_rev_pi_b by blast  
+  then show "nabla \<turnstile> swapas (rev pi) a \<sharp> Atom x"
+    by (simp add: fresh_atom) 
+qed (auto elim: Fresh_elims)
 
-lemma fresh_weak: "nabla1\<turnstile>a\<sharp>t\<longrightarrow>(nabla1\<union>nabla2)\<turnstile>a\<sharp>t"
-apply(rule impI)
-apply(erule fresh.induct)
-apply(auto)
-done
+
+lemma fresh_swap_right: 
+  assumes "nabla \<turnstile> swapas (rev pi) a \<sharp> t"
+  shows "nabla \<turnstile> a \<sharp> swap pi t"
+  by (metis assms fresh_swap_eqvt swapas_rev_pi_b)
+
+lemma fresh_weak: 
+  assumes "nabla1 \<turnstile> a \<sharp> t"
+  shows "(nabla1 \<union> nabla2) \<turnstile> a \<sharp> t"
+  using assms
+  by(induct rule: fresh.induct)(auto)
 
 end 

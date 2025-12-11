@@ -8,62 +8,46 @@ begin
 
 (* substitutions *)
 
-types substs = "(string \<times> trm)list"
+type_synonym substs = "(string \<times> trm)list"
 
-consts 
-  look_up :: "string \<Rightarrow> substs \<Rightarrow> trm"
-primrec 
-  "look_up X []     = Susp [] X"
+fun look_up :: "string \<Rightarrow> substs \<Rightarrow> trm" where
+  "look_up X []     = Susp [] X" |
   "look_up X (x#xs) = (if (X = fst x) then (snd x) else look_up X xs)"
 
-consts 
-  subst :: "substs \<Rightarrow> trm \<Rightarrow> trm"
-primrec
-  subst_unit: "subst s (Unit)          = Unit"
-  subst_susp: "subst s (Susp pi X)     = swap pi (look_up X s)"
-  subst_atom: "subst s (Atom a)        = Atom a" 
-  subst_abst: "subst s (Abst a t)      = Abst a (subst s t)"
-  subst_paar: "subst s (Paar t1 t2)    = Paar (subst s t1) (subst s t2)"
+fun subst :: "substs \<Rightarrow> trm \<Rightarrow> trm" where
+  subst_unit: "subst s (Unit)          = Unit" |
+  subst_susp: "subst s (Susp pi X)     = swap pi (look_up X s)" |
+  subst_atom: "subst s (Atom a)        = Atom a" |
+  subst_abst: "subst s (Abst a t)      = Abst a (subst s t)" |
+  subst_paar: "subst s (Paar t1 t2)    = Paar (subst s t1) (subst s t2)" |
   subst_func: "subst s (Func F t)      = Func F (subst s t)"
 
 declare subst_susp [simp del]
 
 (* composition of substitutions (adapted from Martin Coen) *)
 
-consts
-  alist_rec :: "substs \<Rightarrow> substs \<Rightarrow> (string\<Rightarrow>trm\<Rightarrow>substs\<Rightarrow>substs\<Rightarrow>substs) \<Rightarrow> substs"
-
-primrec
-  "alist_rec [] c d = c"
+fun alist_rec :: "substs \<Rightarrow> substs \<Rightarrow> (string\<Rightarrow>trm\<Rightarrow>substs\<Rightarrow>substs\<Rightarrow>substs) \<Rightarrow> substs" where
+  "alist_rec [] c d = c" |
   "alist_rec (p#al) c d = d (fst p) (snd p) al (alist_rec al c d)"
 
-consts 
-  "\<bullet>"   ::  "substs \<Rightarrow> substs \<Rightarrow> substs" (infixl 81)
-defs
-  comp_def: "s1 \<bullet> s2 \<equiv> alist_rec s2 s1 (\<lambda> x y xs g. (x,subst s1 y)#g)"
+definition comp ::  "substs \<Rightarrow> substs \<Rightarrow> substs" (infixl \<open>\<bullet>\<close> 81) where
+ "s1 \<bullet> s2 \<equiv> alist_rec s2 s1 (\<lambda> x y xs g. (x,subst s1 y)#g)"
 
 (* domain of substitutions *)
 
-consts  
-  domn :: "(trm \<Rightarrow> trm) \<Rightarrow> string set"
-defs 
-  domn_def: "domn s \<equiv> {X. (s (Susp [] X)) \<noteq> (Susp [] X)}" 
+definition domn :: "(trm \<Rightarrow> trm) \<Rightarrow> string set" where
+  "domn s \<equiv> {X. (s (Susp [] X)) \<noteq> (Susp [] X)}" 
 
 (* substitutions extending freshness environments *)
 
-consts 
-  ext_subst :: "fresh_envs \<Rightarrow> (trm \<Rightarrow> trm) \<Rightarrow> fresh_envs \<Rightarrow> bool" (" _ \<Turnstile> _ _ " [80,80,80] 80)
-defs 
-  ext_subst_def: "nabla1 \<Turnstile> s (nabla2) \<equiv> (\<forall>(a,X)\<in>nabla2. nabla1\<turnstile>a\<sharp> s (Susp [] X))"
+definition ext_subst :: "fresh_envs \<Rightarrow> (trm \<Rightarrow> trm) \<Rightarrow> fresh_envs \<Rightarrow> bool" (" _ \<Turnstile> _ _ " [80,80,80] 80) where
+  "nabla1 \<Turnstile> s (nabla2) \<equiv> (\<forall>(a,X)\<in>nabla2. nabla1\<turnstile>a\<sharp> s (Susp [] X))"
 
-(* alpah-equality for substitutions *)
+(* alpha-equality for substitutions *)
 
-consts 
-  subst_equ :: "fresh_envs \<Rightarrow> (trm\<Rightarrow>trm) \<Rightarrow> (trm\<Rightarrow>trm) \<Rightarrow> bool" (" _ \<Turnstile> _ \<approx> _" [80,80,80] 80)
-
-defs 
-  subst_equ_def: 
-  "nabla\<Turnstile> s1 \<approx> s2 \<equiv>  \<forall>X\<in>(domn s1\<union>domn s2). (nabla \<turnstile> s1 (Susp [] X) \<approx> s2 (Susp [] X))"
+definition subst_equ :: "fresh_envs \<Rightarrow> (trm\<Rightarrow>trm) \<Rightarrow> (trm\<Rightarrow>trm) \<Rightarrow> bool" (" _ \<Turnstile> _ \<approx> _" [80,80,80] 80)
+  where
+  "nabla \<Turnstile> s1 \<approx> s2 \<equiv>  \<forall>X\<in>(domn s1\<union>domn s2). (nabla \<turnstile> s1 (Susp [] X) \<approx> s2 (Susp [] X))"
 
 lemma not_in_domn: "X\<notin>(domn s)\<Longrightarrow> (s (Susp [] X)) = (Susp [] X)"
 apply(auto simp only: domn_def)

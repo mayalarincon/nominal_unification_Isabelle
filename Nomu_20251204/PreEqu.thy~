@@ -1,6 +1,10 @@
 
 
-theory PreEqu = Main + Swap + Terms + Disagreement + Fresh:
+theory PreEqu
+
+imports Main  Swap  Terms  Disagreement  Fresh
+
+begin
 
 consts 
   equ :: "(fresh_envs \<times> trm \<times> trm) set"

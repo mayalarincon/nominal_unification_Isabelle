@@ -1,5 +1,3 @@
-
-
 theory Equ
 
 imports Main  Terms  Fresh  PreEqu

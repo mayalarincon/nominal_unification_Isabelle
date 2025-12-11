@@ -1,7 +1,10 @@
 
 
-theory Mgu = Main + Terms + Fresh + Equ + Substs:
+theory Mgu
 
+imports Main  Terms  Fresh  Equ  Substs
+
+begin
 (* unification problems *)
 
 syntax

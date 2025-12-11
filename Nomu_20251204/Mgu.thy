@@ -1,5 +1,3 @@
-
-
 theory Mgu
 
 imports Main  Terms  Fresh  Equ  Substs
@@ -7,19 +5,23 @@ imports Main  Terms  Fresh  Equ  Substs
 begin
 (* unification problems *)
 
+(*
+
 syntax
  "_equ_prob"   :: "trm \<Rightarrow> trm \<Rightarrow> (trm\<times>trm)"        ("_ \<approx>? _" [81,81] 81)
  "_fresh_prob" :: "string \<Rightarrow> trm \<Rightarrow> (string\<times>trm)"  ("_ \<sharp>? _" [81,81] 81)
 
 translations 
   "t1 \<approx>? t2" \<rightharpoonup> "(t1,t2)"
-  " a \<sharp>? t"  \<rightharpoonup> "(a,t)"
+  " a \<sharp>? t"  \<rightharpoonup> "(a,t)"*)
+
+
 
 (* all solutions for a unification problem *)
 
-types 
-  problem_type = "((trm\<times>trm)list) \<times> ((string\<times>trm)list)"
-  unifier_type = "fresh_envs \<times> substs"
+type_synonym problem_type = "((trm\<times>trm)list) \<times> ((string\<times>trm)list)"
+
+type_synonym unifier_type = "fresh_envs \<times> substs"
 
 consts 
   U :: "problem_type \<Rightarrow> (unifier_type set)"

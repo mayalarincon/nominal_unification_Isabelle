@@ -5,10 +5,16 @@ imports Main Swap  Atoms
 
 begin
 
-consts 
+(*consts 
   ds :: "(string \<times> string) list \<Rightarrow> (string \<times> string) list \<Rightarrow> string set"
 defs   
-  ds_def: "ds xs ys  \<equiv>  { a . a \<in> (atms xs \<union> atms ys) \<and> (swapas xs a \<noteq> swapas ys a) }"
+  ds_def: "ds xs ys  \<equiv>  { a . a \<in> (atms xs \<union> atms ys) \<and> (swapas xs a \<noteq> swapas ys a) }"*)
+
+locale test = 
+  fixes ds :: "(string \<times> string) list \<Rightarrow> (string \<times> string) list \<Rightarrow> string set"
+  assumes  ds_def: "ds xs ys  \<equiv>  { a . a \<in> (atms xs \<union> atms ys) \<and> (swapas xs a \<noteq> swapas ys a) }"
+
+begin
 
 lemma 
   ds_elem: "\<lbrakk>swapas pi a\<noteq>a\<rbrakk>\<Longrightarrow>a\<in>ds [] pi"
@@ -16,37 +22,46 @@ apply(simp add: ds_def)
 apply(auto simp add: swapas_pi_ineq_a)
 done
 
+
+
 lemma 
   elem_ds: "\<lbrakk>a\<in>ds [] pi\<rbrakk>\<Longrightarrow>a\<noteq>swapas pi a"
 apply(simp add: ds_def)
-done
+  done
+
 
 lemma 
   ds_sym: "ds pi1 pi2 = ds pi2 pi1"
 apply(simp only: ds_def)
 apply(auto)
-done
+  done
+
+
 
 lemma 
   ds_trans: "c\<in>ds pi1 pi3\<longrightarrow>(c\<in>ds pi1 pi2 \<or> c\<in>ds pi2 pi3)"
 apply(auto)
 apply(simp only: ds_def)
 apply(auto)
-apply(drule a_not_in_atms[THEN mp])+
+apply(drule a_not_in_atms)+
 apply(simp)
-apply(drule a_not_in_atms[THEN mp])
+apply(drule a_not_in_atms)
 apply(simp)
 apply(drule swapas_pi_ineq_a[THEN mp])
 apply(assumption)
-done
+  done
+
+
 
 lemma ds_cancel_pi_left: 
   "(c\<in> ds (pi1@pi) (pi2@pi)) \<longrightarrow> (swapas pi c\<in> ds pi1 pi2)"
 apply(simp only: ds_def)
 apply(auto)
 apply(simp_all add: swapas_append)
-apply(rule a_ineq_swapas_pi[THEN mp], clarify, drule a_not_in_atms[THEN mp], simp)+
+apply(rule a_ineq_swapas_pi[THEN mp], clarify, drule a_not_in_atms, simp)+
 done
+
+
 
 lemma ds_cancel_pi_right: 
   "(swapas pi c\<in> ds pi1 pi2) \<longrightarrow> (c\<in> ds (pi1@pi) (pi2@pi))"
@@ -54,14 +69,18 @@ apply(simp only: ds_def)
 apply(auto)
 apply(simp_all add: swapas_append)
 apply(rule a_ineq_swapas_pi[THEN mp],clarify,
-      drule a_not_in_atms[THEN mp],drule a_not_in_atms[THEN mp],simp)+
-done
+      drule a_not_in_atms,drule a_not_in_atms,simp)+
+  done
+
+
 
 lemma ds_equality: 
   "(ds [] pi)-{a,swapas pi a} = (ds [] ((a,swapas pi a)#pi))-{swapas pi a}"
 apply(simp only: ds_def)
 apply(auto)
-done
+  done
+
+
 
 lemma ds_7: 
   "\<lbrakk>b\<noteq> swapas pi b;a\<in>ds [] ((b,swapas pi b)#pi)\<rbrakk>\<Longrightarrow>a\<in>ds [] pi"
@@ -81,12 +100,14 @@ apply(drule swapas_rev_pi_a)
 apply(simp)
 done
 
+
+
 lemma ds_cancel_pi_front: 
   "ds (pi@pi1) (pi@pi2) = ds pi1 pi2"
 apply(simp only: ds_def)
 apply(auto)
 apply(simp_all add: swapas_append)
-apply(rule swapas_pi_ineq_a[THEN mp], clarify, drule a_not_in_atms[THEN mp], simp)+
+apply(rule swapas_pi_ineq_a[THEN mp], clarify, drule a_not_in_atms, simp)+
 apply(drule swapas_rev_pi_a, simp)+
 done
 
@@ -121,17 +142,22 @@ lemma ds_abab:
   "\<lbrakk>a\<noteq>b\<rbrakk>\<Longrightarrow>ds [] [(a, b), (a, b)] = {}"
 apply(simp only: ds_def)
 apply(auto)
-done
+  done
+
+end
 
 (* disagreement set as list *)
 
-consts flatten :: "(string \<times> string)list \<Rightarrow> string list"
-primrec 
-"flatten []     = []"
+ 
+fun flatten :: "(string \<times> string)list \<Rightarrow> string list" where
+"flatten []     = []" |
 "flatten (x#xs) = (fst x)#(snd x)#(flatten xs)"
 
-consts ds_list :: "(string \<times> string)list \<Rightarrow> (string \<times> string)list \<Rightarrow> string list"
-defs ds_list_def: "ds_list pi1 pi2 \<equiv> remdups ([x:(flatten (pi1@pi2)). x\<in>ds pi1 pi2])"
+locale test2 = test +
+  fixes ds_list :: "(string \<times> string)list \<Rightarrow> (string \<times> string)list \<Rightarrow> string list"
+  assumes ds_list_def: "ds_list pi1 pi2 \<equiv> remdups ([x. x <- (flatten (pi1@pi2)), x\<in>ds pi1 pi2])"
+
+begin
 
 lemma set_flatten_eq_atms: 
   "set (flatten pi) = atms pi"
@@ -146,6 +172,8 @@ apply(simp add: ds_list_def)
 apply(simp add: ds_list_def)
 apply(simp add: set_flatten_eq_atms)
 apply(simp add: ds_def)
-done
+  done
+
+end
 
 end

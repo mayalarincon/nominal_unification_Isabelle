@@ -27,13 +27,15 @@ lemma a_not_in_atms:
 
 
 lemma swapas_pi_ineq_a: 
-  "swapas pi a \<noteq> a \<longrightarrow> a \<in> atms pi"
-  using a_not_in_atms by metis
+  assumes  "swapas pi a \<noteq> a"
+  shows "a \<in> atms pi"
+  using a_not_in_atms assms by force
 
 
 lemma a_ineq_swapas_pi: 
-  "a \<noteq> swapas pi a \<longrightarrow> a \<in> atms pi"
-  using a_not_in_atms by metis
+  assumes "a \<noteq> swapas pi a"
+  shows "a \<in> atms pi"
+  using a_not_in_atms assms by blast
 
 
 lemma swapas_pi_in_atms: 
