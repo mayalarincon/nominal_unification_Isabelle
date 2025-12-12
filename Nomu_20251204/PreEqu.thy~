@@ -1,72 +1,107 @@
-
-
 theory PreEqu
 
 imports Main  Swap  Terms  Disagreement  Fresh
 
 begin
 
-consts 
-  equ :: "(fresh_envs \<times> trm \<times> trm) set"
 
-syntax 
+(*syntax 
   "_equ_judge"   :: "fresh_envs \<Rightarrow> trm \<Rightarrow> trm \<Rightarrow> bool" (" _ \<turnstile> _ \<approx> _" [80,80,80] 80)
 translations 
-  "nabla \<turnstile> t1 \<approx> t2" \<rightleftharpoons> "(nabla,t1,t2) \<in> equ"
+  "nabla \<turnstile> t1 \<approx> t2" \<rightleftharpoons> "(nabla,t1,t2) \<in> equ" *)
 
-inductive equ 
-intros
+inductive equ :: "fresh_envs \<Rightarrow> trm \<Rightarrow> trm \<Rightarrow> bool" (" _ \<turnstile> _ \<approx> _" [80,80,80] 80) where
 equ_abst_ab[intro!]: "\<lbrakk>a\<noteq>b;(nabla \<turnstile> a \<sharp> t2);(nabla \<turnstile> t1 \<approx> (swap [(a,b)] t2))\<rbrakk> 
-                      \<Longrightarrow> (nabla \<turnstile> Abst a t1 \<approx> Abst b t2)"
-equ_abst_aa[intro!]: "(nabla \<turnstile> t1 \<approx> t2) \<Longrightarrow> (nabla \<turnstile> Abst a t1 \<approx> Abst a t2)" 
-equ_unit[intro!]:    "(nabla \<turnstile> Unit \<approx> Unit)"
-equ_atom[intro!]:    "a=b\<Longrightarrow>nabla \<turnstile> Atom a \<approx> Atom b"
-equ_susp[intro!]:    "(\<forall> c \<in> ds pi1 pi2. (c,X) \<in> nabla) \<Longrightarrow> (nabla \<turnstile> Susp pi1 X \<approx> Susp pi2 X)"
-equ_paar[intro!]:    "\<lbrakk>(nabla \<turnstile> t1\<approx>t2);(nabla \<turnstile> s1\<approx>s2)\<rbrakk> \<Longrightarrow> (nabla \<turnstile> Paar t1 s1 \<approx> Paar t2 s2)"
-equ_func[intro!]:    "(nabla \<turnstile> t1 \<approx> t2) \<Longrightarrow> (nabla \<turnstile> Func F t1 \<approx> Func F t2)" 
+                      \<Longrightarrow> (nabla \<turnstile> Abst a t1 \<approx> Abst b t2)" |
+equ_abst_aa[intro!]: "(nabla \<turnstile> t1 \<approx> t2) \<Longrightarrow> (nabla \<turnstile> Abst a t1 \<approx> Abst a t2)" |
+equ_unit[intro!]:    "(nabla \<turnstile> Unit \<approx> Unit)" |
+equ_atom[intro!]:    "a=b\<Longrightarrow>nabla \<turnstile> Atom a \<approx> Atom b" |
+equ_susp[intro!]:    "(\<forall> c \<in> ds pi1 pi2. (c,X) \<in> nabla) \<Longrightarrow> (nabla \<turnstile> Susp pi1 X \<approx> Susp pi2 X)" |
+equ_paar[intro!]:    "\<lbrakk>(nabla \<turnstile> t1\<approx>t2);(nabla \<turnstile> s1\<approx>s2)\<rbrakk> \<Longrightarrow> (nabla \<turnstile> Paar t1 s1 \<approx> Paar t2 s2)" |
+equ_func[intro!]:    "(nabla \<turnstile> t1 \<approx> t2) \<Longrightarrow> (nabla \<turnstile> Func F t1 \<approx> Func F t2)"
 
-lemma equ_atom_elim[elim!]: "nabla\<turnstile>Atom a \<approx> Atom b \<Longrightarrow> a=b"
-apply(ind_cases "nabla \<turnstile> Atom a \<approx> Atom b", auto)
-done
+inductive_cases Equ_elims:
+"nabla \<turnstile> Atom a \<approx> Atom b"
+"nabla \<turnstile> Unit \<approx> Unit"
+"nabla \<turnstile> Susp pi1 X \<approx> Susp pi2 X"
+"nabla \<turnstile> Paar s1 t1 \<approx> Paar s2 t2"
+"nabla \<turnstile> Func F t1 \<approx> Func F t2"
+"nabla \<turnstile> Abst a t1 \<approx> Abst a t2"
+"nabla \<turnstile> Abst a t1 \<approx> Abst b t2"
 
-lemma equ_susp_elim[elim!]: "(nabla \<turnstile> Susp pi1 X \<approx> Susp pi2 X) 
-                             \<Longrightarrow> (\<forall> c \<in> ds pi1 pi2. (c,X)\<in> nabla)"
-apply(ind_cases "nabla \<turnstile> Susp pi1 X \<approx> Susp pi2 X", auto)
-done
+
+(*lemma equ_atom_elim[elim!]: 
+  assumes "nabla \<turnstile> Atom a \<approx> Atom b"
+  shows "a = b"
+  using assms equ.simps by blast
+
+
+lemma equ_susp_elim[elim!]: 
+  assumes "nabla \<turnstile> Susp pi1 X \<approx> Susp pi2 X"
+  shows "\<forall> c \<in> ds pi1 pi2. (c,X) \<in> nabla"
+  sorry
+
+
 lemma equ_paar_elim[elim!]: "(nabla \<turnstile> Paar s1 t1 \<approx> Paar s2 t2) \<Longrightarrow> 
                              (nabla \<turnstile> s1 \<approx> s2)\<and>(nabla \<turnstile> t1 \<approx> t2)"
 apply(ind_cases "nabla \<turnstile> Paar s1 t1 \<approx> Paar s2 t2", auto)
-done
+  done
+
 lemma equ_func_elim[elim!]: "(nabla \<turnstile> Func F t1 \<approx> Func F t2) \<Longrightarrow> (nabla \<turnstile> t1 \<approx> t2)"
 apply(ind_cases "nabla \<turnstile> Func F t1 \<approx> Func F t2", auto)
-done
+  done
+
 lemma equ_abst_aa_elim[elim!]: "(nabla \<turnstile> Abst a t1 \<approx> Abst a t2) \<Longrightarrow> (nabla \<turnstile> t1 \<approx> t2)"
 apply(ind_cases "nabla \<turnstile> Abst a t1 \<approx> Abst a t2", auto)
-done
+  done
+
 lemma equ_abst_ab_elim[elim!]: "\<lbrakk>(nabla \<turnstile> Abst a t1 \<approx> Abst b t2);a\<noteq>b\<rbrakk> \<Longrightarrow> 
                                 (nabla \<turnstile> t1 \<approx> (swap [(a,b)] t2))\<and>(nabla\<turnstile>a\<sharp>t2)"
 apply(ind_cases "(nabla \<turnstile> Abst a t1 \<approx> Abst b t2)", auto)
-done
+done*)
 
-lemma equ_depth: "nabla \<turnstile> t1 \<approx> t2 \<Longrightarrow> depth t1 = depth t2"
-apply(erule equ.induct)
+
+lemma equ_depth: 
+  assumes "nabla \<turnstile> t1 \<approx> t2"
+  shows "depth t1 = depth t2"
+  using assms by (rule equ.induct, simp_all)
+
+
+lemma rev_pi_pi_equ: "(nabla \<turnstile> swap (rev pi) (swap pi t) \<approx> t)"
+apply(induct t)
+       apply(auto)
+  by (metis ds_rev elem_ds swapas_append swapas_rev_pi_a)
+
+lemma equ_pi_right: 
+  assumes "\<forall>a \<in> ds [] pi. nabla \<turnstile> a \<sharp> t"
+  shows "nabla \<turnstile> t \<approx> swap pi t"
+proof(induct t arbitrary: pi)
+  case (Abst x1 t)
+  have "nabla \<turnstile> t \<approx> swap pi t" by fact
+  then have "nabla \<turnstile> Abst x1 t \<approx> Abst x1 (swap pi t)" using Equ_elims(7) by blast
+
+  then show ?case sorry
+next
+  case (Susp x1 x2)
+  then show ?case using Equ_elims(3) assms sorry
+next
+  case Unit
+  then show ?case sorry
+next
+  case (Atom x)
+  then show ?case sorry
+next
+  case (Paar t1 t2)
+  then show ?case sorry
+next
+  case (Func x1 t)
+  then show ?case sorry
+qed
+
+
+(*apply(induct_tac t)
 apply(simp_all)
-done
-
-lemma rev_pi_pi_equ: "(nabla\<turnstile>swap (rev pi) (swap pi t)\<approx>t)"
-apply(induct_tac t)
-apply(auto)
--- Susp
-apply(drule_tac ds_cancel_pi_left[of _ "rev pi @ pi" _ "[]", THEN mp, simplified])
-apply(simp only: ds_rev_pi_pi)
-apply(simp only: ds_def)
-apply(force)
-done
-
-lemma equ_pi_right: "\<forall>pi. (\<forall>a\<in>ds [] pi. nabla\<turnstile>a\<sharp>t) \<longrightarrow> (nabla\<turnstile>t\<approx>swap pi t)"
-apply(induct_tac t)
-apply(simp_all)
--- Abst
+(*Abst*)
 apply(rule allI)
 apply(case_tac "(swapas pi list)=list") 
 apply(simp)
@@ -75,7 +110,7 @@ apply(rule equ_abst_aa)
 apply(drule_tac x="pi" in spec)
 apply(subgoal_tac "(\<forall>a\<in>ds [] pi.  nabla \<turnstile> a \<sharp> trm)")--A
 apply(force)
---A
+(*A*)
 apply(rule ballI)
 apply(drule_tac x=a in bspec)
 apply(assumption)
@@ -90,7 +125,7 @@ apply(simp add: ds_def)
 apply(rule conjI)
 apply(subgoal_tac "swapas (rev pi) list \<in> atms (rev pi)") --B
 apply(simp)
---B
+(*B*)
 apply(drule swapas_pi_ineq_a[THEN mp])
 apply(rule swapas_pi_in_atms)
 apply(simp)
@@ -101,7 +136,7 @@ apply(force dest!: fresh_abst_ab_elim  swapas_rev_pi_b intro!: fresh_swap_right[
 apply(drule_tac x="(list, swapas pi list)#pi" in spec)
 apply(subgoal_tac "(\<forall>a\<in>ds [] ((list, swapas pi list) # pi).  nabla \<turnstile> a \<sharp> trm)")--C
 apply(force simp add: swap_append[THEN sym])
---C
+(*C*)
 apply(rule ballI)
 apply(drule_tac x="a" in bspec)
 apply(rule_tac b="list" in ds_7)
@@ -115,106 +150,162 @@ apply(subgoal_tac "a\<noteq>swapas pi a")
 apply(simp)
 apply(force)
 apply(force dest!: fresh_abst_ab_elim)
--- Susp
+(*Susp*)
 apply(rule allI)
 apply(rule impI)
 apply(rule equ_susp)
 apply(rule ballI)
 apply(subgoal_tac "swapas list1 c\<in>ds [] pi")--A
 apply(force dest!: fresh_susp_elim)
---A
+(*A*)
 apply(rule ds_cancel_pi_left[THEN mp])
 apply(simp)
--- Unit
+(* Unit*)
 apply(force)
--- Atom
+(*Atom*)
 apply(rule allI)
 apply(rule impI)
 apply(case_tac "(swapas pi list) = list")
 apply(force)
 apply(drule ds_elem)
 apply(force dest!: fresh_atom_elim)
--- Paar
+(* Paar*)
 apply(force dest!: fresh_paar_elim)
--- Func
+(*Func*)
 apply(force)
-done
+done *)
 
 lemma pi_comm: "nabla\<turnstile>(swap (pi@[(a,b)]) t)\<approx>(swap ([(swapas pi a, swapas pi b)]@pi) t)"
-apply(induct_tac t)
+proof(induct t arbitrary: pi a)
+  case (Abst x1 t)
+  then show ?case using swapas_comm equ_abst_aa by simp
+next
+  case (Susp x1 x2)
+  then show ?case sorry
+next
+  case Unit
+  then show ?case using equ_unit
+    by simp
+next
+  case (Atom x)
+  then show ?case using swapas_rev_pi_b swapas_rev_pi_a swapas_append swapas_comm
+    by auto
+next
+  case (Paar t1 t2)
+  then show ?case by force
+next
+  case (Func x1 t)
+  then show ?case by force
+qed
+
+(*apply(induct_tac t)
 apply(simp_all)
--- Abst
+(*Abst*)
 apply(force simp add: swapas_comm)
--- Susp
+(*Susp*)
 apply(rule equ_susp)
 apply(rule ballI)
 apply(simp only: ds_def)
 apply(simp only: mem_Collect_eq)
 apply(erule conjE)
 apply(subgoal_tac "swapas (pi@[(a,b)]) (swapas list1 c) =
-                   swapas ([(swapas pi a,swapas pi b)]@pi) (swapas list1 c)")--A
-apply(simp add: swapas_append[THEN sym])
---A
-apply(simp only: swapas_comm)
--- Units
+                   swapas ([(swapas pi a,swapas pi b)] @ pi) (swapas list1 c)")
+       apply(simp add: swapas_append[THEN sym])
+(*A*)
+       apply(simp only: swapas_comm)
+(*Units*)
 apply(rule equ_unit)
--- Atom
+(*Atom*)
 apply(force dest!: swapas_rev_pi_b swapas_rev_pi_a simp add: swapas_append)
---Paar
+(*Paar*)
 apply(force)
---Func
+(*Func*)
 apply(force)
-done
+  done
+*)
 
+lemma l3_jud: 
+  assumes "(nabla \<turnstile> t1\<approx>t2)"
+  shows "(nabla \<turnstile> a\<sharp>t1) \<longrightarrow> (nabla \<turnstile> a\<sharp>t2)"
+proof(induction)
+  case (Abst x1 x2)
+  then show ?case using fresh_abst_aa fresh_abst_ab by metis
+next
+  case (Susp x1 x2)
+  then show ?case sorry
+next
+  case Unit
+  then show ?case using equ_unit by auto
+next
+  case (Atom x)
+  then show ?case sorry
+next
+  case (Paar x1 x2)
+  then show ?case by force
+next
+  case (Func x1 x2)
+  then show ?case by force
+qed
 
-lemma l3_jud: "(nabla \<turnstile> t1\<approx>t2) \<Longrightarrow> (nabla \<turnstile> a\<sharp>t1) \<longrightarrow> (nabla \<turnstile> a\<sharp>t2)"
-apply(erule equ.induct)
+(*apply(rule equ.induct)
 apply(simp_all)
---Abst.ab
-apply(rule impI)
+(*Abst.ab*)
 apply(case_tac "aa=a")
 apply(force)
 apply(case_tac "b=a")
 apply(force)
-apply(force dest!: fresh_abst_ab_elim fresh_swap_left[THEN mp])
--- Abst.aa
+      apply(force dest!: Fresh_elims(1) fresh_swap_left)
+(*Abst.aa*)
 apply(case_tac "a=aa")
 apply(force)
-apply(force dest!: fresh_abst_ab_elim)
--- Susp
+apply(force dest!: Fresh_elims(1))
+(*Susp*)
 apply(rule impI)
-apply(drule fresh_susp_elim, rule fresh_susp)
+    apply(drule Fresh_elims(4), rule fresh_susp)
 apply(case_tac "swapas (rev pi1) a = swapas (rev pi2) a") 
 apply(simp)
-apply(drule_tac x="swapas (rev pi2) a" in bspec)
-apply(rule ds_cancel_pi_left[THEN mp])
-apply(subgoal_tac "swapas (pi1@(rev pi2)) a \<noteq> a")--A
-apply(drule ds_elem)
-apply(force simp add: ds_def swapas_append)
---A
-apply(clarify)
-apply(simp only: swapas_append)
-apply(drule swapas_rev_pi_a)
-apply(force)
-apply(assumption)
--- Paar
+     apply(drule_tac x="swapas (rev pi2) a" in bspec)
+
+
+      apply(rule ds_cancel_pi_left)
+
+  apply(subgoal_tac "swapas (pi1@(rev pi2)) a \<noteq> a")--A
+      apply(drule ds_elem)
+
+      apply(force simp add: ds_def swapas_append)
+
+(*A*)
+      apply(clarify)
+
+      apply(simp only: swapas_append)
+
+      apply(drule swapas_rev_pi_a)
+
+      apply(force)
+
+      apply(assumption)
+
+(*Paar*)
 apply(force dest!: fresh_paar_elim)
--- Func
+(*Func*)
 apply(force dest!: fresh_func_elim)
-done
+  done*)
+
 
 lemma big: "\<forall>t1 t2 t3. (n=depth t1) \<longrightarrow>
              (((nabla\<turnstile>t1\<approx>t2)\<longrightarrow>(nabla\<turnstile>t2\<approx>t1))\<and>  
               (\<forall>pi. (nabla\<turnstile>t1\<approx>t2)\<longrightarrow>(nabla\<turnstile>swap pi t1\<approx>swap pi t2))\<and> 
-              ((nabla\<turnstile>t1\<approx>t2)\<and>(nabla\<turnstile>t2\<approx>t3)\<longrightarrow>(nabla\<turnstile>t1\<approx>t3)))" 
-apply(induct_tac n rule: nat_less_induct)
+              ((nabla\<turnstile>t1\<approx>t2)\<and>(nabla\<turnstile>t2\<approx>t3)\<longrightarrow>(nabla\<turnstile>t1\<approx>t3)))"
+
+  sorry
+(*apply(induct_tac n rule: nat_less_induct)
 apply(rule allI)+apply(rule impI)
 apply(rule conjI)
--- SYMMETRY
+(*SYMMETRY*)
 apply(rule impI)
 apply(ind_cases "nabla \<turnstile> t1 \<approx> t2")
 apply(simp_all)
--- Abst.ab
+(*Abst.ab*)
 apply(rule equ_abst_ab)
 apply(force) --abst.ab.first.premise
 apply(rule_tac "t1.1"="swap [(a,b)] t2a" in l3_jud[THEN mp])
@@ -233,7 +324,7 @@ apply(drule_tac x="swap [(b,a)] t1a" in spec)
 apply(simp (no_asm_use))
 apply(drule_tac x="swap [(b,a),(a,b)] t2a" in spec)
 apply(force)
---B
+(*B*)
 apply(subgoal_tac "nabla\<turnstile>t2a \<approx> swap ([(b, a)] @ [(a, b)]) t2a")--C
 apply(drule_tac x="depth t1a" in spec)
 apply(simp)
@@ -242,45 +333,45 @@ apply(drule mp)
 apply(drule equ_depth)
 apply(force)
 apply(best)
---C
+(*C*)
 apply(rule equ_pi_right[THEN spec,THEN mp])
 apply(subgoal_tac "ds [] ([(b, a)] @ [(a, b)])={}")
 apply(simp)
 apply(simp add: ds_baab)
---A
+(*A*)
 apply(force simp only: swap_append)
--- Abst.aa
+(*Abst.aa*)
 apply(force)
--- Unit
+(*Unit*)
 apply(rule equ_unit)
--- Atom
+(*Atom*)
 apply(force)
--- Susp
+(*Susp*)
 apply(force simp only: ds_sym)
--- Paar
+(*Paar*)
 apply(rule equ_paar)
 apply(drule_tac x="depth t1a" in spec)
 apply(simp add: Suc_max_left)
 apply(drule_tac x="depth s1" in spec)
 apply(simp add: Suc_max_right)
--- Func
+(*Func*)
 apply(best)
--- ADD.PI
+(*ADD.PI*)
 apply(rule conjI)
 apply(rule impI)
 apply(ind_cases "nabla \<turnstile> t1 \<approx> t2")
 apply(simp_all)
--- Abst.ab
+(*Abst.ab*)
 apply(rule allI)
 apply(rule equ_abst_ab)
--- abst.ab.first.premise
+(* abst.ab.first.premise*)
 apply(clarify)
 apply(drule swapas_rev_pi_a)
 apply(simp)
--- abst.ab.second.premise
+(*abst.ab.second.premise*)
 apply(rule fresh_swap_right[THEN mp])
 apply(simp)
--- abst.ab.third.premise
+(*abst.ab.third.premise*)
 apply(subgoal_tac "nabla \<turnstile> swap pi t1a \<approx> swap (pi@[(a,b)]) t2a") --A
 apply(subgoal_tac "nabla \<turnstile> swap (pi@[(a,b)]) t2a \<approx> swap ([(swapas pi a,swapas pi b)]@pi) t2a") --B
 apply(drule_tac x="depth t1a" in spec)
@@ -506,11 +597,11 @@ apply(best)
 -- Func
 apply(ind_cases "nabla \<turnstile> Func F t2a \<approx> t3")
 apply(best)
-done
+done*)
 
-lemma pi_right_equ_help: 
+lemma pi_right_equ_help:
       "\<forall>t. (n=depth t) \<longrightarrow> (\<forall>pi. nabla\<turnstile>t\<approx>swap pi t\<longrightarrow>(\<forall>a\<in> ds [] pi. nabla\<turnstile>a\<sharp>t))"
-apply(induct_tac n rule: nat_less_induct)
+apply(induct n rule: nat_less_induct)
 apply(rule allI)+
 apply(rule impI)
 apply(rule allI)+
@@ -578,6 +669,6 @@ apply(drule_tac x="depth s1" in spec)
 apply(force simp add: Suc_max_right)
 --Func
 apply(best)
-done
+done*)
 
 end 

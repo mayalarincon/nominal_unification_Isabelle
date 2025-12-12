@@ -72,15 +72,41 @@ apply(induct t)
        apply(auto)
   by (metis ds_rev elem_ds swapas_append swapas_rev_pi_a)
 
+thm swap.simps
+
 lemma equ_pi_right: 
   assumes "\<forall>a \<in> ds [] pi. nabla \<turnstile> a \<sharp> t"
   shows "nabla \<turnstile> t \<approx> swap pi t"
+  using assms
 proof(induct t arbitrary: pi)
-  case (Abst x1 t)
-  have "nabla \<turnstile> t \<approx> swap pi t" by fact
-  then have "nabla \<turnstile> Abst x1 t \<approx> Abst x1 (swap pi t)" using Equ_elims(7) by blast
+   case (Abst x1 t)
+  (*have IH: "nabla \<turnstile> t \<approx> swap pi t" by fact*)
+  have "swapas pi x1 = x1 \<or> swapas pi x1 \<noteq> x1" by blast
+  moreover 
+  { assume eq: "swapas pi x1 = x1"
+    have "nabla \<turnstile> Abst x1 t \<approx> Abst x1 (swap pi t)"
+      apply (rule equ_abst_aa)
+      apply (rule Abst.hyps)
+      apply (rule ballI)
+      subgoal for a 
+        apply (rule Fresh_elims(1)[of nabla a x1 t])
+        using Abst.prems elem_ds[of a pi] eq by auto
+      done
+    then have "nabla \<turnstile> Abst x1 t \<approx> swap pi (Abst x1 t)" using eq by simp
+  }
+  moreover
+  { assume neq: "x1 \<noteq> swapas pi x1"  
+    have "nabla \<turnstile> Abst x1 t \<approx> swap pi (Abst x1 t)"
+      apply(simp)
+      apply(rule equ_abst_ab)
+        apply(rule neq)
+      using assms ds_elem
+      
+      (* ? ? ? *)
+  }
+  ultimately show ?case by blast
 
-  then show ?case sorry
+
 next
   case (Susp x1 x2)
   then show ?case using Equ_elims(3) assms sorry
