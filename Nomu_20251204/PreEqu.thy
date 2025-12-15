@@ -30,37 +30,6 @@ inductive_cases Equ_elims:
 "nabla \<turnstile> Abst a t1 \<approx> Abst b t2"
 
 
-(*lemma equ_atom_elim[elim!]: 
-  assumes "nabla \<turnstile> Atom a \<approx> Atom b"
-  shows "a = b"
-  using assms equ.simps by blast
-
-
-lemma equ_susp_elim[elim!]: 
-  assumes "nabla \<turnstile> Susp pi1 X \<approx> Susp pi2 X"
-  shows "\<forall> c \<in> ds pi1 pi2. (c,X) \<in> nabla"
-  sorry
-
-
-lemma equ_paar_elim[elim!]: "(nabla \<turnstile> Paar s1 t1 \<approx> Paar s2 t2) \<Longrightarrow> 
-                             (nabla \<turnstile> s1 \<approx> s2)\<and>(nabla \<turnstile> t1 \<approx> t2)"
-apply(ind_cases "nabla \<turnstile> Paar s1 t1 \<approx> Paar s2 t2", auto)
-  done
-
-lemma equ_func_elim[elim!]: "(nabla \<turnstile> Func F t1 \<approx> Func F t2) \<Longrightarrow> (nabla \<turnstile> t1 \<approx> t2)"
-apply(ind_cases "nabla \<turnstile> Func F t1 \<approx> Func F t2", auto)
-  done
-
-lemma equ_abst_aa_elim[elim!]: "(nabla \<turnstile> Abst a t1 \<approx> Abst a t2) \<Longrightarrow> (nabla \<turnstile> t1 \<approx> t2)"
-apply(ind_cases "nabla \<turnstile> Abst a t1 \<approx> Abst a t2", auto)
-  done
-
-lemma equ_abst_ab_elim[elim!]: "\<lbrakk>(nabla \<turnstile> Abst a t1 \<approx> Abst b t2);a\<noteq>b\<rbrakk> \<Longrightarrow> 
-                                (nabla \<turnstile> t1 \<approx> (swap [(a,b)] t2))\<and>(nabla\<turnstile>a\<sharp>t2)"
-apply(ind_cases "(nabla \<turnstile> Abst a t1 \<approx> Abst b t2)", auto)
-done*)
-
-
 lemma equ_depth: 
   assumes "nabla \<turnstile> t1 \<approx> t2"
   shows "depth t1 = depth t2"
@@ -72,44 +41,56 @@ apply(induct t)
        apply(auto)
   by (metis ds_rev elem_ds swapas_append swapas_rev_pi_a)
 
-thm swap.simps
+lemma teste:
+  assumes "\<forall>a \<in> ds [] pi. nabla \<turnstile> a \<sharp> t"
+  shows "a \<in> ds [] pi \<Longrightarrow> nabla \<turnstile> a \<sharp> t"
+  using bspec assms by simp
 
 lemma equ_pi_right: 
   assumes "\<forall>a \<in> ds [] pi. nabla \<turnstile> a \<sharp> t"
   shows "nabla \<turnstile> t \<approx> swap pi t"
   using assms
 proof(induct t arbitrary: pi)
-   case (Abst x1 t)
-  (*have IH: "nabla \<turnstile> t \<approx> swap pi t" by fact*)
-  have "swapas pi x1 = x1 \<or> swapas pi x1 \<noteq> x1" by blast
+   case (Abst a1 t)
+   have "swapas pi a1 = a1 \<or> swapas pi a1 \<noteq> a1" by blast
   moreover 
-  { assume eq: "swapas pi x1 = x1"
-    have "nabla \<turnstile> Abst x1 t \<approx> Abst x1 (swap pi t)"
+  { assume eq: "swapas pi a1 = a1"
+    have "nabla \<turnstile> Abst a1 t \<approx> Abst a1 (swap pi t)"
       apply (rule equ_abst_aa)
       apply (rule Abst.hyps)
       apply (rule ballI)
       subgoal for a 
-        apply (rule Fresh_elims(1)[of nabla a x1 t])
+        apply (rule Fresh_elims(1)[of nabla a a1 t])
         using Abst.prems elem_ds[of a pi] eq by auto
       done
-    then have "nabla \<turnstile> Abst x1 t \<approx> swap pi (Abst x1 t)" using eq by simp
+    then have "nabla \<turnstile> Abst a1 t \<approx> swap pi (Abst a1 t)" using eq by simp
   }
   moreover
-  { assume neq: "x1 \<noteq> swapas pi x1"  
-    have "nabla \<turnstile> Abst x1 t \<approx> swap pi (Abst x1 t)"
-      apply(simp)
-      apply(rule equ_abst_ab)
-        apply(rule neq)
-      using assms ds_elem
+  { assume neq: "a1 \<noteq> swapas pi a1"  
+    obtain b where b_def: "b = swapas pi a1" by simp
+    have a1_in_ds: "a1 \<in> ds [] pi" using ds_elem neq by simp
+    hence "nabla \<turnstile> a1 \<sharp> t" using assms teste 
+    have b_in_ds: "b \<in> ds [] pi" sorry
+    t "nabla \<turnstile> b \<sharp> t" using assms
+    have "nabla \<turnstile> Abst a1 t \<approx> Abst b t"
+      apply (rule equ_abst_ab)
+        apply (simp add: b_def neq)
+      subgoal using Abst.prems  
+        using Abst.hyps 
+
+      
+      sorry
+
+
+      
       
       (* ? ? ? *)
   }
-  ultimately show ?case by blast
-
+  ultimately show ?case sorry
 
 next
-  case (Susp x1 x2)
-  then show ?case using Equ_elims(3) assms sorry
+  case (Susp pi' X)
+  then show ?case sorry
 next
   case Unit
   then show ?case sorry

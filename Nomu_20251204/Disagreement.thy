@@ -19,9 +19,10 @@ lemma
   ds_elem: "\<lbrakk>swapas pi a\<noteq>a\<rbrakk>\<Longrightarrow>a\<in>ds [] pi"
 apply(simp add: ds_def)
 apply(auto simp add: swapas_pi_ineq_a)
-done
+  done
 
-
+corollary ds_elem_cp: "a \<notin> ds [] pi \<Longrightarrow> swapas pi a = a"
+  using ds_elem by blast
 
 lemma 
   elem_ds: "\<lbrakk>a\<in>ds [] pi\<rbrakk>\<Longrightarrow>a\<noteq>swapas pi a"
@@ -142,6 +143,8 @@ lemma ds_abab:
 apply(simp only: ds_def)
 apply(auto)
   done
+
+
 
 
 (* disagreement set as list *)
