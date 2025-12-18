@@ -5,11 +5,6 @@ imports Main  Swap  Terms  Disagreement  Fresh
 begin
 
 
-(*syntax 
-  "_equ_judge"   :: "fresh_envs \<Rightarrow> trm \<Rightarrow> trm \<Rightarrow> bool" (" _ \<turnstile> _ \<approx> _" [80,80,80] 80)
-translations 
-  "nabla \<turnstile> t1 \<approx> t2" \<rightleftharpoons> "(nabla,t1,t2) \<in> equ" *)
-
 inductive equ :: "fresh_envs \<Rightarrow> trm \<Rightarrow> trm \<Rightarrow> bool" (" _ \<turnstile> _ \<approx> _" [80,80,80] 80) where
 equ_abst_ab[intro!]: "\<lbrakk>a\<noteq>b;(nabla \<turnstile> a \<sharp> t2);(nabla \<turnstile> t1 \<approx> (swap [(a,b)] t2))\<rbrakk> 
                       \<Longrightarrow> (nabla \<turnstile> Abst a t1 \<approx> Abst b t2)" |
@@ -46,47 +41,46 @@ lemma teste:
   shows "a \<in> ds [] pi \<Longrightarrow> nabla \<turnstile> a \<sharp> t"
   using bspec assms by simp
 
+  
+
+
+thm fresh_swap_left fresh_swap_eqvt a_ineq_swapas_pi swapas_pi_in_atms
+
 lemma equ_pi_right: 
   assumes "\<forall>a \<in> ds [] pi. nabla \<turnstile> a \<sharp> t"
   shows "nabla \<turnstile> t \<approx> swap pi t"
   using assms
-proof(induct t arbitrary: pi)
-   case (Abst a1 t)
-   have "swapas pi a1 = a1 \<or> swapas pi a1 \<noteq> a1" by blast
+proof(induct t)
+   case (Abst b t')
+   have "swapas pi b = b \<or> swapas pi b \<noteq> b" by blast
   moreover 
-  { assume eq: "swapas pi a1 = a1"
-    have "nabla \<turnstile> Abst a1 t \<approx> Abst a1 (swap pi t)"
+  { assume eq: "swapas pi b = b"
+    have "nabla \<turnstile> Abst b t' \<approx> Abst b (swap pi t')"
       apply (rule equ_abst_aa)
       apply (rule Abst.hyps)
       apply (rule ballI)
       subgoal for a 
-        apply (rule Fresh_elims(1)[of nabla a a1 t])
+        apply (rule Fresh_elims(1)[of nabla a b t'])
         using Abst.prems elem_ds[of a pi] eq by auto
       done
-    then have "nabla \<turnstile> Abst a1 t \<approx> swap pi (Abst a1 t)" using eq by simp
+    then have "nabla \<turnstile> Abst b t' \<approx> swap pi (Abst b t')" using eq by simp
   }
   moreover
-  { assume neq: "a1 \<noteq> swapas pi a1"  
-    obtain b where b_def: "b = swapas pi a1" by simp
-    have a1_in_ds: "a1 \<in> ds [] pi" using ds_elem neq by simp
-    hence "nabla \<turnstile> a1 \<sharp> t" using assms teste 
-    have b_in_ds: "b \<in> ds [] pi" sorry
-    t "nabla \<turnstile> b \<sharp> t" using assms
-    have "nabla \<turnstile> Abst a1 t \<approx> Abst b t"
-      apply (rule equ_abst_ab)
-        apply (simp add: b_def neq)
-      subgoal using Abst.prems  
-        using Abst.hyps 
-
-      
-      sorry
-
-
-      
-      
+  { assume neq: "b \<noteq> swapas pi b"  
+    obtain c where c_def: "c = swapas pi b" by simp
+    have "nabla \<turnstile> Abst b t' \<approx> Abst c (swap pi t')"
+    proof(rule equ_abst_ab)
+      show "b \<noteq> c" using neq c_def by blast
+      show "nabla \<turnstile> b \<sharp> swap pi t'"sorry
+      show "nabla \<turnstile> t' \<approx> swap [(b, c)] (swap pi t')" sorry
+      (*proof-
+        have "swap [(b, c)] (swap pi t') = swap ([(b,c)]@pi) t'" using swap_append
+          by presburger*)
+    qed
+   then have "nabla \<turnstile> Abst b t' \<approx> swap pi (Abst b t')" using neq c_def by force
       (* ? ? ? *)
   }
-  ultimately show ?case sorry
+  ultimately show ?case by argo
 
 next
   case (Susp pi' X)
@@ -95,115 +89,24 @@ next
   case Unit
   then show ?case sorry
 next
-  case (Atom x)
+  case (Atom b)
   then show ?case sorry
 next
   case (Paar t1 t2)
   then show ?case sorry
 next
-  case (Func x1 t)
-  then show ?case sorry
-qed
-
-
-(*apply(induct_tac t)
-apply(simp_all)
-(*Abst*)
-apply(rule allI)
-apply(case_tac "(swapas pi list)=list") 
-apply(simp)
-apply(rule impI)
-apply(rule equ_abst_aa)
-apply(drule_tac x="pi" in spec)
-apply(subgoal_tac "(\<forall>a\<in>ds [] pi.  nabla \<turnstile> a \<sharp> trm)")--A
-apply(force)
-(*A*)
-apply(rule ballI)
-apply(drule_tac x=a in bspec)
-apply(assumption)
-apply(case_tac "list\<noteq>a")
-apply(force dest!: fresh_abst_ab_elim)
-apply(simp add: ds_def)
-apply(rule impI)
-apply(rule equ_abst_ab)
-apply(force)
-apply(drule_tac x="swapas (rev pi) list" in bspec)
-apply(simp add: ds_def)
-apply(rule conjI)
-apply(subgoal_tac "swapas (rev pi) list \<in> atms (rev pi)") --B
-apply(simp)
-(*B*)
-apply(drule swapas_pi_ineq_a[THEN mp])
-apply(rule swapas_pi_in_atms)
-apply(simp)
-apply(clarify)
-apply(drule swapas_rev_pi_b)
-apply(simp)
-apply(force dest!: fresh_abst_ab_elim  swapas_rev_pi_b intro!: fresh_swap_right[THEN mp])
-apply(drule_tac x="(list, swapas pi list)#pi" in spec)
-apply(subgoal_tac "(\<forall>a\<in>ds [] ((list, swapas pi list) # pi).  nabla \<turnstile> a \<sharp> trm)")--C
-apply(force simp add: swap_append[THEN sym])
-(*C*)
-apply(rule ballI)
-apply(drule_tac x="a" in bspec)
-apply(rule_tac b="list" in ds_7)
-apply(force)
-apply(assumption)
-apply(case_tac "list=a")
-apply(simp)
-apply(simp only: ds_def mem_Collect_eq)
-apply(erule conjE)
-apply(subgoal_tac "a\<noteq>swapas pi a")
-apply(simp)
-apply(force)
-apply(force dest!: fresh_abst_ab_elim)
-(*Susp*)
-apply(rule allI)
-apply(rule impI)
-apply(rule equ_susp)
-apply(rule ballI)
-apply(subgoal_tac "swapas list1 c\<in>ds [] pi")--A
-apply(force dest!: fresh_susp_elim)
-(*A*)
-apply(rule ds_cancel_pi_left[THEN mp])
-apply(simp)
-(* Unit*)
-apply(force)
-(*Atom*)
-apply(rule allI)
-apply(rule impI)
-apply(case_tac "(swapas pi list) = list")
-apply(force)
-apply(drule ds_elem)
-apply(force dest!: fresh_atom_elim)
-(* Paar*)
-apply(force dest!: fresh_paar_elim)
-(*Func*)
-apply(force)
-done *)
-
-lemma pi_comm: "nabla\<turnstile>(swap (pi@[(a,b)]) t)\<approx>(swap ([(swapas pi a, swapas pi b)]@pi) t)"
-proof(induct t arbitrary: pi a)
-  case (Abst x1 t)
-  then show ?case using swapas_comm equ_abst_aa by simp
-next
-  case (Susp x1 x2)
-  then show ?case sorry
-next
-  case Unit
-  then show ?case using equ_unit
+  case (Func f t')
+  then have star: "\<forall>a\<in>ds [] pi. nabla \<turnstile> a \<sharp> t'" using fresh_func
+    by (metis Fresh_elims(6))
+  have "nabla \<turnstile> Func f t' \<approx> Func f (swap pi t')"
+    apply(rule equ_func)
+    apply(rule Func.hyps)
+    using star by auto
+  then show ?case
     by simp
-next
-  case (Atom x)
-  then show ?case using swapas_rev_pi_b swapas_rev_pi_a swapas_append swapas_comm
-    by auto
-next
-  case (Paar t1 t2)
-  then show ?case by force
-next
-  case (Func x1 t)
-  then show ?case by force
 qed
+
+
 
 (*apply(induct_tac t)
 apply(simp_all)
