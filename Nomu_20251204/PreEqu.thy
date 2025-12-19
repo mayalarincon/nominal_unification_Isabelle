@@ -36,14 +36,7 @@ apply(induct t)
        apply(auto)
   by (metis ds_rev elem_ds swapas_append swapas_rev_pi_a)
 
-lemma teste:
-  assumes "\<forall>a \<in> ds [] pi. nabla \<turnstile> a \<sharp> t"
-  shows "a \<in> ds [] pi \<Longrightarrow> nabla \<turnstile> a \<sharp> t"
-  using bspec assms by simp
-
   
-
-
 thm fresh_swap_left fresh_swap_eqvt a_ineq_swapas_pi swapas_pi_in_atms
 
 lemma equ_pi_right: 
@@ -71,11 +64,8 @@ proof(induct t)
     have "nabla \<turnstile> Abst b t' \<approx> Abst c (swap pi t')"
     proof(rule equ_abst_ab)
       show "b \<noteq> c" using neq c_def by blast
-      show "nabla \<turnstile> b \<sharp> swap pi t'"sorry
+      show "nabla \<turnstile> b \<sharp> swap pi t'" sorry
       show "nabla \<turnstile> t' \<approx> swap [(b, c)] (swap pi t')" sorry
-      (*proof-
-        have "swap [(b, c)] (swap pi t') = swap ([(b,c)]@pi) t'" using swap_append
-          by presburger*)
     qed
    then have "nabla \<turnstile> Abst b t' \<approx> swap pi (Abst b t')" using neq c_def by force
       (* ? ? ? *)
@@ -84,30 +74,50 @@ proof(induct t)
 
 next
   case (Susp pi' X)
-  then show ?case sorry
+  have "\<forall>a\<in>ds [] pi. nabla \<turnstile> a \<sharp> Susp pi' X" by fact
+  then have "nabla \<turnstile> Susp pi' X \<approx> Susp (pi @ pi') X"
+   using Fresh_elims(4) equ_susp ds_def ds_cancel_pi_left
+   by (metis (lifting) append_self_conv2 swapas_rev_pi_a)
+  then show ?case by simp
 next
   case Unit
-  then show ?case sorry
+  then show ?case 
+    using equ_unit swap.simps(2) by force
 next
   case (Atom b)
-  then show ?case sorry
+    then show ?case
+      apply simp
+    apply (rule equ_atom)
+    using Fresh_elims(3) ds_elem_cp
+    by metis
 next
   case (Paar t1 t2)
-  then show ?case sorry
+  then have hypsp1: "(\<forall>a\<in>ds [] pi.  nabla \<turnstile> a \<sharp> t1)"
+    and hypsp2: "(\<forall>a\<in>ds [] pi.  nabla \<turnstile> a \<sharp> t2)"
+    using Paar.prems Fresh_elims(5) 
+     apply meson
+    using Paar.prems Fresh_elims(5) by blast
+  have "nabla \<turnstile> Paar t1 t2 \<approx> Paar (swap pi t1) (swap pi t2)"
+    apply(rule equ_paar)
+     apply(rule Paar.hyps)
+     apply (simp add: hypsp1)
+    by (simp add: Paar.hyps(2) hypsp2)
+  then show ?case by simp
 next
   case (Func f t')
-  then have star: "\<forall>a\<in>ds [] pi. nabla \<turnstile> a \<sharp> t'" using fresh_func
+  then have hypsf: "\<forall>a\<in>ds [] pi. nabla \<turnstile> a \<sharp> t'" using fresh_func
     by (metis Fresh_elims(6))
   have "nabla \<turnstile> Func f t' \<approx> Func f (swap pi t')"
     apply(rule equ_func)
     apply(rule Func.hyps)
-    using star by auto
+    using hypsf by auto
   then show ?case
     by simp
 qed
 
 
-
+lemma pi_comm: "nabla \<turnstile> (swap (pi @ [(a,b)]) t) \<approx> (swap ([(swapas pi a, swapas pi b)] @ pi) t)"
+  sorry
 (*apply(induct_tac t)
 apply(simp_all)
 (*Abst*)
