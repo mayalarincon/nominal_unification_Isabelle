@@ -43,7 +43,7 @@ lemma equ_pi_right:
   assumes "\<forall>a \<in> ds [] pi. nabla \<turnstile> a \<sharp> t"
   shows "nabla \<turnstile> t \<approx> swap pi t"
   using assms
-proof(induct t)
+proof(induct t arbitrary: pi)
    case (Abst b t')
    have "swapas pi b = b \<or> swapas pi b \<noteq> b" by blast
   moreover 
@@ -61,11 +61,19 @@ proof(induct t)
   moreover
   { assume neq: "b \<noteq> swapas pi b"  
     obtain c where c_def: "c = swapas pi b" by simp
-    have "nabla \<turnstile> Abst b t' \<approx> Abst c (swap pi t')"
+    have "c \<in> ds [] pi"
+      by (metis append.right_neutral c_def ds_cancel_pi_front ds_cancel_pi_left ds_elem neq)
+    then have one: "nabla \<turnstile> c \<sharp> Abst b t'" using assms Abst.prems by auto
+    have two: "b \<noteq> c" using neq c_def by blast
+    have "nabla \<turnstile> c \<sharp> t'" using one two by cases auto
+    have "nabla \<turnstile> Abst b t' \<approx> Abst c (swap pi t')" 
     proof(rule equ_abst_ab)
       show "b \<noteq> c" using neq c_def by blast
-      show "nabla \<turnstile> b \<sharp> swap pi t'" sorry
-      show "nabla \<turnstile> t' \<approx> swap [(b, c)] (swap pi t')" sorry
+      have b_is_swap: "b = swapas (rev pi) c" using c_def by simp
+      show "nabla \<turnstile> b \<sharp> swap pi t'" 
+        by (metis Abst.prems Fresh_elims(1) ds_elem fresh_swap_right neq swapas_rev_pi_a)
+      show "nabla \<turnstile> t' \<approx> swap [(b, c)] (swap pi t')"
+        sorry
     qed
    then have "nabla \<turnstile> Abst b t' \<approx> swap pi (Abst b t')" using neq c_def by force
       (* ? ? ? *)
