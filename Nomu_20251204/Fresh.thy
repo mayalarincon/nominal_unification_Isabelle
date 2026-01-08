@@ -6,21 +6,6 @@ begin
 
 type_synonym fresh_envs = "(string \<times> string) set"
 
-
-(*locale test3 =
-  fixes fresh :: "(fresh_envs \<times> string \<times> trm) set"
-
-begin *)
-
-(*abbreviation "fresh_judge nabla a t fresh \<equiv> (nabla,a,t) \<in> fresh" 
-
-notation "fresh_judge" (" _ \<turnstile> _ \<sharp> _" [80,80,80] 80) *)
-
-(*syntax 
-  "_fresh_judge" :: "fresh_envs \<Rightarrow> string \<Rightarrow> trm \<Rightarrow> bool" (" _ \<turnstile> _ \<sharp> _" [80,80,80] 80)
-translations
-  "nabla \<turnstile> a \<sharp> t"  \<rightleftharpoons> "(nabla,a,t) \<in> fresh"*)
-
 inductive fresh :: "fresh_envs \<Rightarrow> string \<Rightarrow> trm \<Rightarrow> bool" (" _ \<turnstile> _ \<sharp> _" [80,80,80] 80) 
   where
   fresh_abst_ab[intro!]: "\<lbrakk>nabla \<turnstile> a \<sharp> t; a\<noteq>b\<rbrakk> \<Longrightarrow> nabla \<turnstile> a \<sharp> Abst b t" |
@@ -95,5 +80,6 @@ lemma fresh_weak:
   shows "(nabla1 \<union> nabla2) \<turnstile> a \<sharp> t"
   using assms
   by(induct rule: fresh.induct)(auto)
+
 
 end 

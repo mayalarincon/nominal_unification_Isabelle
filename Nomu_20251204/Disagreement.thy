@@ -143,8 +143,6 @@ apply(auto)
   done
 
 
-
-
 (* disagreement set as list *)
 
  

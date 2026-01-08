@@ -30,13 +30,15 @@ lemma [simp]:
 lemma swap_append: 
   shows "swap (pi1@pi2) t = swap pi1 (swap pi2 t)"
   apply(induct t arbitrary: pi1 pi2)
-  apply(auto simp add: swapas_append)
+       apply(auto simp add: swapas_append)
   done
+
 
 lemma swap_empty: 
   assumes "swap pi t = Susp [] X" 
   shows "pi = []"
-  using assms swap.elims by blast 
+  using assms swap.elims by blast
+
 
 (* depth of terms *)
 
@@ -54,7 +56,7 @@ lemma
   Suc_max_right: "Suc(max x y) = z \<longrightarrow> y < z"
 by(auto)
 
-lemma [simp]: 
+lemma swap_depth [simp]: 
   shows "depth (swap pi t) = depth t" 
   by (induct t) (auto)
 

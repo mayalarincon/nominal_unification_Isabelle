@@ -53,13 +53,11 @@ apply(assumption)
 
 
 
-lemma ds_cancel_pi_left: 
-  "(c\<in> ds (pi1@pi) (pi2@pi)) \<longrightarrow> (swapas pi c\<in> ds pi1 pi2)"
-apply(simp only: ds_def)
-apply(auto)
-apply(simp_all add: swapas_append)
-apply(rule a_ineq_swapas_pi, clarify, drule a_not_in_atms, simp)+
-done
+lemma ds_cancel_pi_left:
+  assumes "(c\<in> ds (pi1@pi) (pi2@pi))"
+  shows "(swapas pi c\<in> ds pi1 pi2)"
+  using ds_def swapas_append a_ineq_swapas_pi a_not_in_atms
+  by (metis (mono_tags, lifting) Un_iff assms mem_Collect_eq)
 
 
 

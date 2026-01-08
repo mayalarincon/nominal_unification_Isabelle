@@ -5,7 +5,7 @@ begin
 (* terms *)
 
 datatype trm = Abst string  trm   
-             | Susp "(string \<times> string)list" string
+             | Susp "(string \<times> string) list" string
              | Unit                                   
              | Atom string                           
              | Paar trm trm                          
@@ -13,7 +13,7 @@ datatype trm = Abst string  trm
 
 (* swapping operation on terms *)
 
-fun swap  :: "(string \<times> string)list \<Rightarrow> trm \<Rightarrow> trm"
+fun swap  :: "(string \<times> string) list \<Rightarrow> trm \<Rightarrow> trm"
   where
   "swap  pi (Unit)        = Unit" 
 | "swap  pi (Atom a)      = Atom (swapas pi a)"
@@ -30,13 +30,15 @@ lemma [simp]:
 lemma swap_append: 
   shows "swap (pi1@pi2) t = swap pi1 (swap pi2 t)"
   apply(induct t arbitrary: pi1 pi2)
-  apply(auto simp add: swapas_append)
+       apply(auto simp add: swapas_append)
   done
+
 
 lemma swap_empty: 
   assumes "swap pi t = Susp [] X" 
   shows "pi = []"
-  using assms swap.elims by blast 
+  using assms swap.elims by blast
+
 
 (* depth of terms *)
 
