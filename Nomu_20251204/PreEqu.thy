@@ -238,9 +238,9 @@ qed
 
 lemma big: 
   assumes "n=depth t1"
-  shows "(((nabla\<turnstile>t1\<approx>t2)\<longrightarrow>(nabla\<turnstile>t2\<approx>t1))\<and>  
-              (\<forall>pi. (nabla\<turnstile>t1\<approx>t2)\<longrightarrow>(nabla\<turnstile>swap pi t1\<approx>swap pi t2))\<and> 
-              ((nabla\<turnstile>t1\<approx>t2)\<and>(nabla\<turnstile>t2\<approx>t3)\<longrightarrow>(nabla\<turnstile>t1\<approx>t3)))"
+  shows "(((nabla \<turnstile> t1 \<approx> t2)\<longrightarrow>(nabla \<turnstile> t2 \<approx> t1))\<and>  
+              (\<forall>pi. (nabla \<turnstile> t1 \<approx> t2) \<longrightarrow> (nabla \<turnstile> swap pi t1 \<approx> swap pi t2))\<and> 
+              ((nabla \<turnstile> t1 \<approx> t2)\<and>(nabla \<turnstile> t2 \<approx> t3) \<longrightarrow> (nabla \<turnstile> t1 \<approx> t3)))"
   using assms
 proof(induction n arbitrary: t1 t2 t3 rule: nat_less_induct)
   case (1 n)
@@ -287,7 +287,8 @@ proof(cases rule: equ.cases[OF \<open>nabla \<turnstile> t1 \<approx> t2\<close>
     from this have "depth t1' < depth t1"
       by force
     then have "nabla \<turnstile> swap pi t1' \<approx> swap pi t2'"
-      using "1.IH" "1.prems"(2) "2"(1,4) by blast
+      using "1.prems" "2"(1,4) IH_usable(2)
+      by blast
     then have abst: "nabla \<turnstile> Abst (swapas pi a) (swap pi t1') \<approx> Abst (swapas pi a) (swap pi t2')"
       using equ_abst_aa[of nabla "swap pi t1'" "swap pi t2'" "swapas pi a"]
       by blast
@@ -308,9 +309,24 @@ proof(cases rule: equ.cases[OF \<open>nabla \<turnstile> t1 \<approx> t2\<close>
       by auto
   next
     case (6 nabla t1' t2' s1' s2')
-    then show ?thesis 
-      using equ_paar "1.prems"(2) swap.simps(5) Suc_max_right Suc_max_left "1.IH" depth.simps(6) plus_1_eq_Suc
-      by metis
+    from this 
+    have depths1: "depth t1' < depth t1" "depth s1' < depth t1" 
+        using depth.simps(6) by auto
+      then have depths2: "depth t2' < depth t1" "depth s2' < depth t1"
+       using equ_depth "6"(4,5) by auto
+    then have "nabla \<turnstile> t2' \<approx> t1'"
+      using "1.prems" "6"(1,4,5) IH_usable(1) depths1
+      by blast
+    then have par1: "nabla \<turnstile> swap pi t2' \<approx> swap pi t1'" 
+      using 6(1) "1.prems"  depths2  IH_usable(2)[of t2' t1' pi] 
+      by simp
+    from depths1 have "nabla \<turnstile> s2' \<approx> s1'"
+      using "1.prems" "6"(1,4,5) IH_usable(1) by auto
+    then have par2: "nabla \<turnstile> swap pi s2' \<approx> swap pi s1'" 
+      using 6(1) "1.prems"  depths2  IH_usable(2)[of s2' s1' pi] 
+      by simp
+    from par1 par2 show ?thesis using 6 "1.prems" IH_usable(1) depths2 equ_paar swap.simps(5) swap_depth
+      by presburger
   next
     case (7 nabla t1' t2' f)
     from this have "depth t1' < depth t1"
@@ -329,7 +345,8 @@ proof(cases rule: equ.cases[OF \<open>nabla \<turnstile> t1 \<approx> t2\<close>
   qed
   ultimately show ?case by simp
 qed
-apply(rule allI)+apply(rule impI)
+
+(*apply(rule allI)+apply(rule impI)
 apply(rule conjI)
 (*SYMMETRY*)
   subgoal for n t1 t2
@@ -629,9 +646,9 @@ apply(best)
 -- Func
 apply(ind_cases "nabla \<turnstile> Func F t2a \<approx> t3")
 apply(best)
-  done
+  done*)
 
-lemma equ_add_pi :
+(*lemma equ_add_pi :
   assumes "n = depth t1"
   shows "(nabla \<turnstile> t1 \<approx> t2) \<Longrightarrow> (nabla \<turnstile> swap pi t1 \<approx> swap pi t2)"
   using assms
@@ -694,7 +711,7 @@ proof (induction n arbitrary: t1 t2 rule: nat_less_induct)
     then show ?thesis
       using equ_func 7 by simp
   qed
-qed
+qed*)
 
 
 
@@ -792,10 +809,10 @@ proof (induction n arbitrary: t1 t2 t3 rule: nat_less_induct)
     case (7 nabla t1' t2' f)
     then show ?thesis sorry
   qed
-qed
+qed*)
 
 
-lemma big: "\<forall>t1 t2 t3. (n=depth t1) \<longrightarrow>
+(*lemma big: "\<forall>t1 t2 t3. (n=depth t1) \<longrightarrow>
              (((nabla\<turnstile>t1\<approx>t2)\<longrightarrow>(nabla\<turnstile>t2\<approx>t1))\<and>  
               (\<forall>pi. (nabla\<turnstile>t1\<approx>t2)\<longrightarrow>(nabla\<turnstile>swap pi t1\<approx>swap pi t2))\<and> 
               ((nabla\<turnstile>t1\<approx>t2)\<and>(nabla\<turnstile>t2\<approx>t3)\<longrightarrow>(nabla\<turnstile>t1\<approx>t3)))"
@@ -1099,7 +1116,7 @@ apply(best)
 -- Func
 apply(ind_cases "nabla \<turnstile> Func F t2a \<approx> t3")
 apply(best)
-  done
+  done*)
 
 lemma pi_right_equ_help:
       "\<forall>t. (n=depth t) \<longrightarrow> (\<forall>pi. nabla\<turnstile>t\<approx>swap pi t\<longrightarrow>(\<forall>a\<in> ds [] pi. nabla\<turnstile>a\<sharp>t))"
