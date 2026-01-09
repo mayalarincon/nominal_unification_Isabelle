@@ -160,6 +160,11 @@ next
     by simp
 qed
 
+lemma equ_pi_piprime: 
+assumes "\<forall>a \<in> ds pi pi'. nabla \<turnstile> a \<sharp> t"
+shows "nabla \<turnstile> swap pi t \<approx> swap pi' t"
+  sorry
+
 
 lemma pi_comm: "nabla \<turnstile> (swap (pi @ [(a,b)]) t) \<approx> (swap ([(swapas pi a, swapas pi b)] @ pi) t)"
 proof(induct t)
@@ -397,41 +402,274 @@ proof(induction n arbitrary: t1 t2 t3 rule: nat_less_induct)
   qed
   moreover have "nabla \<turnstile> t1 \<approx> t2 \<Longrightarrow> nabla \<turnstile> t2 \<approx> t3 \<Longrightarrow>  nabla \<turnstile> t1 \<approx> t3"
   proof-
-    assume "nabla \<turnstile> t1 \<approx> t2" and "nabla \<turnstile> t2 \<approx> t3"
+    assume t12: "nabla \<turnstile> t1 \<approx> t2" and t23: "nabla \<turnstile> t2 \<approx> t3"
     show ?thesis 
      proof(cases rule: equ.cases[OF \<open>nabla \<turnstile> t1 \<approx> t2\<close>])
-    case (1 a b nabla t2' t1')
-    then show ?thesis sorry
+       case (1 a b nabla t2' t1')
+       note case12 = this
+       from t23 show ?thesis 
+       proof(cases rule: equ.cases)
+         case (equ_abst_ab b c t3' t2')
+         then show ?thesis sorry
+       next
+         case (equ_abst_aa t2' t3' b)
+         then show ?thesis sorry
+       next
+         case equ_unit
+         then show ?thesis
+           using t12 by auto
+       next
+         case (equ_atom b c)
+         then show ?thesis using t12 by auto
+       next
+         case (equ_susp pi2 pi3 X)
+         then show ?thesis
+           using case12(3) by blast
+       next
+         case (equ_paar t2' t3' s2' s3')
+         then show ?thesis
+           using case12(3) by blast
+       next
+         case (equ_func t2' t3' f)
+         then show ?thesis
+           using case12(3) by blast
+       qed
   next
     case (2 nabla t1' t2' a)
-    then show ?thesis sorry
+   from t23 show ?thesis 
+       proof(cases rule: equ.cases)
+         case (equ_abst_ab a b t3' t2')
+         then show ?thesis sorry
+       next
+         case (equ_abst_aa t2' t3' a)
+         have "depth t1' < n" 
+           using depth.simps(4) "2"(2) "1.prems" by simp
+         then show ?thesis sorry
+       next
+         case equ_unit
+         then show ?thesis
+           using t12 by blast
+       next
+         case (equ_atom b c)
+         then show ?thesis
+           using t12 by blast
+       next
+         case (equ_susp pi2 pi3 X)
+         then show ?thesis
+          using 2(3) by simp 
+       next
+         case (equ_paar t2' t3' s2' s3')
+         then show ?thesis 
+           using 2(3) by simp 
+       next
+         case (equ_func t2' t3' f)
+         then show ?thesis 
+           using 2(3) by simp 
+       qed
   next
     case (3 nabla)
-    then show ?thesis sorry
+    from t23 show ?thesis 
+       proof(cases rule: equ.cases)
+         case (equ_abst_ab a b t3' t2')
+         then show ?thesis 
+           using 3(3) by simp 
+       next
+         case (equ_abst_aa t2' t3' b)
+         then show ?thesis
+            using 3(3) by simp 
+       next
+         case equ_unit
+         then show ?thesis
+           using t12 by auto
+       next
+         case (equ_atom b c)
+         then show ?thesis 
+           using t12 by blast
+       next
+         case (equ_susp pi2 pi3 X)
+         then show ?thesis 
+           using 3(3) by simp 
+       next
+         case (equ_paar t2' t3' s2' s3')
+         then show ?thesis 
+           using 3(3) by simp 
+       next
+         case (equ_func t2' t3' f)
+         then show ?thesis 
+           using 3(3) by simp 
+       qed
   next
     case (4 a b nabla)
-    then show ?thesis sorry
+    from t23 show ?thesis 
+       proof(cases rule: equ.cases)
+         case (equ_abst_ab a b t3' t2')
+         then show ?thesis 
+           using 4 by blast
+       next
+         case (equ_abst_aa t2' t3' b)
+         then show ?thesis
+           using 4 by blast
+       next
+         case equ_unit
+         then show ?thesis 
+          using 4 by blast
+       next
+         case (equ_atom b c)
+         then show ?thesis 
+          using 4 by blast
+       next
+         case (equ_susp pi2 pi3 X)
+         then show ?thesis 
+          using 4 by blast
+       next
+         case (equ_paar t2' t3' s2' s3')
+         then show ?thesis 
+          using 4 by blast
+       next
+         case (equ_func t2' t3' f)
+         then show ?thesis 
+           using 4 by blast
+       qed
   next
     case (5 pi1 pi2 X nabla)
-    then show ?thesis sorry
+    from t23 show ?thesis 
+       proof(cases rule: equ.cases)
+         case (equ_abst_ab a b t3' t2')
+         then show ?thesis sorry
+       next
+         case (equ_abst_aa t2' t3' b)
+         then show ?thesis sorry
+       next
+         case equ_unit
+         then show ?thesis sorry
+       next
+         case (equ_atom b c)
+         then show ?thesis sorry
+       next
+         case (equ_susp pi2 pi3 X)
+         then show ?thesis sorry
+       next
+         case (equ_paar t2' t3' s2' s3')
+         then show ?thesis sorry
+       next
+         case (equ_func t2' t3' f)
+         then show ?thesis sorry
+       qed
   next
     case (6 nabla t1' t2' s1' s2')
-    then show ?thesis sorry
+    from t23 show ?thesis 
+       proof(cases rule: equ.cases)
+         case (equ_abst_ab a b t3' t2')
+         then show ?thesis 
+           using 6 by blast
+       next
+         case (equ_abst_aa t2' t3' b)
+         then show ?thesis 
+          using 6 by blast
+       next
+         case equ_unit
+         then show ?thesis 
+          using 6 by blast
+       next
+         case (equ_atom b c)
+         then show ?thesis 
+          using 6 by blast
+       next
+         case (equ_susp pi2 pi3 X)
+         then show ?thesis 
+          using 6 by blast
+       next
+         case (equ_paar t2' t3' s2' s3')
+         have deptht1: "depth t1' < n" 
+           using IH depth.simps(6) "6"(2) by auto
+         have depths1: "depth s1' < n" 
+           using IH depth.simps(6) "6"(2) by auto
+         have a: "nabla \<turnstile> t1' \<approx> t2'" 
+           using "6"(3,4) equ_paar by auto
+         have b: "nabla \<turnstile> s1' \<approx> s2'" 
+           using "6" equ_paar by auto
+         from a have t1_equal_t3: "nabla \<turnstile> t1' \<approx> t3'" 
+           using IH_usable(3)[of t1' t2' t3'] equ_paar(3) 6(1) deptht1
+           by fast
+         from b have s1_equal_s3: "nabla \<turnstile> s1' \<approx> s3'" 
+           using IH_usable(3)[of s1' s2' s3'] equ_paar(4) 6(1) depths1
+           by fast
+         from t1_equal_t3 s1_equal_s3 show ?thesis 
+           using equ.equ_paar[of nabla t1' t3' s1' s3'] 6(1,2) equ_paar(2)
+           by fast
+       next
+         case (equ_func t2' t3' f)
+         then show ?thesis 
+          using 6 by blast
+       qed
   next
     case (7 nabla t1' t2' f)
-    then show ?thesis sorry
+    from t23 show ?thesis 
+       proof(cases rule: equ.cases)
+         case (equ_abst_ab a b t3' t2')
+         then show ?thesis 
+           using 7 by blast
+       next
+         case (equ_abst_aa t2' t3' b)
+         then show ?thesis 
+           using 7 by blast
+       next
+         case equ_unit
+         then show ?thesis
+          using 7 by blast
+       next
+         case (equ_atom b c)
+         then show ?thesis 
+          using 7 by blast
+       next
+         case (equ_susp pi2 pi3 X)
+         then show ?thesis
+          using 7 by blast
+       next
+         case (equ_paar t2' t3' s2' s3')
+         then show ?thesis
+          using 7 by blast
+       next
+         case (equ_func t2' t3' f)
+         have deptht1: "depth t1' < n" 
+           using IH depth.simps(5) "7"(2) by auto
+         have "nabla \<turnstile>  t1' \<approx> t2'" 
+           using "7"(3,4) equ_func(1) by auto
+         hence "nabla \<turnstile> t1' \<approx> t3'" 
+           using IH_usable(3)[of t1' t2' t3'] 7(1) deptht1 equ_func(3)
+           by blast
+         then show ?thesis 
+           using equ.equ_func[of nabla t1' t3' f] 7(1,2,3) equ_func(1,2)
+           by fast
+       qed
   qed
   qed
   ultimately show ?case by simp
 qed
 
 
+(*
+Case abab:
+t1 = Abst a t1'
+t2 = Abst b t2'
+t3 = Abst c t3'
 
-lemma equ_trans:
-  assumes "n = depth t1"
-  shows "\<lbrakk>nabla \<turnstile> t1 \<approx> t2; nabla \<turnstile> t2 \<approx> t3\<rbrakk> \<Longrightarrow> (nabla \<turnstile> t1 \<approx> t3)"
- using assms
-  oops
+a\<noteq>b
+b\<noteq>c
+a\<noteq>c
+
+i: nabla \<turnstile> t1 \<approx> t2 \<Longrightarrow> nabla \<turnstile> a \<sharp> t2' and nabla \<turnstile> t1' \<approx> (a b) t2'
+ii: nabla \<turnstile> t2 \<approx> t3 \<Longrightarrow> nabla \<turnstile> b \<sharp> t3' and nabla \<turnstile> t2' \<approx> (b c) t3'
+
+eqv in ii pi =(ab)
+
+iii: nabla \<turnstile> (a b) b \<sharp> (a b) t3' and nabla \<turnstile> (a b) t2' \<approx> (a b)(b c) t3'
+
+iv: nabla \<turnstile> t1' \<approx> (a b)(b c) t3'
+
+Goal:  nabla \<turnstile> Abs a t1' \<approx> Abst c t3'
+       Subgoals: nabla \<turnstile> a \<sharp> t3' and nabla \<turnstile> t1' \<approx> (a c) t3'
+*)
 
 (*
 -- TRANSITIVITY
