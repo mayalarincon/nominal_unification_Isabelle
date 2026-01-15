@@ -163,8 +163,11 @@ qed
 lemma perm_invariance: 
 assumes "\<forall>a \<in> ds pi pi'. nabla \<turnstile> a \<sharp> t"
 shows "nabla \<turnstile> swap pi t \<approx> swap pi' t"
+proof-
+  have "nabla \<turnstile> t \<approx> swap (rev pi @ pi') t"
+    using ds_rev equ_pi_right assms
+    by simp
   oops
-
 
 lemma pi_comm: "nabla \<turnstile> (swap (pi @ [(a,b)]) t) \<approx> (swap ([(swapas pi a, swapas pi b)] @ pi) t)"
 proof(induct t)
@@ -417,6 +420,8 @@ proof(induction n arbitrary: t1 t2 t3 rule: nat_less_induct)
          hence deptht2: "depth t2' < n" 
            using equ_depth 1(3,6) equ_abst_ab(1)
            by auto
+         hence deptht3: "depth t3' < n" 
+           using equ_depth 1 equ_abst_ab(1,5) by simp
          then show ?thesis 
          proof(cases "a = c")
            case True
@@ -445,7 +450,58 @@ proof(induction n arbitrary: t1 t2 t3 rule: nat_less_induct)
              using True 1(1,2) equ_abst_aa equ_abst_ab(2) by simp
          next
            case False
-           then show ?thesis sorry
+
+           have a_fresh_bc_t3: "nabla \<turnstile> a \<sharp> swap [(b,c)] t3'"
+             using l3_jud 1(1,3,5) equ_abst_ab(1,5)
+             by blast
+           hence "nabla \<turnstile> swapas [(b,c)] a \<sharp> t3'"
+             using fresh_swap_left
+             by fastforce
+           hence a_fresh_t3: "nabla \<turnstile> a \<sharp> t3'"
+             using False 1(3,4) equ_abst_ab(1,3)
+             by fastforce 
+            
+           have t1t2: "nabla \<turnstile> t1' \<approx> swap [(a,b)] t2'"
+             using 1(3,6) equ_abst_ab(1) by auto
+           have t2t3: "nabla \<turnstile> t2' \<approx> swap [(b,c)] t3'"
+             using 1(1) equ_abst_ab(5)
+             by blast
+           hence i: "nabla \<turnstile> swap [(a,b)] t2' \<approx> swap ([(a,b)]@[(b,c)]) t3'"
+             using 1(1) IH_usable(2)[OF deptht2] swap_append
+             by presburger
+           from t1t2 i have ii: "nabla \<turnstile> t1' \<approx> swap ([(a,b),(b,c)]) t3'"
+             using 1(1) IH_usable(3)[OF deptht1] by auto
+
+
+           have "ds [] [(a, c), (a, b), (b, c)] = {a, b}"
+             using ds_acabbc False 1(3,4) equ_abst_ab(1,3) by auto
+           hence "nabla \<turnstile> t3' \<approx> swap [(a, c), (a, b), (b, c)] t3'"
+             using 1(1) equ_pi_right equ_abst_ab(4) a_fresh_t3 
+             by simp
+           hence "nabla \<turnstile> t3' \<approx> swap [(a, c)] (swap [(a, b), (b, c)] t3')"
+             using  swap_append Cons_eq_append_conv
+             by metis
+           hence iii: "nabla \<turnstile> swap [(a,c)] t3' \<approx> swap [(a,c)] (swap [(a, c)] (swap [(a, b), (b, c)] t3'))"
+             using IH_usable(2)[OF deptht3] 1(1) by auto
+           have iv: "nabla \<turnstile> swap [(a, c)] (swap [(a, c)] (swap [(a, b), (b, c)] t3')) \<approx> (swap [(a, b), (b, c)] t3')" 
+             using rev_pi_pi_equ rev_singleton_conv
+             by metis
+           from iii iv have "nabla \<turnstile> swap [(a,c)] t3' \<approx> swap [(a, b), (b, c)] t3'" 
+             using IH_usable(3)[of \<open>swap [(a,c)] t3'\<close> 
+                 \<open>swap [(a,c)] (swap [(a, c)] (swap [(a, b), (b, c)] t3'))\<close>
+                 \<open>(swap [(a, b), (b, c)] t3')\<close>] 
+               swap_depth 1(1) deptht3 by force
+           hence v: "nabla \<turnstile> swap [(a, b), (b, c)] t3' \<approx> swap [(a,c)] t3'"
+             using IH_usable(1)[of \<open>swap [(a,c)] t3'\<close> \<open>swap [(a, b), (b, c)] t3'\<close>] 
+               deptht3 swap_depth 1(1) 
+             by simp
+
+           from ii v have t1_equal_ac_t3: "nabla \<turnstile> t1' \<approx> swap [(a, c)] t3'"
+             using 1(1) IH_usable(3)[OF deptht1] 
+             by blast
+
+           from a_fresh_t3 t1_equal_ac_t3 show ?thesis 
+             using 1(1,2) equ_abst_ab(2) equ.equ_abst_ab[OF False] by simp
          qed
        next
          case (equ_abst_aa t2' t3' b)
