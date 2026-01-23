@@ -17,7 +17,7 @@ fun swap  :: "(string \<times> string) list \<Rightarrow> trm \<Rightarrow> trm"
   where
   "swap  pi (Unit)        = Unit" 
 | "swap  pi (Atom a)      = Atom (swapas pi a)"
-| "swap  pi (Susp pi' X)  = Susp (pi@pi') X"
+| "swap  pi (Susp pi' X)  = Susp (pi @ pi') X"
 | "swap  pi (Abst a t)    = Abst (swapas pi a) (swap pi t)"
 | "swap  pi (Paar t1 t2)  = Paar (swap pi t1) (swap pi t2)"
 | "swap  pi (Func F t)    = Func F (swap pi t)"
@@ -60,6 +60,11 @@ lemma swap_depth [simp]:
   shows "depth (swap pi t) = depth t" 
   by (induct t) (auto)
 
+lemma teste:
+  fixes t :: trm
+  assumes "a \<noteq> []" and "b \<noteq> []" and "t \<noteq> []"
+  shows "swap [(a,b)] (swap [(b,a)] t) = t"
+  oops
 
 (* occurs predicate and variables in terms *)
 

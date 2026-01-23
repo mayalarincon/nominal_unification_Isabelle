@@ -55,7 +55,7 @@ apply(assumption)
 
 lemma ds_cancel_pi_left:
   assumes "(c\<in> ds (pi1@pi) (pi2@pi))"
-  shows "(swapas pi c\<in> ds pi1 pi2)"
+  shows "(swapas pi c \<in> ds pi1 pi2)"
   using ds_def swapas_append a_ineq_swapas_pi a_not_in_atms
   by (metis (mono_tags, lifting) Un_iff assms mem_Collect_eq)
 

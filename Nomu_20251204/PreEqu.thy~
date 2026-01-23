@@ -36,9 +36,6 @@ apply(induct t)
        apply(auto)
   by (metis ds_rev elem_ds swapas_append swapas_rev_pi_a)
 
-  
-thm fresh_swap_left fresh_swap_eqvt a_ineq_swapas_pi swapas_pi_in_atms
-
 lemma equ_pi_right: 
   assumes "\<forall>a \<in> ds [] pi. nabla \<turnstile> a \<sharp> t"
   shows "nabla \<turnstile> t \<approx> swap pi t"
@@ -163,6 +160,14 @@ next
     by simp
 qed
 
+lemma perm_invariance: 
+assumes "\<forall>a \<in> ds pi pi'. nabla \<turnstile> a \<sharp> t"
+shows "nabla \<turnstile> swap pi t \<approx> swap pi' t"
+proof-
+  have "nabla \<turnstile> t \<approx> swap (rev pi @ pi') t"
+    using ds_rev equ_pi_right assms
+    by simp
+  oops
 
 lemma pi_comm: "nabla \<turnstile> (swap (pi @ [(a,b)]) t) \<approx> (swap ([(swapas pi a, swapas pi b)] @ pi) t)"
 proof(induct t)
@@ -235,72 +240,145 @@ next
     using Fresh_elims(6) by blast
 qed
 
+(*lemma equ_symm:
+  shows "(nabla \<turnstile> t1 \<approx> t2) \<Longrightarrow> (nabla \<turnstile> t2 \<approx> t1)"
+proof(induction rule: equ.induct)
+  case (equ_abst_ab a b nabla t2 t1)
+  then show ?case sorry
+next
+  case (equ_abst_aa nabla t1 t2 a)
+  then show ?case sorry
+next
+  case (equ_unit nabla)
+  then show ?case sorry
+next
+  case (equ_atom a b nabla)
+  then show ?case sorry
+next
+  case (equ_susp pi1 pi2 X nabla)
+  then show ?case sorry
+next
+  case (equ_paar nabla t1 t2 s1 s2)
+  then show ?case sorry
+next
+  case (equ_func nabla t1 t2 F)
+  then show ?case sorry
+qed
+*)
 
-lemma equ_trans:
+lemma big: 
   assumes "n = depth t1"
-  shows "\<lbrakk>nabla \<turnstile> t1 \<approx> t2; nabla \<turnstile> t2 \<approx> t3\<rbrakk> \<Longrightarrow> (nabla \<turnstile> t1 \<approx> t3)"
- using assms
-proof (induction n arbitrary: t1 t2 t3 rule: nat_less_induct)
+  shows "(((nabla \<turnstile> t1 \<approx> t2)\<longrightarrow>(nabla \<turnstile> t2 \<approx> t1))\<and>  
+              (\<forall>pi. (nabla \<turnstile> t1 \<approx> t2) \<longrightarrow> (nabla \<turnstile> swap pi t1 \<approx> swap pi t2))\<and> 
+              ((nabla \<turnstile> t1 \<approx> t2)\<and>(nabla \<turnstile> t2 \<approx> t3) \<longrightarrow> (nabla \<turnstile> t1 \<approx> t3)))"
+  using assms
+proof(induction n arbitrary: t1 t2 t3 rule: nat_less_induct)
   case (1 n)
- assume depth: "n = depth t1"
-  show ?case
+  note IH = this
+  have IH_usable : "n > depth t1 \<Longrightarrow> nabla \<turnstile> t1 \<approx> t2 \<Longrightarrow>  nabla \<turnstile> t2 \<approx> t1" 
+     "n > depth t1 \<Longrightarrow> nabla \<turnstile> t1 \<approx> t2 \<Longrightarrow>  nabla \<turnstile> swap pi t1 \<approx> swap pi t2"
+     "n > depth t1 \<Longrightarrow> nabla \<turnstile> t1 \<approx> t2 \<Longrightarrow>  nabla \<turnstile> t2 \<approx> t3 \<Longrightarrow>  nabla \<turnstile> t1 \<approx> t3"
+     for t1 t2 t3 pi using IH 
+    by blast+
+  have "nabla \<turnstile> t1 \<approx> t2 \<Longrightarrow>  nabla \<turnstile> t2 \<approx> t1"
+  proof-
+    assume "nabla \<turnstile> t1 \<approx> t2" 
+    show ?thesis
   proof(cases rule: equ.cases[OF \<open>nabla \<turnstile> t1 \<approx> t2\<close>])
     case (1 a b nabla t2' t1')
-    then show ?thesis sorry
+    have depth1: "depth t1' < depth t1" 
+      using 1(2) depth.simps(4) by simp
+    then have i: "nabla \<turnstile> swap [(a, b)] t2' \<approx> t1'"
+      using IH 1(1,6) by blast
+    have ii: "nabla \<turnstile> b \<sharp> swap [(a, b)] t2'" 
+      using fresh_swap_eqvt[of nabla a t2' "[(a,b)]"] "1"(5)
+      by fastforce
+    from i ii have b_fresh: "nabla \<turnstile> b \<sharp> t1'"
+      using l3_jud by blast
+    from i have iii: "nabla \<turnstile> swap [(b,a)] (swap [(a, b)] t2') \<approx> swap [(b,a)] t1'"
+      using "1"(1) "1.prems" IH_usable(2) depth1 equ_depth by auto
+    then have swap_ba_ab_t2: "nabla \<turnstile> swap ([(b,a)]@ [(a, b)]) t2' \<approx> swap [(b,a)] t1'"
+      using swap_append by presburger
+    have "nabla \<turnstile> swap ([(b,a)]@ [(a, b)]) t2' \<approx> t2'" 
+      using rev_pi_pi_equ "1"(1,4,6) "1.prems" IH_usable(1) 
+        depth1 ds_baab equ_depth equ_pi_right by auto
+    then have "nabla \<turnstile>  t2' \<approx> swap ([(b,a)]@ [(a, b)]) t2'"
+      using "1"(1,6) "1.prems" IH_usable(1) depth1 equ_depth swap_depth
+      by metis
+    then have equ_swap: "nabla \<turnstile> t2' \<approx> swap [(b, a)] t1'"
+      using IH_usable(3)[of t2' \<open>swap ([(b,a)]@ [(a, b)]) t2'\<close> \<open>swap [(b, a)] t1'\<close>] iii
+        "1"(1) "1.prems" depth1 equ_depth swap_ba_ab_t2 swap_depth
+      by metis
+    from b_fresh equ_swap show ?thesis
+      using "1"(1,2,3,4)
+      by fastforce
   next
     case (2 nabla t1' t2' a)
-    then show ?thesis sorry
+    then show ?thesis 
+      using IH by auto
   next
     case (3 nabla)
-    then show ?thesis 
-      using "1.prems" by blast
+    then show ?thesis
+      by blast
   next
     case (4 a b nabla)
     then show ?thesis 
-      using "1.prems"(2) by blast
+      by force
   next
     case (5 pi1 pi2 X nabla)
-    then show ?thesis sorry
+    then show ?thesis 
+      using ds_sym by fast
   next
     case (6 nabla t1' t2' s1' s2')
-    then show ?thesis sorry
+    have depth1: "depth t1' < depth t1" 
+      using "6"(2) by simp
+    have depth2: "depth s1' < depth t1" 
+      using "6"(2) by simp
+    from depth1 depth2 have "nabla \<turnstile> t2' \<approx> t1' \<and> nabla \<turnstile> s2' \<approx> s1'"
+      using "1.IH" "1.prems" "6"(1,4,5) by blast
+    then show ?thesis 
+      using equ_paar 6(1,2,3)
+      by fast
   next
     case (7 nabla t1' t2' f)
-    then show ?thesis sorry
+    then show ?thesis
+      using "1.prems" IH_usable(1) by auto
   qed
-qed
-
-
-lemma equ_add_pi :
-  assumes "n = depth t1"
-  shows "(nabla \<turnstile> t1 \<approx> t2) \<Longrightarrow> (nabla \<turnstile> swap pi t1 \<approx> swap pi t2)"
-  using assms
-proof (induction n arbitrary: t1 t2 rule: nat_less_induct)
-  case (1 n)
-  show ?case
-  proof(cases rule: equ.cases[OF \<open>nabla \<turnstile> t1 \<approx> t2\<close>])
+  qed
+  moreover have "nabla \<turnstile> t1 \<approx> t2 \<Longrightarrow>  nabla \<turnstile> swap pi t1 \<approx> swap pi t2"
+    for pi 
+  proof-
+    assume "nabla \<turnstile> t1 \<approx> t2"
+    show ?thesis 
+    proof(cases rule: equ.cases[OF \<open>nabla \<turnstile> t1 \<approx> t2\<close>])
     case (1 a b nabla t2' t1')
-    from this have "depth t1' < depth t1"
+    from this have depth_less: "depth t1' < depth t1"
       by force
     then have "nabla \<turnstile> swap pi t1' \<approx> swap pi (swap [(a,b)] t2')"
-      using "1.IH" "1.prems"(2) 1(1,6) by blast
-    then have "nabla \<turnstile> swap pi t1' \<approx> swap (pi @ [(a,b)]) t2'"
+       using "1"(1,6) "1.IH" "1.prems" by blast
+    then have A: "nabla \<turnstile> swap pi t1' \<approx> swap (pi @ [(a,b)]) t2'"
       using swap_append by presburger
     have "nabla \<turnstile> swap (pi @ [(a,b)]) t2' \<approx> (swap ([(swapas pi a, swapas pi b)] @ pi) t2')"
       using pi_comm by force
-    then have "nabla \<turnstile> swap (pi @ [(a,b)]) t2' \<approx> swap [(swapas pi a, swapas pi b)] (swap pi t2')"
+    then have B: "nabla \<turnstile> swap (pi @ [(a,b)]) t2' \<approx> swap [(swapas pi a, swapas pi b)] (swap pi t2')"
       using swap_append
       by metis
     have pi_a_fresh: "nabla \<turnstile> swapas pi a \<sharp> swap pi t2'"
       using 1(5) fresh_swap_eqvt
       by simp
-    then show ?thesis sorry
+    have "nabla \<turnstile> swap pi t1' \<approx> swap [(swapas pi a, swapas pi b)] (swap pi t2')"
+      apply (rule IH_usable(3)[simplified 1(1), OF _ A B])
+      using  depth_less IH(2) 
+      by auto
+    then show ?thesis
+      by (metis "1"(1,2,3,4) equ_abst_ab pi_a_fresh swap.simps(4) swapas_rev_pi_a)
   next
     case (2 nabla t1' t2' a)
     from this have "depth t1' < depth t1"
       by force
     then have "nabla \<turnstile> swap pi t1' \<approx> swap pi t2'"
-      using "1.IH" "1.prems"(2) "2"(1,4) by blast
+      using "1.prems" "2"(1,4) IH_usable(2)
+      by blast
     then have abst: "nabla \<turnstile> Abst (swapas pi a) (swap pi t1') \<approx> Abst (swapas pi a) (swap pi t2')"
       using equ_abst_aa[of nabla "swap pi t1'" "swap pi t2'" "swapas pi a"]
       by blast
@@ -321,397 +399,496 @@ proof (induction n arbitrary: t1 t2 rule: nat_less_induct)
       by auto
   next
     case (6 nabla t1' t2' s1' s2')
-    then show ?thesis 
-      using equ_paar swap.simps(5) Suc_max_right Suc_max_left "1.IH" depth depth.simps(6) plus_1_eq_Suc
-      by metis
+    from this 
+    have depths1: "depth t1' < depth t1" "depth s1' < depth t1" 
+        using depth.simps(6) by auto
+      then have depths2: "depth t2' < depth t1" "depth s2' < depth t1"
+       using equ_depth "6"(4,5) by auto
+    then have "nabla \<turnstile> t2' \<approx> t1'"
+      using "1.prems" "6"(1,4,5) IH_usable(1) depths1
+      by blast
+    then have par1: "nabla \<turnstile> swap pi t2' \<approx> swap pi t1'" 
+      using 6(1) "1.prems"  depths2  IH_usable(2)[of t2' t1' pi] 
+      by simp
+    from depths1 have "nabla \<turnstile> s2' \<approx> s1'"
+      using "1.prems" "6"(1,4,5) IH_usable(1) by auto
+    then have par2: "nabla \<turnstile> swap pi s2' \<approx> swap pi s1'" 
+      using 6(1) "1.prems"  depths2  IH_usable(2)[of s2' s1' pi] 
+      by simp
+    from par1 par2 show ?thesis 
+      using 6 "1.prems" IH_usable(1) depths2 equ_paar swap.simps(5) swap_depth
+      by presburger
   next
     case (7 nabla t1' t2' f)
-    then show ?thesis 
-      using "1.IH" depth
-      by auto
-  qed
-qed
-
-
-
-lemma equ_symm :
-  assumes "n = depth t1"
-  shows "(nabla \<turnstile> t1 \<approx> t2) \<Longrightarrow> (nabla \<turnstile> t2 \<approx> t1)"
-  using assms
-proof (induction n arbitrary: t1 t2 rule: nat_less_induct)
-  case (1 n)
-  note IH = this
-  show ?case
-  proof(cases rule: equ.cases[OF \<open>nabla \<turnstile> t1 \<approx> t2\<close>])
-    case (1 a b nabla t2' t1')
-    have depth1: "depth t1' < depth t1" 
-      using 1(2) depth.simps(4) by simp
-    then have i: "nabla \<turnstile> swap [(a, b)] t2' \<approx> t1'"
-      using IH 1(1,6) by blast
-    have ii: "nabla \<turnstile> b \<sharp> swap [(a, b)] t2'" 
-      using fresh_swap_eqvt[of nabla a t2' "[(a,b)]"] "1"(5)
+    from this have "depth t1' < depth t1"
+      using depth.simps(5)
       by fastforce
-    from i ii have b_fresh: "nabla \<turnstile> b \<sharp> t1'"
-      using l3_jud by blast
-    from i have "nabla \<turnstile> swap [(b,a)] (swap [(a, b)] t2') \<approx> swap [(b,a)] t1'"
-      using equ_add_pi by simp
-    then have "nabla \<turnstile> swap ([(b,a)]@ [(a, b)]) t2' \<approx> swap [(b,a)] t1'"
-      using swap_append by presburger
-    then have equ_swap: "nabla \<turnstile> t2' \<approx> swap [(b, a)] t1'"
-      sorry
-    from b_fresh equ_swap show ?thesis
-      using equ_abst_ab 1
-      by blast
+    then have "nabla \<turnstile> swap pi t1' \<approx> swap pi t2'"
+     using "1.prems" "7"(1,4) IH_usable(2) by auto
+    then show ?thesis
+      using equ_func 7 by simp
+  qed
+  qed
+  moreover have "nabla \<turnstile> t1 \<approx> t2 \<Longrightarrow> nabla \<turnstile> t2 \<approx> t3 \<Longrightarrow>  nabla \<turnstile> t1 \<approx> t3"
+  proof-
+    assume t12: "nabla \<turnstile> t1 \<approx> t2" and t23: "nabla \<turnstile> t2 \<approx> t3"
+    show ?thesis 
+     proof(cases rule: equ.cases[OF \<open>nabla \<turnstile> t1 \<approx> t2\<close>])
+       case (1 a b nabla t2' t1')
+       note case12 = this
+       from t23 show ?thesis 
+       proof(cases rule: equ.cases)
+         case (equ_abst_ab b c t3' t2')
+         have deptht1: "depth t1' < n"
+           using depth.simps(4) 1(2) "1.prems"
+           by auto
+         hence deptht2: "depth t2' < n" 
+           using equ_depth 1(3,6) equ_abst_ab(1)
+           by auto
+         hence deptht3: "depth t3' < n" 
+           using equ_depth 1 equ_abst_ab(1,5) by simp
+         then show ?thesis 
+         proof(cases "a = c")
+           case True
+           have  t1t2: "nabla \<turnstile> t1' \<approx> swap [(c,b)] t2'"
+             using True 1(3,6) equ_abst_ab(1) by auto
+           have i: "nabla \<turnstile> t2' \<approx> swap [(b,c)] t3'"
+             using 1(1) equ_abst_ab(5)
+             by blast
+           hence ii: "nabla \<turnstile> swap [(c,b)] t2' \<approx> swap [(c,b)] (swap [(b,c)] t3')"
+             using IH_usable(2)[OF deptht2] 1(1)
+             by blast
+           have iii: "nabla \<turnstile> swap [(c,b)] t2' \<approx> swap ([(c,b)]@[(b,c)]) t3'"
+             using swap_append ii
+             by presburger
+           have v: "nabla \<turnstile> swap ([(c,b)]@ [(b, c)]) t3' \<approx> t3'"
+             using IH_usable(1) 1(1) deptht1 ds_baab equ_depth 
+               equ_pi_right i local.equ_abst_ab(3) t1t2
+              by auto
+           from iii v  have iv: "nabla \<turnstile> swap [(c,b)] t2' \<approx> t3'"
+             using IH_usable(3)[of \<open>swap [(c,b)] t2'\<close>] 1(1) deptht2
+             by auto
+           from t1t2 iv have "nabla \<turnstile> t1' \<approx> t3'"
+             using deptht1 1(1) IH_usable(3)[of t1' \<open>swap [(c, b)] t2'\<close> t3']
+             by blast
+           then show ?thesis 
+             using True 1(1,2) equ_abst_aa equ_abst_ab(2) by simp
+         next
+           case False
+
+           have a_fresh_bc_t3: "nabla \<turnstile> a \<sharp> swap [(b,c)] t3'"
+             using l3_jud 1(1,3,5) equ_abst_ab(1,5)
+             by blast
+           hence "nabla \<turnstile> swapas [(b,c)] a \<sharp> t3'"
+             using fresh_swap_left
+             by fastforce
+           hence a_fresh_t3: "nabla \<turnstile> a \<sharp> t3'"
+             using False 1(3,4) equ_abst_ab(1,3)
+             by fastforce 
+            
+           have t1t2: "nabla \<turnstile> t1' \<approx> swap [(a,b)] t2'"
+             using 1(3,6) equ_abst_ab(1) by auto
+           have t2t3: "nabla \<turnstile> t2' \<approx> swap [(b,c)] t3'"
+             using 1(1) equ_abst_ab(5)
+             by blast
+           hence i: "nabla \<turnstile> swap [(a,b)] t2' \<approx> swap ([(a,b)]@[(b,c)]) t3'"
+             using 1(1) IH_usable(2)[OF deptht2] swap_append
+             by presburger
+           from t1t2 i have ii: "nabla \<turnstile> t1' \<approx> swap ([(a,b),(b,c)]) t3'"
+             using 1(1) IH_usable(3)[OF deptht1] by auto
+
+
+           have "ds [] [(a, c), (a, b), (b, c)] = {a, b}"
+             using ds_acabbc False 1(3,4) equ_abst_ab(1,3) by auto
+           hence "nabla \<turnstile> t3' \<approx> swap [(a, c), (a, b), (b, c)] t3'"
+             using 1(1) equ_pi_right equ_abst_ab(4) a_fresh_t3 
+             by simp
+           hence "nabla \<turnstile> t3' \<approx> swap [(a, c)] (swap [(a, b), (b, c)] t3')"
+             using  swap_append Cons_eq_append_conv
+             by metis
+           hence iii: "nabla \<turnstile> swap [(a,c)] t3' \<approx> swap [(a,c)] (swap [(a, c)] (swap [(a, b), (b, c)] t3'))"
+             using IH_usable(2)[OF deptht3] 1(1) by auto
+           have iv: "nabla \<turnstile> swap [(a, c)] (swap [(a, c)] (swap [(a, b), (b, c)] t3')) \<approx> (swap [(a, b), (b, c)] t3')" 
+             using rev_pi_pi_equ rev_singleton_conv
+             by metis
+           from iii iv have "nabla \<turnstile> swap [(a,c)] t3' \<approx> swap [(a, b), (b, c)] t3'" 
+             using IH_usable(3)[of \<open>swap [(a,c)] t3'\<close> 
+                 \<open>swap [(a,c)] (swap [(a, c)] (swap [(a, b), (b, c)] t3'))\<close>
+                 \<open>(swap [(a, b), (b, c)] t3')\<close>] 
+               swap_depth 1(1) deptht3 by force
+           hence v: "nabla \<turnstile> swap [(a, b), (b, c)] t3' \<approx> swap [(a,c)] t3'"
+             using IH_usable(1)[of \<open>swap [(a,c)] t3'\<close> \<open>swap [(a, b), (b, c)] t3'\<close>] 
+               deptht3 swap_depth 1(1) 
+             by simp
+
+           from ii v have t1_equal_ac_t3: "nabla \<turnstile> t1' \<approx> swap [(a, c)] t3'"
+             using 1(1) IH_usable(3)[OF deptht1] 
+             by blast
+
+           from a_fresh_t3 t1_equal_ac_t3 show ?thesis 
+             using 1(1,2) equ_abst_ab(2) equ.equ_abst_ab[OF False] by simp
+         qed
+       next
+         case (equ_abst_aa t2' t3' b)
+         have deptht1: "depth t1' < n"
+           using depth.simps(4) 1(2) "1.prems"
+           by force
+         have a_fresh_t2: "nabla \<turnstile> a \<sharp> t2'"
+           using 1(3,5) equ_abst_aa(1) by blast
+         have i: "nabla \<turnstile> t1' \<approx> swap [(a, b)] t2'"
+           using 1(3,6) equ_abst_aa(1) by fast
+         hence deptht2: "depth t2' < n"
+           using deptht1 equ_depth by simp
+         hence ii: "nabla \<turnstile> swap [(a,b)] t2' \<approx> swap [(a,b)] t3'"
+           using IH_usable(2)[of t2' t3' \<open>[(a,b)]\<close>] equ_abst_aa(3) 1(1) by blast
+         from i ii have iii: "nabla \<turnstile> t1' \<approx> swap [(a,b)] t3'"
+           using IH_usable(3) deptht1 1(1) 
+           by blast
+         from a_fresh_t2 have iv: "nabla \<turnstile> a \<sharp> t3'"
+           using 1(1) l3_jud equ_abst_aa(3) by presburger
+         from iii iv show ?thesis 
+           using equ_abst_ab 1(1,2,3,4) equ_abst_aa(1,2)
+           by fast
+       next
+         case equ_unit
+         then show ?thesis
+           using t12 by auto
+       next
+         case (equ_atom b c)
+         then show ?thesis using t12 by auto
+       next
+         case (equ_susp pi2 pi3 X)
+         then show ?thesis
+           using case12(3) by blast
+       next
+         case (equ_paar t2' t3' s2' s3')
+         then show ?thesis
+           using case12(3) by blast
+       next
+         case (equ_func t2' t3' f)
+         then show ?thesis
+           using case12(3) by blast
+       qed
   next
     case (2 nabla t1' t2' a)
-    then show ?thesis 
-      using IH by force
+   from t23 show ?thesis 
+       proof(cases rule: equ.cases)
+         case (equ_abst_ab a c t3' t2')
+         have deptht1: "depth t1' < n"
+          using IH depth.simps(1) "2"(2) by auto
+         have i: "nabla \<turnstile> t1' \<approx> t2'"
+           using 2(3,4) equ_abst_ab(1) by blast
+         have ii: "nabla \<turnstile> t2' \<approx> swap [(a, c)] t3'"
+           using 2(1) local.equ_abst_ab(5) by blast
+         from i ii have iii: "nabla \<turnstile> t1' \<approx> swap [(a, c)] t3'"
+           using "1.IH" 2(1) deptht1 by blast
+         have iv: "nabla \<turnstile> a \<sharp> t3'" 
+           using 2(1) equ_abst_ab(4)
+           by blast
+         from iii iv show ?thesis 
+           using  2(1,2,3) local.equ_abst_ab(1,2,3) by blast
+       next
+         case (equ_abst_aa t2' t3' a)
+         have "depth t1' < n" 
+           using depth.simps(4) "2"(2) "1.prems" by simp
+         then show ?thesis
+           using "2"(1,2,3,4) IH_usable(3) local.equ_abst_aa(1,2,3) by blast
+       next
+         case equ_unit
+         then show ?thesis
+           using t12 by blast
+       next
+         case (equ_atom b c)
+         then show ?thesis
+           using t12 by blast
+       next
+         case (equ_susp pi2 pi3 X)
+         then show ?thesis
+          using 2(3) by simp 
+       next
+         case (equ_paar t2' t3' s2' s3')
+         then show ?thesis 
+           using 2(3) by simp 
+       next
+         case (equ_func t2' t3' f)
+         then show ?thesis 
+           using 2(3) by simp 
+       qed
   next
     case (3 nabla)
-    then show ?thesis
-      by blast
+    from t23 show ?thesis 
+       proof(cases rule: equ.cases)
+         case (equ_abst_ab a b t3' t2')
+         then show ?thesis 
+           using 3(3) by simp 
+       next
+         case (equ_abst_aa t2' t3' b)
+         then show ?thesis
+            using 3(3) by simp 
+       next
+         case equ_unit
+         then show ?thesis
+           using t12 by auto
+       next
+         case (equ_atom b c)
+         then show ?thesis 
+           using t12 by blast
+       next
+         case (equ_susp pi2 pi3 X)
+         then show ?thesis 
+           using 3(3) by simp 
+       next
+         case (equ_paar t2' t3' s2' s3')
+         then show ?thesis 
+           using 3(3) by simp 
+       next
+         case (equ_func t2' t3' f)
+         then show ?thesis 
+           using 3(3) by simp 
+       qed
   next
     case (4 a b nabla)
-    then show ?thesis 
-      by force
+    from t23 show ?thesis 
+       proof(cases rule: equ.cases)
+         case (equ_abst_ab a b t3' t2')
+         then show ?thesis 
+           using 4 by blast
+       next
+         case (equ_abst_aa t2' t3' b)
+         then show ?thesis
+           using 4 by blast
+       next
+         case equ_unit
+         then show ?thesis 
+          using 4 by blast
+       next
+         case (equ_atom b c)
+         then show ?thesis 
+          using 4 by blast
+       next
+         case (equ_susp pi2 pi3 X)
+         then show ?thesis 
+          using 4 by blast
+       next
+         case (equ_paar t2' t3' s2' s3')
+         then show ?thesis 
+          using 4 by blast
+       next
+         case (equ_func t2' t3' f)
+         then show ?thesis 
+           using 4 by blast
+       qed
   next
     case (5 pi1 pi2 X nabla)
-    then show ?thesis 
-      using ds_sym by fast
+    from t23 show ?thesis 
+       proof(cases rule: equ.cases)
+         case (equ_abst_ab a b t3' t2')
+         then show ?thesis 
+           using 5 by blast
+       next
+         case (equ_abst_aa t2' t3' b)
+         then show ?thesis
+          using 5 by blast
+       next
+         case equ_unit
+         then show ?thesis
+          using 5 by blast
+       next
+         case (equ_atom b c)
+         then show ?thesis
+          using 5 by blast
+       next
+         case (equ_susp pi2 pi3 X)
+         have a: "\<forall>c\<in>ds pi1 pi2. (c, X) \<in> nabla"
+           using 5(3,4) equ_susp by simp
+         have b: "\<forall>c\<in>ds pi2 pi3. (c, X) \<in> nabla" 
+           using 5(1) equ_susp(3) by auto
+         from a b have "\<forall>c\<in>ds pi1 pi3. (c, X) \<in> nabla"
+           using ds_trans by blast
+         hence "nabla \<turnstile> Susp pi1 X \<approx> Susp pi3 X"
+           by blast
+         then show ?thesis 
+           using "5"(1,2,3) equ_susp(1,2)
+           by blast
+       next
+         case (equ_paar t2' t3' s2' s3')
+         then show ?thesis
+           using 5 by blast
+       next
+         case (equ_func t2' t3' f)
+         then show ?thesis 
+           using 5 by blast
+       qed
   next
     case (6 nabla t1' t2' s1' s2')
-    have depth1: "depth t1' < depth t1" 
-      using "6"(2) by simp
-    have depth2: "depth s1' < depth t1" 
-      using "6"(2) by simp
-    from depth1 depth2 have "nabla \<turnstile> t2' \<approx> t1' \<and> nabla \<turnstile> s2' \<approx> s1'"
-      using "1.IH" "6"(1,4,5) IH(3)
-      by blast
-    then show ?thesis 
-      using equ_paar 6(1,2,3)
-      by fast
+    from t23 show ?thesis 
+       proof(cases rule: equ.cases)
+         case (equ_abst_ab a b t3' t2')
+         then show ?thesis 
+           using 6 by blast
+       next
+         case (equ_abst_aa t2' t3' b)
+         then show ?thesis 
+          using 6 by blast
+       next
+         case equ_unit
+         then show ?thesis 
+          using 6 by blast
+       next
+         case (equ_atom b c)
+         then show ?thesis 
+          using 6 by blast
+       next
+         case (equ_susp pi2 pi3 X)
+         then show ?thesis 
+          using 6 by blast
+       next
+         case (equ_paar t2' t3' s2' s3')
+         have deptht1: "depth t1' < n" 
+           using IH depth.simps(6) "6"(2) by auto
+         have depths1: "depth s1' < n" 
+           using IH depth.simps(6) "6"(2) by auto
+         have a: "nabla \<turnstile> t1' \<approx> t2'" 
+           using "6"(3,4) equ_paar by auto
+         have b: "nabla \<turnstile> s1' \<approx> s2'" 
+           using "6" equ_paar by auto
+         from a have t1_equal_t3: "nabla \<turnstile> t1' \<approx> t3'" 
+           using IH_usable(3)[of t1' t2' t3'] equ_paar(3) 6(1) deptht1
+           by fast
+         from b have s1_equal_s3: "nabla \<turnstile> s1' \<approx> s3'" 
+           using IH_usable(3)[of s1' s2' s3'] equ_paar(4) 6(1) depths1
+           by fast
+         from t1_equal_t3 s1_equal_s3 show ?thesis 
+           using equ.equ_paar[of nabla t1' t3' s1' s3'] 6(1,2) equ_paar(2)
+           by fast
+       next
+         case (equ_func t2' t3' f)
+         then show ?thesis 
+          using 6 by blast
+       qed
   next
     case (7 nabla t1' t2' f)
-    then show ?thesis 
-      using "1.IH" IH(3)
-      by auto
+    from t23 show ?thesis 
+       proof(cases rule: equ.cases)
+         case (equ_abst_ab a b t3' t2')
+         then show ?thesis 
+           using 7 by blast
+       next
+         case (equ_abst_aa t2' t3' b)
+         then show ?thesis 
+           using 7 by blast
+       next
+         case equ_unit
+         then show ?thesis
+          using 7 by blast
+       next
+         case (equ_atom b c)
+         then show ?thesis 
+          using 7 by blast
+       next
+         case (equ_susp pi2 pi3 X)
+         then show ?thesis
+          using 7 by blast
+       next
+         case (equ_paar t2' t3' s2' s3')
+         then show ?thesis
+          using 7 by blast
+       next
+         case (equ_func t2' t3' f)
+         have deptht1: "depth t1' < n" 
+           using IH depth.simps(5) "7"(2) by auto
+         have "nabla \<turnstile>  t1' \<approx> t2'" 
+           using "7"(3,4) equ_func(1) by auto
+         hence "nabla \<turnstile> t1' \<approx> t3'" 
+           using IH_usable(3)[of t1' t2' t3'] 7(1) deptht1 equ_func(3)
+           by blast
+         then show ?thesis 
+           using equ.equ_func[of nabla t1' t3' f] 7(1,2,3) equ_func(1,2)
+           by fast
+       qed
   qed
+  qed
+  ultimately show ?case by simp
 qed
 
 
+(*
+Case abab:
+t1 = Abst a t1'
+t2 = Abst b t2'
+t3 = Abst c t3'
+
+a\<noteq>b
+b\<noteq>c
+a\<noteq>c
+
+i: nabla \<turnstile> t1 \<approx> t2 \<Longrightarrow> nabla \<turnstile> a \<sharp> t2' and nabla \<turnstile> t1' \<approx> (a b) t2'
+ii: nabla \<turnstile> t2 \<approx> t3 \<Longrightarrow> nabla \<turnstile> b \<sharp> t3' and nabla \<turnstile> t2' \<approx> (b c) t3'
+
+eqv in ii pi =(ab)
+
+iii: nabla \<turnstile> (a b) b \<sharp> (a b) t3' and nabla \<turnstile> (a b) t2' \<approx> (a b)(b c) t3'
+
+iv: nabla \<turnstile> t1' \<approx> (a b)(b c) t3'
+
+Goal:  nabla \<turnstile> Abs a t1' \<approx> Abst c t3'
+       Subgoals: nabla \<turnstile> a \<sharp> t3' and nabla \<turnstile> t1' \<approx> (a c) t3'
+*)
 
 
-
-lemma big: "\<forall>t1 t2 t3. (n=depth t1) \<longrightarrow>
-             (((nabla\<turnstile>t1\<approx>t2)\<longrightarrow>(nabla\<turnstile>t2\<approx>t1))\<and>  
-              (\<forall>pi. (nabla\<turnstile>t1\<approx>t2)\<longrightarrow>(nabla\<turnstile>swap pi t1\<approx>swap pi t2))\<and> 
-              ((nabla\<turnstile>t1\<approx>t2)\<and>(nabla\<turnstile>t2\<approx>t3)\<longrightarrow>(nabla\<turnstile>t1\<approx>t3)))"
-
-  sorry
-(*apply(induct_tac n rule: nat_less_induct)
-apply(rule allI)+apply(rule impI)
-apply(rule conjI)
-(*SYMMETRY*)
-apply(rule impI)
-apply(ind_cases "nabla \<turnstile> t1 \<approx> t2")
-apply(simp_all)
-(*Abst.ab*)
-apply(rule equ_abst_ab)
-apply(force) --abst.ab.first.premise
-apply(rule_tac "t1.1"="swap [(a,b)] t2a" in l3_jud[THEN mp])
-apply(drule_tac x="depth t1a" in spec)
-apply(simp)
-apply(rule fresh_swap_right[THEN mp])
-apply(simp) --abst.ab.second.premise
-apply(subgoal_tac "nabla \<turnstile> swap [(b, a)] t1a \<approx> t2a")
-apply(drule_tac x="depth t1a" in spec)
-apply(simp)
-apply(subgoal_tac "nabla \<turnstile> swap [(b,a)] t1a \<approx> swap ([(b,a)]@[(a,b)]) t2a") --A
-apply(subgoal_tac "nabla \<turnstile> swap ([(b,a)]@[(a,b)]) t2a \<approx> t2a") --B
-apply(drule_tac x="depth t1a" in spec)
-apply(simp (no_asm_use))
-apply(drule_tac x="swap [(b,a)] t1a" in spec)
-apply(simp (no_asm_use))
-apply(drule_tac x="swap [(b,a),(a,b)] t2a" in spec)
-apply(force)
-(*B*)
-apply(subgoal_tac "nabla\<turnstile>t2a \<approx> swap ([(b, a)] @ [(a, b)]) t2a")--C
-apply(drule_tac x="depth t1a" in spec)
-apply(simp)
-apply(drule_tac x="t2a" in spec)
-apply(drule mp)
-apply(drule equ_depth)
-apply(force)
-apply(best)
-(*C*)
-apply(rule equ_pi_right[THEN spec,THEN mp])
-apply(subgoal_tac "ds [] ([(b, a)] @ [(a, b)])={}")
-apply(simp)
-apply(simp add: ds_baab)
-(*A*)
-apply(force simp only: swap_append)
-(*Abst.aa*)
-apply(force)
-(*Unit*)
-apply(rule equ_unit)
-(*Atom*)
-apply(force)
-(*Susp*)
-apply(force simp only: ds_sym)
-(*Paar*)
-apply(rule equ_paar)
-apply(drule_tac x="depth t1a" in spec)
-apply(simp add: Suc_max_left)
-apply(drule_tac x="depth s1" in spec)
-apply(simp add: Suc_max_right)
-(*Func*)
-apply(best)
-(*ADD.PI*)
-apply(rule conjI)
-apply(rule impI)
-apply(ind_cases "nabla \<turnstile> t1 \<approx> t2")
-apply(simp_all)
-(*Abst.ab*)
-apply(rule allI)
-apply(rule equ_abst_ab)
-(* abst.ab.first.premise*)
-apply(clarify)
-apply(drule swapas_rev_pi_a)
-apply(simp)
-(*abst.ab.second.premise*)
-apply(rule fresh_swap_right[THEN mp])
-apply(simp)
-(*abst.ab.third.premise*)
-apply(subgoal_tac "nabla \<turnstile> swap pi t1a \<approx> swap (pi@[(a,b)]) t2a") --A
-apply(subgoal_tac "nabla \<turnstile> swap (pi@[(a,b)]) t2a \<approx> swap ([(swapas pi a,swapas pi b)]@pi) t2a") --B
-apply(drule_tac x="depth t1a" in spec)
-apply(simp (no_asm_use))
-apply(drule_tac x="swap pi t1a" in spec)
-apply(simp (no_asm_use)) 
-apply(drule_tac x="swap (pi@[(a,b)]) t2a" in spec)
-apply(drule conjunct2)+
-apply(drule_tac x="swap ((swapas pi a, swapas pi b) # pi) t2a" in spec)
-apply(simp add: swap_append[THEN sym])
---B
-apply(rule pi_comm)
-apply(force simp only: swap_append)
--- A
-apply(force simp only: swap_append)
--- Unit
-apply(rule equ_unit)
--- Atom
-apply(force)
--- Susp
-apply(force simp only: ds_cancel_pi_front)
--- Paar
-apply(rule allI)
-apply(rule equ_paar)
-apply(drule_tac x="depth t1a" in spec)
-apply(simp only: Suc_max_left)
-apply(drule_tac x="depth s1" in spec)
-apply(simp only: Suc_max_right)
--- Func
-apply(best)
--- TRANSITIVITY
-apply(rule impI)
-apply(erule conjE)
-apply(ind_cases "nabla \<turnstile> t1 \<approx> t2")
-apply(simp_all)
--- Abst.ab
-apply(ind_cases "nabla \<turnstile> Abst b t2a \<approx> t3")
-apply(simp)
-apply(case_tac "ba=a")
-apply(simp)
-apply(rule equ_abst_aa)
-apply(subgoal_tac "nabla\<turnstile>swap [(a,b)] t2a \<approx> t2b") --A
-apply(best)
---A
-apply(subgoal_tac "nabla\<turnstile>swap [(a,b)] t2a\<approx> swap ([(a,b)]@[(b,a)]) t2b") --B
-apply(subgoal_tac "nabla\<turnstile>swap ([(a,b)]@[(b,a)]) t2b \<approx> t2b") --C
-apply(drule_tac x="depth t1a" in spec)
-apply(simp)
-apply(drule_tac x="swap [(a,b)] t2a" in spec)
-apply(drule equ_depth)
-apply(simp (no_asm_use))
-apply(best)
---C
-apply(subgoal_tac "nabla\<turnstile>t2b \<approx> swap ([(a,b)]@[(b,a)]) t2b")--D
-apply(drule_tac x="depth t1a" in spec)
-apply(simp)
-apply(drule_tac x="t2b" in spec)
-apply(drule mp)
-apply(force dest!: equ_depth)
-apply(best)
---D
-apply(rule equ_pi_right[THEN spec, THEN mp])
-apply(simp add: ds_baab)
---B
-apply(drule_tac x="depth t1a" in spec)
-apply(simp)
-apply(drule_tac x="t2a" in spec)
-apply(drule equ_depth)
-apply(simp) 
-apply(drule_tac x="swap [(b, a)] t2b" in spec)
-apply(drule conjunct2)
-apply(drule conjunct1)
-apply(simp)
-apply(drule_tac x="[(a,b)]" in spec)
-apply(simp add: swap_append[THEN sym])
--- Abst.ab
-apply(rule equ_abst_ab)
--- abst.ab.first.premise
-apply(force)
--- abst.ab.second.premise
-apply(rule_tac "t1.1"="swap [(b,ba)] t2a" in l3_jud[THEN mp])
-apply(subgoal_tac "nabla \<turnstile> swap [(b,ba)] t2a \<approx> swap ([(b,ba)]@[(b, ba)]) t2b") --A
-apply(subgoal_tac "nabla\<turnstile>swap ([(b,ba)]@[(b,ba)]) t2b \<approx> t2b") --B
-apply(drule_tac x="depth t1a" in spec)
-apply(simp)
-apply(drule_tac x="swap [(b, ba)] t2a" in spec)
-apply(drule mp)
-apply(force dest!: equ_depth)
-apply(best)
---B
-apply(subgoal_tac "nabla\<turnstile>t2b \<approx> swap ([(b,ba)] @ [(b,ba)]) t2b")--C
-apply(drule_tac x="depth t1a" in spec)
-apply(simp)
-apply(drule_tac x="t2b" in spec)
-apply(drule mp)
-apply(force dest!: equ_depth)
-apply(best)
--- C
-apply(rule equ_pi_right[THEN spec, THEN mp])
-apply(simp add: ds_abab)
---A
-apply(drule_tac x="depth t1a" in spec)
-apply(simp)
-apply(drule_tac x="t2a" in spec)
-apply(drule mp)
-apply(force dest!: equ_depth)
-apply(drule_tac x="swap [(b,ba)] t2b" in spec)
-apply(drule conjunct2)
-apply(drule conjunct1)
-apply(simp)
-apply(drule_tac x="[(b,ba)]" in spec)
-apply(simp add: swap_append[THEN sym])
--- abst.ab.third.premise
-apply(force intro!: fresh_swap_right[THEN mp])
--- very.complex
-apply(subgoal_tac "nabla\<turnstile>t1a \<approx> swap ([(a,b)]@[(b,ba)]) t2b") --A
-apply(subgoal_tac "nabla\<turnstile>swap ([(a,b)]@[(b,ba)]) t2b \<approx> swap [(a,ba)] t2b") --B
-apply(drule_tac x="depth t1a" in spec)
-apply(simp (no_asm_use))
-apply(best)
---B
-apply(subgoal_tac "nabla\<turnstile>swap [(a, ba)] t2b \<approx> swap [(a,b),(b,ba)] t2b")--C
-apply(drule_tac x="depth t1a" in spec)
-apply(simp)
-apply(drule_tac x="swap [(a, ba)] t2b" in spec)
-apply(drule mp)
-apply(force dest!: equ_depth)
-apply(force)
-apply(subgoal_tac "nabla\<turnstile>swap [(a,ba)] t2b\<approx> swap [(a,ba)] (swap [(a,ba),(a,b),(b,ba)] t2b)") --D
-apply(subgoal_tac "nabla\<turnstile>swap (rev [(a,ba)]) (swap [(a,ba)] (swap [(a,b),(b,ba)] t2b)) 
-                        \<approx>swap [(a,b),(b,ba)] t2b") --E
-apply(simp add: swap_append[THEN sym])
-apply(drule_tac x="depth t1a" in spec)
-apply(simp)
-apply(drule_tac x="swap [(a,ba)] t2b" in spec)
-apply(drule mp)
-apply(force dest!: equ_depth)
-apply(drule_tac x="swap [(a, ba), (a, ba), (a, b), (b, ba)] t2b" in spec)
-apply(drule conjunct2)+
-apply(best)
--- D
-apply(rule rev_pi_pi_equ)
--- E
-apply(subgoal_tac "nabla\<turnstile>t2b\<approx>swap [(a, ba), (a, b), (b, ba)] t2b") --F
-apply(drule_tac x="depth t1a" in spec)
-apply(simp)
-apply(drule_tac x="t2b" in spec)
-apply(drule mp)
-apply(force dest!: equ_depth)
-apply(best)
---F
-apply(rule equ_pi_right[THEN spec, THEN mp])
-apply(subgoal_tac "ds [] [(a,ba),(a,b),(b,ba)]={a,b}") -- G
-apply(simp)
-apply(drule_tac "t1.1"="t2a" and "t2.1"="swap [(b, ba)] t2b" and a1="a" in l3_jud[THEN mp])
-apply(assumption)
-apply(subgoal_tac "nabla \<turnstile> swapas (rev [(b,ba)]) a \<sharp> t2b") --H
-apply(simp)
-apply(case_tac "b=a")
-apply(force)
-apply(force)
---H
-apply(rule fresh_swap_left[THEN mp])
-apply(assumption)
---G
-apply(rule ds_acabbc)
-apply(assumption)+
---A
-apply(subgoal_tac "nabla\<turnstile>swap [(a,b)] t2a\<approx>swap [(a,b)] (swap [(b,ba)] t2b)")--I
-apply(drule_tac x="depth t1a" in spec)
-apply(simp (no_asm_use))
-apply(drule_tac x="t1a" in spec)
-apply(simp (no_asm_use))
-apply(drule_tac x="swap [(a,b)] t2a" in spec)
-apply(drule conjunct2)+
-apply(drule_tac x="swap [(a, b)] (swap [(b, ba)] t2b)" in spec)
-apply(force simp add: swap_append[THEN sym])
---I 
-apply(drule_tac x="depth t1a" in spec)
-apply(simp (no_asm_use))
-apply(drule_tac x="t2a" in spec)
-apply(drule mp)
-apply(force dest!: equ_depth)
-apply(drule_tac x="swap [(b,ba)] t2b" in spec)
-apply(best)
--- Abst.ab
-apply(simp)
-apply(rule equ_abst_ab)
-apply(assumption)
-apply(drule_tac "t1.1"="t2a" and "t2.1"="t2b" and a1="a" in l3_jud[THEN mp])
-apply(assumption)+
-apply(subgoal_tac "nabla\<turnstile>swap [(a, b)] t2a\<approx>swap [(a, b)] t2b") --A
-apply(best)
---A
-apply(drule_tac x="depth t1a" in spec)
-apply(simp (no_asm_use))
-apply(drule_tac x="t2a" in spec)
-apply(drule mp)
-apply(force dest!: equ_depth)
-apply(drule_tac x="t2b" in spec)
-apply(best)
--- Abst
-apply(ind_cases "nabla \<turnstile> Abst a t2a \<approx> t3")
-apply(best)
-apply(best)
--- Susp
-apply(ind_cases "nabla \<turnstile> Susp pi2 X \<approx> t3")
-apply(simp)
-apply(rule equ_susp)
-apply(rule ballI)
-apply(drule_tac "pi2.1"="pi2" in ds_trans[THEN mp])
-apply(force)
--- Paar
-apply(ind_cases "nabla \<turnstile> Paar t2a s2 \<approx> t3")
-apply(simp)
-apply(rule equ_paar)
-apply(drule_tac x="depth t1a" in spec)
-apply(simp (no_asm_use) add: Suc_max_left)
-apply(best)
-apply(drule_tac x="depth s1" in spec)
-apply(simp (no_asm_use) add: Suc_max_right)
-apply(best)
--- Func
-apply(ind_cases "nabla \<turnstile> Func F t2a \<approx> t3")
-apply(best)
-done*)
 
 lemma pi_right_equ_help:
-      "\<forall>t. (n=depth t) \<longrightarrow> (\<forall>pi. nabla\<turnstile>t\<approx>swap pi t\<longrightarrow>(\<forall>a\<in> ds [] pi. nabla\<turnstile>a\<sharp>t))"
-  sorry
+  assumes "(n=depth t)"
+  shows "nabla \<turnstile> t \<approx> swap pi t \<Longrightarrow> \<forall> a \<in> ds [] pi. nabla \<turnstile> a \<sharp> t"
+  using assms
+proof(induction n arbitrary: t rule: nat_less_induct)
+  case (1 n)
+  note IH = this
+  then show ?case 
+    proof(cases rule: equ.cases[OF \<open>nabla \<turnstile> t \<approx> swap pi t\<close>])
+      case (1 a b nabla t2 t1)
+      then show ?thesis sorry
+    next
+      case (2 nabla t1 t2 a)
+      then show ?thesis sorry
+    next
+      case (3 nabla)
+      then show ?thesis 
+        by blast
+    next
+      case (4 a b nabla)
+      then show ?thesis
+        using elem_ds by force
+    next
+      case (5 pi1 pi2 X nabla)
+      have "swap pi t = Susp (pi@pi1) X" 
+        using "5"(2) by auto
+      also have "... = Susp pi2 X"
+        using 5(3) calculation by simp
+      then have "pi@pi1 = pi2" by simp
+      hence "\<forall>c\<in>ds pi1 (pi@pi1). (c, X) \<in> nabla"
+        using 5(4) by blast
+      then show ?thesis 
+        using "5"(1,2) fresh_susp ds_cancel_pi_right[of _ _ "[]" _]
+          by force
+    next
+      case (6 nabla t1 t2 s1 s2)
+      then show ?thesis sorry
+    next
+      case (7 nabla t1 t2 f)
+      have deptht1: "depth t1 < n"
+        using 7(2) depth.simps(5) IH 
+        by auto
+      have "nabla \<turnstile> t1 \<approx> swap pi t1"
+        using 7 by simp
+      then have "\<forall> a \<in> ds [] pi. nabla \<turnstile> a \<sharp> t1"
+        using 7(1) IH deptht1 by simp
+      then show ?thesis 
+        using 7(1,2) fresh_func[of nabla _ t1 f] 
+        by simp
+    qed
+  qed
+
 (*apply(induct n rule: nat_less_induct)
 apply(rule allI)+
 apply(rule impI)
