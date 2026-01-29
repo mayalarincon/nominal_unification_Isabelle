@@ -17,6 +17,10 @@ lemma [simp]:
   shows "swapas [(a,a)] b=b"
   by simp
 
+lemma swapas_ab_ba:
+  shows "swapas [(a,b)] = swapas [(b,a)]"
+  by auto
+
 lemma swapas_append: 
   shows "swapas (pi1@pi2) a = swapas pi1 (swapas pi2 a)"
   by (induct pi1) auto

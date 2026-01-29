@@ -60,11 +60,6 @@ lemma swap_depth [simp]:
   shows "depth (swap pi t) = depth t" 
   by (induct t) (auto)
 
-lemma teste:
-  fixes t :: trm
-  assumes "a \<noteq> []" and "b \<noteq> []" and "t \<noteq> []"
-  shows "swap [(a,b)] (swap [(b,a)] t) = t"
-  oops
 
 (* occurs predicate and variables in terms *)
 
@@ -115,8 +110,9 @@ lemma psub_sub_trms:
 
 
 lemma t_sub_trms_t: 
-  shows "t\<in> sub_trms t"
+  shows "t \<in> sub_trms t"
   by (induct t) (auto)
+
 
 
 lemma abst_psub_trms: 
@@ -141,6 +137,71 @@ lemma paar_psub_trms:
   using assms
 apply(induct t3)
 apply(auto simp add: t_sub_trms_t intro: psub_sub_trms)
-done
+  done
+
+lemma t_not_in_psub_trms_t: 
+  shows "t \<notin> psub_trms t"
+proof(induct t)
+  case (Abst x1 t)
+  then show ?case 
+    using abst_psub_trms by auto
+next
+  case (Susp x1 x2)
+  then show ?case by simp
+next
+  case Unit
+  then show ?case by simp
+next
+  case (Atom x)
+  then show ?case by simp
+next
+  case (Paar t1 t2)
+  then have "Paar t1 t2 \<notin> sub_trms t1" "Paar t1 t2 \<notin> sub_trms t2"
+    using paar_psub_trms by auto
+  then show ?case by simp
+next
+  case (Func f t)
+  then show ?case
+    using func_psub_trms by auto
+qed
+
+lemma if_sub_not_eq_then_psub: 
+  assumes "t1 \<in> sub_trms t2" "t1 \<noteq> t2"
+  shows "t1 \<in> psub_trms t2"
+  using assms
+  by (induct t2) auto
+
+
+lemma depth_psub_trms: 
+  assumes "t1 \<in> psub_trms t2"
+  shows "depth t1 < depth t2"
+  using assms
+proof(induct t2)
+  case (Abst a t)
+  then show ?case
+    using depth.simps(4)[of a t]
+      psub_trms.simps(5)[of a t] if_sub_not_eq_then_psub
+    by fastforce
+next
+  case (Susp pi X)
+  then show ?case by simp
+next
+  case Unit
+  then show ?case by simp
+next
+  case (Atom a)
+  then show ?case by simp
+next
+  case (Paar t1' t2')
+  then show ?case 
+    using depth.simps(6)[of t1' t2'] 
+      psub_trms.simps(4) if_sub_not_eq_then_psub by fastforce
+next
+  case (Func f t1')
+  then show ?case
+    using depth.simps(5)[of f t1']
+      psub_trms.simps(6)[of f t1'] if_sub_not_eq_then_psub
+    by fastforce
+qed
 
 end

@@ -160,14 +160,6 @@ next
     by simp
 qed
 
-lemma perm_invariance: 
-assumes "\<forall>a \<in> ds pi pi'. nabla \<turnstile> a \<sharp> t"
-shows "nabla \<turnstile> swap pi t \<approx> swap pi' t"
-proof-
-  have "nabla \<turnstile> t \<approx> swap (rev pi @ pi') t"
-    using ds_rev equ_pi_right assms
-    by simp
-  oops
 
 lemma pi_comm: "nabla \<turnstile> (swap (pi @ [(a,b)]) t) \<approx> (swap ([(swapas pi a, swapas pi b)] @ pi) t)"
 proof(induct t)
@@ -240,31 +232,94 @@ next
     using Fresh_elims(6) by blast
 qed
 
-(*lemma equ_symm:
+
+(**)
+
+lemma equ_symm:
   shows "(nabla \<turnstile> t1 \<approx> t2) \<Longrightarrow> (nabla \<turnstile> t2 \<approx> t1)"
 proof(induction rule: equ.induct)
-  case (equ_abst_ab a b nabla t2 t1)
-  then show ?case sorry
+  case (equ_abst_ab a b nabla t2' t1')
+  have i: "nabla \<turnstile> b \<sharp> swap [(a, b)] t2'" 
+    using fresh_swap_eqvt[of nabla a t2' "[(a,b)]"] equ_abst_ab(2) by auto
+  with equ_abst_ab(4) 
+  have b_fresh: "nabla \<turnstile> b \<sharp> t1'"
+    using l3_jud by blast
+  from equ_abst_ab(4) 
+  have ii: "nabla \<turnstile> t2' \<approx> swap [(b, a)] t1'"
+    sorry
+  show ?case 
+    using equ.equ_abst_ab[OF equ_abst_ab(1)[symmetric] b_fresh ii] by simp
 next
-  case (equ_abst_aa nabla t1 t2 a)
-  then show ?case sorry
+  case (equ_abst_aa nabla t1' t2' a)
+  then show ?case 
+    using equ.equ_abst_aa[OF equ_abst_aa(2), of a] by simp
 next
   case (equ_unit nabla)
-  then show ?case sorry
+  then show ?case by auto
 next
   case (equ_atom a b nabla)
-  then show ?case sorry
+  then show ?case by auto
 next
   case (equ_susp pi1 pi2 X nabla)
-  then show ?case sorry
+  then show ?case 
+    using ds_sym by auto
 next
-  case (equ_paar nabla t1 t2 s1 s2)
-  then show ?case sorry
+  case (equ_paar nabla t1' t2' s1' s2')
+  then show ?case by auto
 next
-  case (equ_func nabla t1 t2 F)
-  then show ?case sorry
+  case (equ_func nabla t1' t2' f)
+  then show ?case 
+    using equ.equ_func[OF equ_func(2), of f] by simp
 qed
-*)
+
+
+lemma equ_trans: 
+  shows "(nabla \<turnstile> t1 \<approx> t2)\<and>(nabla \<turnstile> t2 \<approx> t3) \<Longrightarrow> (nabla \<turnstile> t1 \<approx> t3)"
+  sorry
+
+lemma equ_equivariance:
+  assumes "n = depth t1"
+  shows "(nabla \<turnstile> t1 \<approx> t2) \<Longrightarrow> (nabla \<turnstile> swap pi t1 \<approx> swap pi t2)"
+  using assms
+proof(induction n arbitrary: t1 t2 rule: nat_less_induct)
+  case (1 n)
+  then show ?case
+proof(cases rule: equ.cases[OF \<open>nabla \<turnstile> t1 \<approx> t2\<close>])
+  case (1 a b nabla t2' t1')
+  then show ?thesis sorry
+next
+  case (2 nabla t1' t2' a)
+  then show ?thesis sorry
+next
+  case (3 nabla)
+  then show ?thesis sorry
+next
+  case (4 a b nabla)
+  then show ?thesis sorry
+next
+  case (5 pi1 pi2 X nabla)
+  then show ?thesis sorry
+next
+  case (6 nabla t1' t2' s1' s2')
+  have depths: "depth t1' < n" "depth s1' < n"
+    using 1(3) 6(2) depth.simps(6)
+    by auto
+  then have "nabla \<turnstile> swap pi t1' \<approx> swap pi t2'" "nabla \<turnstile> swap pi s1' \<approx> swap pi s2'"
+    using 1(1) 6(1,4,5)
+    by auto
+  then have "nabla \<turnstile> Paar (swap pi t1') (swap pi s1') \<approx> Paar (swap pi t2') (swap pi s2')"
+    using equ_paar
+    by simp
+  then have "nabla \<turnstile> swap pi (Paar  t1' s1') \<approx> swap pi (Paar  t2' s2')"
+    using swap.simps(5) by simp
+  with 6(1,2,3) show ?thesis by simp
+next
+  case (7 nabla t1' t2' f)
+  then show ?thesis sorry
+qed
+qed
+
+(**)
 
 lemma big: 
   assumes "n = depth t1"
@@ -399,25 +454,17 @@ proof(induction n arbitrary: t1 t2 t3 rule: nat_less_induct)
       by auto
   next
     case (6 nabla t1' t2' s1' s2')
-    from this 
-    have depths1: "depth t1' < depth t1" "depth s1' < depth t1" 
-        using depth.simps(6) by auto
-      then have depths2: "depth t2' < depth t1" "depth s2' < depth t1"
-       using equ_depth "6"(4,5) by auto
-    then have "nabla \<turnstile> t2' \<approx> t1'"
-      using "1.prems" "6"(1,4,5) IH_usable(1) depths1
-      by blast
-    then have par1: "nabla \<turnstile> swap pi t2' \<approx> swap pi t1'" 
-      using 6(1) "1.prems"  depths2  IH_usable(2)[of t2' t1' pi] 
-      by simp
-    from depths1 have "nabla \<turnstile> s2' \<approx> s1'"
-      using "1.prems" "6"(1,4,5) IH_usable(1) by auto
-    then have par2: "nabla \<turnstile> swap pi s2' \<approx> swap pi s1'" 
-      using 6(1) "1.prems"  depths2  IH_usable(2)[of s2' s1' pi] 
-      by simp
-    from par1 par2 show ?thesis 
-      using 6 "1.prems" IH_usable(1) depths2 equ_paar swap.simps(5) swap_depth
-      by presburger
+     have depths: "depth t1' < n" "depth s1' < n"
+       using "1.prems" 6(2) depth.simps(6) by simp+
+     then have "nabla \<turnstile> swap pi t1' \<approx> swap pi t2'" "nabla \<turnstile> swap pi s1' \<approx> swap pi s2'"
+       using "1.IH" 6(1,4,5) by blast+
+     then have "nabla \<turnstile> Paar (swap pi t1') (swap pi s1') \<approx> Paar (swap pi t2') (swap pi s2')"
+       using equ_paar
+       by simp
+     then have "nabla \<turnstile> swap pi (Paar  t1' s1') \<approx> swap pi (Paar  t2' s2')"
+       using swap.simps(5) by simp
+     with 6(1,2,3)
+     show ?thesis by simp
   next
     case (7 nabla t1' t2' f)
     from this have "depth t1' < depth t1"
@@ -838,7 +885,7 @@ Goal:  nabla \<turnstile> Abs a t1' \<approx> Abst c t3'
 
 
 lemma pi_right_equ_help:
-  assumes "(n=depth t)"
+  assumes "(n = depth t)"
   shows "nabla \<turnstile> t \<approx> swap pi t \<Longrightarrow> \<forall> a \<in> ds [] pi. nabla \<turnstile> a \<sharp> t"
   using assms
 proof(induction n arbitrary: t pi rule: nat_less_induct)
@@ -869,9 +916,13 @@ proof(induction n arbitrary: t pi rule: nat_less_induct)
           using fresh_abst_ab by blast
         have b_fresh_abst_t1: "nabla \<turnstile> b \<sharp> Abst b t1"
           using fresh_abst_aa by simp
-        with ds_minus_b have "\<forall> a \<in> ds [] pi. nabla \<turnstile> a \<sharp> Abst b t1"
-          using member_remove remove_def
-          by metis
+        have "\<forall> a \<in> ds [] pi. nabla \<turnstile> a \<sharp> Abst b t1"
+        proof(rule, goal_cases)
+          case (1 a)
+          then show ?case
+            using b_fresh_abst_t1 ds_minus_b
+            by (cases "a=b", auto)
+        qed
         with 1 show ?thesis
           by auto
     next

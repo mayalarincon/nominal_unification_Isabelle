@@ -4,11 +4,11 @@ begin
 
 (* theory about swappings *)
 
-fun swapa   :: "(string \<times> string) \<Rightarrow> string \<Rightarrow> string"
+fun swapa :: "(string \<times> string) \<Rightarrow> string \<Rightarrow> string"
   where
   "swapa (b,c) a = (if b = a then c else (if c = a then b else a))"
 
-fun swapas  :: "(string \<times> string)list \<Rightarrow> string \<Rightarrow> string"
+fun swapas:: "(string \<times> string) list \<Rightarrow> string \<Rightarrow> string"
   where
   "swapas []     a = a"
 | "swapas (x#pi) a = swapa x (swapas pi a)"
@@ -19,7 +19,7 @@ lemma [simp]:
 
 lemma swapas_append: 
   shows "swapas (pi1@pi2) a = swapas pi1 (swapas pi2 a)"
-  by (induct_tac pi1)(auto)
+  by (induct pi1) auto
  
 lemma [simp]: 
   shows "swapas (rev pi) (swapas pi a) = a"
@@ -30,7 +30,7 @@ done
 lemma swapas_rev_pi_a: 
   assumes "swapas pi a = b"
   shows "swapas (rev pi) b = a"
-using assms by(auto)
+using assms by auto
 
 
 lemma [simp]: 
@@ -40,7 +40,7 @@ lemma [simp]:
 lemma swapas_rev_pi_b: 
   assumes "swapas (rev pi) a = b"
   shows "swapas pi b = a"
-using assms by(auto)
+using assms by auto
 
 lemma swapas_comm: 
   shows "(swapas (pi@[(a,b)]) c) = (swapas ([(swapas pi a,swapas pi b)]@pi) c)"
