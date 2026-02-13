@@ -78,21 +78,23 @@ qed
 
 lemma equ_involutive_right: 
   "nabla \<turnstile> t1 \<approx> swap (rev pi) (swap pi t2) = nabla \<turnstile> t1 \<approx> t2"
-apply(simp only: swap_append[THEN sym])
-apply(simp only: equ_pi_to_left[THEN sym])
-apply(simp)
-apply(simp only: swap_append)
-apply(simp only: equ_involutive_left)
-done
+  using equ_dec_pi[of nabla pi t1 t2] equ_add_pi[of nabla t1 t2 pi] 
+    equ_pi_to_right[of nabla t1 pi \<open>swap pi t2\<close>]
+  by auto
 
 lemma equ_pi1_pi2_add: 
   "(\<forall>a\<in> ds pi1 pi2. nabla\<turnstile>a\<sharp>t) \<Longrightarrow> (nabla\<turnstile>swap pi1 t \<approx> swap pi2 t)"
-apply(simp only: equ_pi_to_right[THEN sym])
-apply(simp only: swap_append[THEN sym])
-apply(rule equ_pi_right)
-apply(auto)
-apply(simp only: ds_rev)
-done
+proof-
+  assume "(\<forall>a\<in> ds pi1 pi2. nabla\<turnstile>a\<sharp>t)"
+  hence "nabla \<turnstile> t \<approx> swap (rev pi1 @ pi2) t" 
+    using ds_rev equ_pi_right by simp
+  hence "nabla \<turnstile> t \<approx> swap (rev pi1) (swap pi2 t)"
+    using swap_append by auto
+  then show "nabla\<turnstile>swap pi1 t \<approx> swap pi2 t"
+    using equ_pi_to_right by simp
+qed
+
+
 
 lemma pi_right_equ: "(nabla \<turnstile> t \<approx> swap pi t) \<Longrightarrow> (\<forall>a\<in> ds [] pi. nabla \<turnstile> a \<sharp> t)"
   using pi_right_equ_help by blast
@@ -100,11 +102,15 @@ lemma pi_right_equ: "(nabla \<turnstile> t \<approx> swap pi t) \<Longrightarrow
 
 lemma equ_pi1_pi2_dec:  
   "(nabla \<turnstile> swap pi1 t \<approx> swap pi2 t) \<Longrightarrow> (\<forall> a \<in> ds pi1 pi2. nabla\<turnstile>a \<sharp> t)"
-apply(simp only: equ_pi_to_right[THEN sym])
-apply(simp only: swap_append[THEN sym])
-apply(drule pi_right_equ)
-apply(simp only: ds_rev)
-done
+proof-
+  assume assm: "nabla \<turnstile> swap pi1 t \<approx> swap pi2 t"
+  then have "nabla \<turnstile> t \<approx> swap ((rev pi1) @ pi2) t"
+    using equ_pi_to_right swap_append by simp
+  hence "\<forall>a\<in>ds [] (rev pi1 @ pi2).  nabla \<turnstile> a \<sharp> t"
+    using pi_right_equ_help by simp
+  then show "\<forall> a \<in> ds pi1 pi2. nabla\<turnstile>a \<sharp> t"
+    using ds_rev by simp
+qed
 
 lemma equ_weak: 
   "nabla1 \<turnstile> t1 \<approx> t2 \<Longrightarrow> (nabla1 \<union> nabla2) \<turnstile> t1 \<approx> t2"
@@ -119,7 +125,7 @@ lemma psub_trm_not_equ:
   "\<forall> t2 \<in> psub_trms t1. (\<not>(\<exists> pi. (nabla \<turnstile> t1 \<approx> swap pi t2)))"
 proof
   fix t2
-  assume A: "t2 \<in> psub_trms t1"
+  assume i: "t2 \<in> psub_trms t1"
   show "\<not> (\<exists>pi. nabla \<turnstile> t1 \<approx> swap pi t2)"
   proof
     assume "\<exists>pi. nabla \<turnstile> t1 \<approx> swap pi t2"
@@ -127,12 +133,13 @@ proof
       "nabla \<turnstile> t1 \<approx> swap pi t2" by blast
 
     from equ_depth[OF H]
-    have "depth t1 = depth (swap pi t2)" .
-
-    hence "depth t1 = depth t2" by simp
-
+    have "depth t1 = depth (swap pi t2)"
+      by simp
+    hence "depth t1 = depth t2" 
+      by simp
     moreover have "depth t2 < depth t1"
-      using A by (rule depth_psub_trms)
+      using i depth_psub_trms 
+      by simp
 
     ultimately show False by auto
   qed
