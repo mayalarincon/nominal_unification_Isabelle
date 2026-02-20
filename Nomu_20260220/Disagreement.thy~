@@ -122,6 +122,12 @@ lemma ds_pi_rev_id:
   using ds_rev_pi_id[of \<open>rev pi\<close>] rev_rev_ident[of pi]
   by simp
 
+lemma ds_swapas_eq:
+"ds pi1 pi2 = {} \<Longrightarrow> swapas pi1 a = swapas pi2 a"
+  using ds_elem[of \<open>rev pi1 @ pi2\<close>] ds_rev[of pi1 pi2] 
+  empty_iff[of a] swapas_append[of \<open>rev pi1\<close> pi2 a] swapas_inv by metis
+
+
 (* disagreement set as list *)
 
  

@@ -82,5 +82,23 @@ lemma fresh_weak:
   using assms
   by(induct rule: fresh.induct)(auto)
 
+lemma ds_empty_fresh_1:
+  assumes "ds pi1 pi2 = {}"
+  shows "nabla \<turnstile> swapas pi1 a \<sharp> t \<Longrightarrow> nabla \<turnstile> swapas pi2 a \<sharp> t"
+  using assms ds_swapas_eq by simp
+
+lemma ds_empty_fresh_2:
+  assumes "ds pi1 pi2 = {}"
+  shows "nabla \<turnstile> a \<sharp> swap pi1 t \<Longrightarrow> nabla \<turnstile> a \<sharp> swap pi2 t"
+  using assms 
+proof-
+  assume assm1: "nabla \<turnstile> a \<sharp> swap pi1 t"
+  have i: "swapas (rev pi1) a = swapas (rev pi2) a"
+    using assms ds_swapas_eq swapas_rev_pi_a by metis
+  with assms have ii: "nabla \<turnstile> swapas (rev pi2) a \<sharp> t"
+    using fresh_swap_left[OF assm1] i by simp
+  show ?thesis 
+    using fresh_swap_right[OF ii] by simp
+qed
 
 end 

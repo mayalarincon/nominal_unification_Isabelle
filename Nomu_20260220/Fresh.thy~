@@ -73,7 +73,8 @@ qed (auto elim: Fresh_elims)
 lemma fresh_swap_right: 
   assumes "nabla \<turnstile> swapas (rev pi) a \<sharp> t"
   shows "nabla \<turnstile> a \<sharp> swap pi t"
-  using assms fresh_swap_eqvt swapas_rev_pi_b by metis
+  using assms fresh_swap_eqvt[of nabla \<open>swapas (rev pi) a\<close> t pi] 
+    swapas_rev_swapas_id[of pi a] by simp
 
 lemma fresh_weak: 
   assumes "nabla1 \<turnstile> a \<sharp> t"
