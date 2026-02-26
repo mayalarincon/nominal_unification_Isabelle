@@ -32,10 +32,13 @@ lemma equ_depth:
 
 
 lemma rev_pi_pi_equ: "(nabla \<turnstile> swap (rev pi) (swap pi t) \<approx> t)"
-apply(induct t)
-       apply(auto)
-  using ds_cancel_pi_left[of _ \<open>rev pi @ pi\<close> _ \<open>[]\<close>]
-    ds_rev_pi_pi elem_ds by fastforce
+proof(induct t)
+  case (Susp pi' X)
+  then show ?case 
+    using ds_cancel_pi_left[of _ \<open>rev pi @ pi\<close> _ \<open>[]\<close>]
+    ds_rev_pi_pi elem_ds ds_rev_pi_id by auto
+qed (auto)
+  
 
 lemma equ_pi_right: 
   assumes "\<forall>a \<in> ds [] pi. nabla \<turnstile> a \<sharp> t"
@@ -314,7 +317,7 @@ lemma ds_empty_equiv_2:
   assumes "ds pi1 pi2 = {}"
   shows "nabla \<turnstile> t1 \<approx> swap pi1 t2 \<Longrightarrow> nabla \<turnstile> t1 \<approx> swap pi2 t2"
 using assms
-proof(induction t2 arbitrary: t1)
+proof(induction t2 arbitrary: pi1 pi2 t1)
   case (Abst b t2')
   then obtain a t1'
     where t1: "t1 = Abst a t1'"
@@ -335,16 +338,26 @@ proof(induction t2 arbitrary: t1)
       using t1 by simp
   next
     case False
-    then have equ_ab_pi1: "nabla \<turnstile> t1' \<approx> swap [(a, swapas pi1 b)] (swap pi1 t2')" 
+    then have equ_ab: "nabla \<turnstile> t1' \<approx> swap [(a, swapas pi1 b)] (swap pi1 t2')" 
       and fresh_ab_pi1: "nabla \<turnstile> a \<sharp> swap pi1 t2'"
       using i Equ_elims(7) by blast+
-    have equ_ab_pi2: "nabla \<turnstile> t1' \<approx> swap [(a, swapas pi2 b)] (swap pi2 t2')"
-      using equ_ab_pi1 ds_swapas_eq
-        Abst(1,3) sorry 
+
+    then have equ_ab_pi1: "nabla \<turnstile> t1' \<approx> swap ([(a, swapas pi1 b)]@ pi1) t2'"
+      using swap_append[of \<open>[(a, swapas pi1 b)]\<close> pi1 t2'] by simp
+
+    have ds_empty: "ds ([(a, swapas pi1 b)] @ pi1) ([(a, swapas pi2 b)] @ pi2) = {}"
+      using Abst(3) ds_swapas_eq[OF Abst(3), of b] 
+        ds_cancel_pi_front[of \<open>[(a, swapas pi1 b)]\<close> pi1 pi2] by simp
+    
+    hence "nabla \<turnstile> t1' \<approx> swap ([(a, swapas pi2 b)]@ pi2) t2'"
+      using Abst(1)[OF equ_ab_pi1 ds_empty] by simp
+    hence equ_ab_pi2: "nabla \<turnstile> t1' \<approx> swap [(a, swapas pi2 b)] (swap pi2 t2')"
+      using swap_append[of \<open>[(a, swapas pi2 b)]\<close> pi2 t2'] by simp
+
     have fresh_ab_pi2: "nabla \<turnstile> a \<sharp> swap pi2 t2'"
-      using ds_empty_fresh_2[OF assms fresh_ab_pi1] by simp
+      using ds_empty_fresh_2 Abst(3) fresh_ab_pi1 by auto
     with equ_ab_pi2 have "nabla \<turnstile> Abst a t1' \<approx> Abst (swapas pi2 b) (swap pi2 t2')"
-      using equ_abst_ab ds_swapas_eq False assms by auto 
+      using equ_abst_ab ds_swapas_eq False assms Abst(3) by auto
     then show ?thesis using t1 by simp
   qed
 next
@@ -368,7 +381,7 @@ next
 next
   case (Atom a)
   then show ?case
-    using ds_swapas_eq[OF assms] by (auto elim: equ.cases)
+    using ds_swapas_eq by (auto elim: equ.cases)
 next
   case (Paar t11 t12)
   then show ?case by (auto elim: equ.cases)
@@ -808,7 +821,7 @@ proof(induction \<open>depth t1\<close> arbitrary: t1 t2 t3 rule: nat_less_induc
 lemma pi_right_equ_help:
   assumes "(n = depth t)"
   shows "nabla \<turnstile> t \<approx> swap pi t \<Longrightarrow> \<forall> a \<in> ds [] pi. nabla \<turnstile> a \<sharp> t"
-  using assms
+  using assms 
 proof(induction n arbitrary: t pi rule: nat_less_induct)
   case (1 n)
   note IH = this

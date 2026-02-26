@@ -177,7 +177,7 @@ apply(ind_cases "P1 \<turnstile> nabla \<rightarrow> P2")
 apply(simp_all add: lex_prod_def)
 sorry
 
-lemma rank_sred: "\<lbrakk>P1\<turnstile> s \<leadsto>P2\<rbrakk>\<Longrightarrow>(rank P2) \<lless> (rank P1)"
+lemma rank_sred: "\<lbrakk>P1\<turnstile>(s)\<leadsto>P2\<rbrakk>\<Longrightarrow>(rank P2) \<lless> (rank P1)"
 apply(ind_cases "P1 \<turnstile> s \<leadsto> P2")
           apply(simp_all add: lex_prod_def union_comm)
 
@@ -195,7 +195,7 @@ apply(simp_all add: apply_subst_def vars_decrease)
 done*)
 
 
-lemma rank_trans: "\<lbrakk>rank P1 \<lless> rank P2; rank P2 \<lless> rank P3\<rbrakk>\<Longrightarrow> rank P1 \<lless> rank P3"
+lemma rank_trans: "\<lbrakk>rank P1 \<lless> rank P2; rank P2 \<lless> rank P3\<rbrakk>\<Longrightarrow>rank P1 \<lless> rank P3"
   using measure_relation_def trans_less_than trans_lex_prod transE by metis
 
 (* all reduction are well-founded under \<lless> *)

@@ -32,10 +32,13 @@ lemma equ_depth:
 
 
 lemma rev_pi_pi_equ: "(nabla \<turnstile> swap (rev pi) (swap pi t) \<approx> t)"
-apply(induct t)
-       apply(auto)
-  using ds_cancel_pi_left[of _ \<open>rev pi @ pi\<close> _ \<open>[]\<close>]
-    ds_rev_pi_pi elem_ds by fastforce
+proof(induct t)
+  case (Susp pi' X)
+  then show ?case 
+    using ds_cancel_pi_left[of _ \<open>rev pi @ pi\<close> _ \<open>[]\<close>]
+    ds_rev_pi_pi elem_ds ds_rev_pi_id by auto
+qed (auto)
+  
 
 lemma equ_pi_right: 
   assumes "\<forall>a \<in> ds [] pi. nabla \<turnstile> a \<sharp> t"
@@ -294,20 +297,11 @@ next
     using equ_susp by simp
   then show ?case using t2 swap.simps(3) by simp
 next
-  case Unit
-  then show ?case by simp
-next
   case (Atom a)
   then show ?case
     using ds_swapas_eq[OF Atom(2), of a]
     by (auto elim: equ.cases)
-next
-  case (Paar t11 t12)
-  then show ?case by (auto elim: equ.cases)
-next
-  case (Func f t1')
-  then show ?case by (auto elim: equ.cases)
-qed
+qed (auto elim: equ.cases)
 
 
 lemma ds_empty_equiv_2:
@@ -373,19 +367,10 @@ next
     using equ_susp by simp
   then show ?case using t1 swap.simps(3) by simp
 next
-  case Unit
-  then show ?case by simp
-next
   case (Atom a)
   then show ?case
     using ds_swapas_eq by (auto elim: equ.cases)
-next
-  case (Paar t11 t12)
-  then show ?case by (auto elim: equ.cases)
-next
-  case (Func f t1')
-  then show ?case by (auto elim: equ.cases)
-qed
+qed (auto elim: equ.cases)
 
 
 lemma equ_equivariance:
@@ -419,23 +404,10 @@ next
   then show ?case
     using equ.equ_abst_aa by simp
 next
-  case (equ_unit nabla)
-  then show ?case by auto
-next
-  case (equ_atom a b nabla)
-  then show ?case by auto
-   
-next
   case (equ_susp pi1 pi2 X nabla)
   then show ?case using ds_cancel_pi_front
     by auto
-next
-  case (equ_paar nabla t1 t2 s1 s2)
-  then show ?case by auto
-next
-  case (equ_func nabla t1 t2 F)
-  then show ?case by auto
-qed
+qed (auto)
 
 lemma swap_inv_side: 
   shows "nabla \<turnstile> swap pi t1 \<approx> t2 = nabla \<turnstile> t1 \<approx> swap (rev pi) t2"
@@ -612,23 +584,7 @@ proof(induction \<open>depth t1\<close> arbitrary: t1 t2 t3 rule: nat_less_induc
           
          from a_fresh_t3 is_equ show ?thesis
            using 1 equ_abst_aa(1,2) equ.equ_abst_ab by simp
-       next
-         case equ_unit
-         then show ?thesis using t12 by auto
-       next
-         case (equ_atom a b)
-         then show ?thesis using t12 by auto
-       next
-         case (equ_susp pi1 pi2 X)
-         then show ?thesis
-           using "1"(3) by auto
-       next
-         case (equ_paar t1 t2 s1 s2)
-         then show ?thesis using 1(3) by auto
-       next
-         case (equ_func t1 t2 F)
-         then show ?thesis using 1(3) by auto
-       qed
+       qed (auto simp add: 1 t12)
      next
        case (2 nabla t1' t2' a)
        have deptht1: "depth t1' < depth t1"
@@ -646,118 +602,34 @@ proof(induction \<open>depth t1\<close> arbitrary: t1 t2 t3 rule: nat_less_induc
            case (equ_abst_aa t2' t3' a)
            then show ?thesis 
              using 1 2(1,2,3,4) by auto
-         next
-           case equ_unit
-           then show ?thesis using 2(3) by auto
-         next
-           case (equ_atom a b)
-           then show ?thesis using 2(3) by auto
-         next
-           case (equ_susp pi1 pi2 X)
-           then show ?thesis using 2(3) by auto
-         next
-           case (equ_paar t1 t2 s1 s2)
-           then show ?thesis using 2(3) by auto
-         next
-           case (equ_func t1 t2 F)
-           then show ?thesis using 2(3) by auto
-         qed
+         qed (auto simp add: 2)
      next
        case (3 nabla)
-        from t23 show ?thesis 
+        from t23 show ?thesis
         proof(cases rule: equ.cases)
-          case (equ_abst_ab a b t2 t1)
-          then show ?thesis using 3(3) by simp
-        next
-          case (equ_abst_aa t1 t2 a)
-          then show ?thesis using 3(3) by simp
-        next
           case equ_unit
           then show ?thesis using t12 by auto
-        next
-          case (equ_atom a b)
-          then show ?thesis using 3(3) by simp
-        next
-          case (equ_susp pi1 pi2 X)
-          then show ?thesis using 3(3) by simp
-        next
-          case (equ_paar t1 t2 s1 s2)
-          then show ?thesis using 3(3) by simp
-        next
-          case (equ_func t1 t2 F)
-          then show ?thesis using 3(3) by simp
-        qed
+        qed (auto simp add: 3)
      next
        case (4 a b nabla)
         from t23 show ?thesis 
         proof(cases rule: equ.cases)
-          case (equ_abst_ab a b t2 t1)
-          then show ?thesis using 4(3) by simp
-        next
-          case (equ_abst_aa t1 t2 a)
-          then show ?thesis using 4(3) by simp
-        next
-          case equ_unit
-          then show ?thesis using 4(3) by simp
-        next
           case (equ_atom a b)
           then show ?thesis
             using t12 by auto
-        next
-          case (equ_susp pi1 pi2 X)
-          then show ?thesis using 4(3) by simp
-        next
-          case (equ_paar t1 t2 s1 s2)
-          then show ?thesis using 4(3) by simp
-        next
-          case (equ_func t1 t2 F)
-          then show ?thesis using 4(3) by simp
-        qed
+        qed (auto simp add: 4)
      next
        case (5 pi1 pi2 X nabla)
         from t23 show ?thesis 
         proof(cases rule: equ.cases)
-          case (equ_abst_ab a b t2 t1)
-          then show ?thesis using 5(3) by simp
-        next
-          case (equ_abst_aa t1 t2 a)
-          then show ?thesis using 5(3) by simp
-        next
-          case equ_unit
-          then show ?thesis using 5(3) by simp
-        next
-          case (equ_atom a b)
-          then show ?thesis using 5(3) by simp
-        next
           case (equ_susp pi1 pi2 X)
           then show ?thesis 
             using ds_trans 5 by blast
-        next
-          case (equ_paar t1 t2 s1 s2)
-          then show ?thesis using 5(3) by simp
-        next
-          case (equ_func t1 t2 F)
-          then show ?thesis using 5(3) by simp
-        qed
+        qed (auto simp add: 5)
      next
        case (6 nabla t1' t2' s1' s2')
         from t23 show ?thesis 
         proof(cases rule: equ.cases)
-          case (equ_abst_ab a b t2 t1)
-          then show ?thesis using 6(3) by simp
-        next
-          case (equ_abst_aa t1 t2 a)
-          then show ?thesis using 6(3) by simp
-        next
-          case equ_unit
-          then show ?thesis using 6(3) by simp
-        next
-          case (equ_atom a b)
-          then show ?thesis using 6(3) by simp
-        next
-          case (equ_susp pi1 pi2 X)
-          then show ?thesis using 6(3) by simp
-        next
           case (equ_paar t2' t3' s2' s3')
           have deptht1: "depth t1' < depth t1" 
             using 6(2) by simp
@@ -776,36 +648,15 @@ proof(induction \<open>depth t1\<close> arbitrary: t1 t2 t3 rule: nat_less_induc
          from t1_equal_t3 s1_equal_s3 show ?thesis 
            using equ.equ_paar[of nabla t1' t3' s1' s3'] 6(1,2) equ_paar(2)
            by simp
-        next
-          case (equ_func t1 t2 F)
-          then show ?thesis using 6(3) by simp
-        qed
+        qed (auto simp add: 6)
      next
        case (7 nabla t1 t2 F)
         from t23 show ?thesis 
        proof(cases rule: equ.cases)
-         case (equ_abst_ab a b t2 t1)
-         then show ?thesis using 7(3) by simp
-       next
-         case (equ_abst_aa t1 t2 a)
-         then show ?thesis using 7(3) by simp
-       next
-         case equ_unit
-         then show ?thesis using 7(3) by simp
-       next
-         case (equ_atom a b)
-         then show ?thesis using 7(3) by simp
-       next
-         case (equ_susp pi1 pi2 X)
-         then show ?thesis using 7(3) by simp
-       next
-         case (equ_paar t1 t2 s1 s2)
-         then show ?thesis using 7(3) by simp
-       next
          case (equ_func t1 t2 F)
          then show ?thesis 
            using 1 7(1,2,3,4) by auto
-       qed
+       qed (auto simp add: 7)
      qed
    qed
    then show ?case 
@@ -818,7 +669,7 @@ proof(induction \<open>depth t1\<close> arbitrary: t1 t2 t3 rule: nat_less_induc
 lemma pi_right_equ_help:
   assumes "(n = depth t)"
   shows "nabla \<turnstile> t \<approx> swap pi t \<Longrightarrow> \<forall> a \<in> ds [] pi. nabla \<turnstile> a \<sharp> t"
-  using assms
+  using assms 
 proof(induction n arbitrary: t pi rule: nat_less_induct)
   case (1 n)
   note IH = this

@@ -27,10 +27,10 @@ inductive_cases Fresh_elims:
 lemma fresh_swap_eqvt: 
   assumes "nabla \<turnstile> a \<sharp> t"
   shows "nabla \<turnstile> swapas pi a \<sharp> swap pi t"
-using assms
-  apply(induct arbitrary: pi rule: fresh.induct)
-  apply(auto simp add: swapas_append dest: swapas_rev_pi_a)
-done  
+  using assms
+  by (induct arbitrary: pi rule: fresh.induct)
+(auto simp add: swapas_append dest: swapas_rev_pi_a)
+
 
 lemma fresh_swap_left: 
   assumes "nabla \<turnstile> a \<sharp> swap pi t"
@@ -68,6 +68,7 @@ next
   then show "nabla \<turnstile> swapas (rev pi) a \<sharp> Atom x"
     by (simp add: fresh_atom) 
 qed (auto elim: Fresh_elims)
+
 
 
 lemma fresh_swap_right: 
