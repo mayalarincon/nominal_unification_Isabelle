@@ -8,7 +8,7 @@ begin
 type_synonym eprobs = "((trm \<times> trm) list)"
 type_synonym fprobs = "((string \<times> trm) list)"
 type_synonym probs = "eprobs \<times> fprobs"
-
+                                             
 fun vars_trm :: "trm \<Rightarrow> string set"
   where
 "vars_trm (Unit)       = {}" |
@@ -82,21 +82,13 @@ lemma union_comm: "A\<union>(B\<union>C)=(A\<union>B)\<union>C"
   by auto
 
 lemma card_union: "\<lbrakk>finite A; finite B\<rbrakk>\<Longrightarrow>(card B < card (A\<union>B)) \<or> (card B = card (A\<union>B))"
-apply(auto)
-apply(rule psubset_card_mono)
-apply(auto)
-done
+  using psubset_card_mono finite_Un inf_sup_ord(4) psubsetI by metis
 
 lemma card_insert: "\<lbrakk>finite B\<rbrakk>\<Longrightarrow>(card B < card (insert X B)) \<or> (card B = card (insert X B))"
-apply(auto)
-apply(rule psubset_card_mono)
-apply(auto)
-done
+ using psubset_card_mono card_insert_le order_le_imp_less_or_eq by fast
 
 lemma subseteq_card: "\<lbrakk>A\<subseteq>B ; finite B\<rbrakk> \<Longrightarrow> (card A \<le> card B)"
-apply(drule_tac A="A" in card_mono)
-apply(auto simp add: le_eq_less_or_eq)
-done
+  using card_mono le_eq_less_or_eq by auto
 
 lemma not_occurs_trm: "\<not>occurs X t \<longrightarrow> X\<notin> vars_trm t"
   by (induct t) auto
@@ -108,91 +100,105 @@ lemma not_occurs_list: "\<not> occurs X t \<longrightarrow>
   X \<notin> vars_eprobs (apply_subst_eprobs [(X, swap pi t)] xs)"
   using not_occurs_subst apply_subst_eprobs_def by (induct xs) auto
 
-lemma vars_equ: "\<not>occurs X t1 \<and> occurs X t2\<longrightarrow> 
-  vars_trm (subst [(X, swap pi t1)] t2)=(vars_trm t1\<union>vars_trm t2)-{X}"
-apply(induct_tac t2)
-       apply(force)
-  sorry
-(*apply(case_tac "X=list2")
-apply(simp add: subst_susp not_occurs_trm)
-apply(simp)
-apply(simp)
-apply(simp)
-apply(simp)
-apply(rule conjI)
-apply(case_tac "occurs X trm2")
-apply(force)
-apply(force dest: not_occurs_trm[THEN mp] simp add: subst_not_occurs)
-apply(force dest: not_occurs_trm[THEN mp] simp add: subst_not_occurs)
-apply(force)
-done*)
+lemma vars_equ: 
+  assumes "\<not>occurs X t1" and "occurs X t2"
+  shows "vars_trm (subst [(X, swap pi t1)] t2)=(vars_trm t1\<union>vars_trm t2)-{X}"
+  using assms
+proof(induct t2)
+  case (Susp pi X)
+  then show ?case sorry
+next
+  case (Paar t21 t22)
+  then show ?case
+    using not_occurs_trm subst_not_occurs by fastforce
+qed (simp_all)
 
-lemma vars_subseteq: "\<not>occurs X t \<longrightarrow>
-  vars_eprobs (apply_subst_eprobs [(X, swap pi t)] xs) \<subseteq> (vars_trm t \<union> vars_eprobs xs)"
-  sorry
-(*apply(induct_tac xs)
-apply(simp)
-apply(rule impI)
-apply(simp)
-apply(cases "occurs X (fst a)")
-apply(case_tac "occurs X (snd a)")
-apply(simp add: vars_equ[THEN mp])
-apply(force)
-apply(simp add: subst_not_occurs)
-apply(force simp add: vars_equ)
-apply(case_tac "occurs X (snd a)")
-apply(simp add: vars_equ[THEN mp])
-apply(force simp add: subst_not_occurs)
-apply(force simp add: subst_not_occurs)
-done*)
+
+lemma vars_subseteq:
+  assumes "\<not>occurs X t "
+  shows "vars_eprobs (apply_subst_eprobs [(X, swap pi t)] xs) \<subseteq> (vars_trm t \<union> vars_eprobs xs)"
+  using assms
+proof(induct xs)
+  case Nil
+  then show ?case sorry
+next
+  case (Cons a xs)
+  then show ?case sorry
+qed
+
 
 lemma vars_decrease: 
-  "\<not>occurs X t\<longrightarrow> card (vars_eprobs (apply_subst_eprobs [(X, swap pi t)] xs))
-                 <card (insert X (vars_trm t \<union> vars_eprobs xs))"
-apply(rule impI)
-apply(case_tac "X\<in>(vars_trm t \<union> vars_eprobs xs)")
-(* first case *)
-apply(subgoal_tac "insert X (vars_trm t \<union> vars_eprobs xs) = (vars_trm t \<union> vars_eprobs xs)") (*A*)
-apply(simp)
-apply(frule_tac pi1="pi" and xs1="xs" in vars_subseteq[THEN mp])
-apply(frule_tac pi1="pi" and xs1="xs" in not_occurs_list[THEN mp])
-apply(subgoal_tac "vars_eprobs (apply_subst_eprobs [(X, swap pi t)] xs)
-                   \<subset>  vars_trm t \<union> vars_eprobs xs") (* B *)
-apply(simp add: psubset_card_mono)
-(* B *)
-apply(force)
-(* A *)
-apply(force)
-(* second case *)
-apply(subgoal_tac "finite (vars_trm t \<union> vars_eprobs xs)")
-apply(drule_tac x="X" in card_insert_disjoint)
-apply(simp)
-apply(simp)
-apply(frule_tac pi1="pi" and xs1="xs" in vars_subseteq[THEN mp])
-apply(auto dest: subseteq_card)
-done
+  assumes "\<not>occurs X t"
+  shows "card (vars_eprobs (apply_subst_eprobs [(X, swap pi t)] xs))
+                 < card (insert X (vars_trm t \<union> vars_eprobs xs))"
+proof(cases "X \<in> (vars_trm t \<union> vars_eprobs xs)")
+  case True
+  then show ?thesis sorry
+next
+  case False
+  then show ?thesis sorry
+qed
 
-lemma rank_cred: "\<lbrakk>P1\<turnstile>(nabla)\<rightarrow>P2\<rbrakk>\<Longrightarrow>(rank P2) \<lless> (rank P1)"
-apply(ind_cases "P1 \<turnstile> nabla \<rightarrow> P2")
-apply(simp_all add: lex_prod_def)
-sorry
+lemma rank_cred: 
+  assumes "P1\<turnstile>(nabla)\<rightarrow>P2" 
+  shows "(rank P2) \<lless> (rank P1)"
+  using assms
+proof(cases rule: c_red.cases[OF \<open>P1 \<turnstile> nabla \<rightarrow> P2\<close>])
+  case (1 a xs)
+  then show ?thesis sorry
+next
+  case (2 a t1 t2 xs)
+  then show ?thesis sorry
+next
+  case (3 a F t xs)
+  then show ?thesis sorry
+next
+  case (4 a t xs)
+  then show ?thesis sorry
+next
+  case (5 a b t xs)
+  then show ?thesis sorry
+next
+  case (6 a b xs)
+  then show ?thesis sorry
+next
+  case (7 a pi X xs)
+  then show ?thesis sorry
+qed
 
-lemma rank_sred: "\<lbrakk>P1\<turnstile> s \<leadsto>P2\<rbrakk>\<Longrightarrow>(rank P2) \<lless> (rank P1)"
-apply(ind_cases "P1 \<turnstile> s \<leadsto> P2")
-          apply(simp_all add: lex_prod_def union_comm)
 
-  sorry
-(*apply(subgoal_tac 
-  "vars_trm s1\<union>vars_trm t1\<union>vars_trm s2\<union>vars_trm t2\<union>vars_eprobs xs = 
-   vars_trm s1\<union>vars_trm s2\<union>vars_trm t1\<union>vars_trm t2\<union>vars_eprobs xs") (*A*)
-apply(simp)
-(* A *)
-apply(force)
-(* Susp-Susp case *)
-apply(simp add: card_insert)
-(* variable elimination cases *)
-apply(simp_all add: apply_subst_def vars_decrease)
-done*)
+lemma rank_sred: 
+  assumes "P1\<turnstile> s \<leadsto>P2"
+  shows "(rank P2) \<lless> (rank P1)"
+  using assms
+proof(cases rule: s_red.cases[OF \<open>P1\<turnstile> s \<leadsto>P2\<close>])
+  case (1 xs ys)
+  then show ?thesis sorry
+next
+  case (2 t1 t2 s1 s2 xs ys)
+  then show ?thesis sorry
+next
+  case (3 F t1 t2 xs ys)
+  then show ?thesis sorry
+next
+  case (4 a t1 t2 xs ys)
+  then show ?thesis sorry
+next
+  case (5 a b t1 t2 xs ys)
+  then show ?thesis sorry
+next
+  case (6 a xs ys)
+  then show ?thesis sorry
+next
+  case (7 pi1 X pi2 xs ys)
+  then show ?thesis sorry
+next
+  case (8 X t pi xs ys)
+  then show ?thesis sorry
+next
+  case (9 X t pi xs ys)
+  then show ?thesis sorry
+qed
 
 
 lemma rank_trans: "\<lbrakk>rank P1 \<lless> rank P2; rank P2 \<lless> rank P3\<rbrakk>\<Longrightarrow> rank P1 \<lless> rank P3"
@@ -200,7 +206,7 @@ lemma rank_trans: "\<lbrakk>rank P1 \<lless> rank P2; rank P2 \<lless> rank P3\<
 
 (* all reduction are well-founded under \<lless> *)
 
-lemma rank_red_plus: "\<lbrakk>P1\<Turnstile>(s,nabla)\<Rightarrow>P2\<rbrakk>\<Longrightarrow>(rank P2) \<lless> (rank P1)"
+lemma rank_red_plus: "\<lbrakk>P1\<Turnstile> (s,nabla)\<Rightarrow>P2\<rbrakk> \<Longrightarrow>(rank P2) \<lless> (rank P1)"
 apply(erule red_plus.induct)
 apply(auto dest: rank_sred rank_cred rank_trans)
 done

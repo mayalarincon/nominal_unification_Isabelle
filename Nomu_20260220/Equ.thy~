@@ -8,11 +8,11 @@ lemma equ_refl:
   "nabla \<turnstile> t \<approx> t"
   by(induct t, auto simp add: ds_def)
 
-lemma 
-  equ_sym:    "nabla \<turnstile> t1 \<approx> t2 \<Longrightarrow> nabla \<turnstile> t2 \<approx> t1" and
+(*lemma 
+  equ_symm:    "nabla \<turnstile> t1 \<approx> t2 \<Longrightarrow> nabla \<turnstile> t2 \<approx> t1" and
   equ_trans:  "\<lbrakk>nabla \<turnstile> t1 \<approx> t2 ; nabla \<turnstile> t2 \<approx> t3\<rbrakk> \<Longrightarrow> nabla \<turnstile> t1 \<approx> t3" and
-  equ_add_pi: "nabla \<turnstile> t1 \<approx> t2 \<Longrightarrow> nabla \<turnstile> swap pi t1 \<approx> swap pi t2"
-  using big by blast+
+  equ_equivariance: "nabla \<turnstile> t1 \<approx> t2 \<Longrightarrow> nabla \<turnstile> swap pi t1 \<approx> swap pi t2"
+  using big by blast+*)
 
 
 lemma equ_dec_pi:
@@ -23,8 +23,8 @@ proof-
     using rev_pi_pi_equ by auto
   assume "nabla \<turnstile> swap pi t1 \<approx> swap pi t2"
   then have "nabla \<turnstile> swap (rev pi) (swap pi t1) \<approx> swap (rev pi) (swap pi t2)"
-    using equ_add_pi by simp
-  then show ?thesis using i equ_sym equ_trans by meson 
+    using equ_equivariance by simp
+  then show ?thesis using i equ_symm equ_trans by meson 
 qed
 
 
@@ -32,11 +32,11 @@ lemma equ_involutive_left:
   "nabla \<turnstile> swap (rev pi) (swap pi t1) \<approx> t2 = nabla \<turnstile> t1 \<approx> t2"
 proof(auto)
   have i: "nabla \<turnstile> t1 \<approx> swap (rev pi) (swap pi t1)"
-    using rev_pi_pi_equ equ_sym by blast
+    using rev_pi_pi_equ equ_symm by blast
   show "nabla \<turnstile> swap (rev pi) (swap pi t1) \<approx> t2 \<Longrightarrow> nabla \<turnstile> t1 \<approx> t2"
     using i equ_trans by blast
   show "nabla \<turnstile> t1 \<approx> t2 \<Longrightarrow> nabla \<turnstile> swap (rev pi) (swap pi t1) \<approx> t2"
-    using i equ_trans equ_sym by blast
+    using i equ_trans equ_symm by blast
 qed
 
 
@@ -46,14 +46,14 @@ proof
 
   {assume i: "nabla \<turnstile> swap (rev pi) t1 \<approx> t2"
   have "nabla \<turnstile> swap pi (swap (rev pi) t1) \<approx> swap pi t2"
-    using equ_add_pi[OF i, of pi] by simp
+    using equ_equivariance[OF i, of pi] by simp
   then show "nabla \<turnstile> t1 \<approx> swap pi t2"
     using equ_involutive_left[of nabla \<open>rev pi\<close> t1 \<open>swap pi t2\<close>] rev_rev_ident[of pi]
     by simp}
 
   {assume i: "nabla \<turnstile> t1 \<approx> swap pi t2"
   have ii: "nabla \<turnstile> swap (rev pi) t1 \<approx> swap (rev pi) (swap pi t2)"
-    using equ_add_pi[OF i, of \<open>rev pi\<close>] by simp
+    using equ_equivariance[OF i, of \<open>rev pi\<close>] by simp
   then have iii: "nabla \<turnstile> swap (rev pi) (swap pi t2) \<approx> swap (rev pi) t1"
     using equ_symm[OF ii] by simp
   then have iv: "nabla \<turnstile> t2 \<approx> swap (rev pi) t1"
@@ -72,13 +72,13 @@ proof
       using equ_involutive_left equ_dec_pi by blast}
   {assume ii: "nabla \<turnstile> swap pi t1 \<approx> t2"
     then show "nabla \<turnstile> t1 \<approx> swap (rev pi) t2"
-      using equ_involutive_left equ_add_pi by blast}
+      using equ_involutive_left equ_equivariance by blast}
 qed
 
 
 lemma equ_involutive_right: 
   "nabla \<turnstile> t1 \<approx> swap (rev pi) (swap pi t2) = nabla \<turnstile> t1 \<approx> t2"
-  using equ_dec_pi[of nabla pi t1 t2] equ_add_pi[of nabla t1 t2 pi] 
+  using equ_dec_pi[of nabla pi t1 t2] equ_equivariance[of nabla t1 t2 pi] 
     equ_pi_to_right[of nabla t1 pi \<open>swap pi t2\<close>]
   by auto
 

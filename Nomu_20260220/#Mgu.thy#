@@ -114,10 +114,10 @@ inductive c_red :: "problem_type \<Rightarrow> fresh_envs \<Rightarrow> problem_
 
 inductive red_plus :: "problem_type \<Rightarrow> unifier_type \<Rightarrow> problem_type \<Rightarrow> bool" ("_ \<Turnstile> _ \<Rightarrow> _ " [80,80,80] 80)
   where
-  sred_single[intro!]: "\<lbrakk>P1\<turnstile>s1\<leadsto>P2\<rbrakk>\<Longrightarrow>P1\<Turnstile>({},s1)\<Rightarrow>P2" |
-  cred_single[intro!]: "\<lbrakk>P1\<turnstile>nabla1\<rightarrow>P2\<rbrakk>\<Longrightarrow>P1\<Turnstile>(nabla1,[])\<Rightarrow>P2" |
-  sred_step[intro!]:   "\<lbrakk>P1\<turnstile>s1\<leadsto>P2;P2\<Turnstile>(nabla2,s2)\<Rightarrow>P3\<rbrakk>\<Longrightarrow>P1\<Turnstile>(nabla2,(s2\<bullet>s1))\<Rightarrow>P3" |
-  cred_step[intro!]:   "\<lbrakk>P1\<turnstile>nabla1\<rightarrow>P2;P2\<Turnstile>(nabla2,[])\<Rightarrow>P3\<rbrakk>\<Longrightarrow>P1\<Turnstile>(nabla2\<union>nabla1,[])\<Rightarrow>P3"
+  sred_single[intro!]: "\<lbrakk>P1\<turnstile>s1 \<leadsto> P2\<rbrakk> \<Longrightarrow> P1\<Turnstile>({},s1)\<Rightarrow>P2" |
+  cred_single[intro!]: "\<lbrakk>P1\<turnstile>nabla1\<rightarrow>P2\<rbrakk> \<Longrightarrow> P1 \<Turnstile> (nabla1,[]) \<Rightarrow> P2" |
+  sred_step[intro!]:   "\<lbrakk>P1\<turnstile>s1\<leadsto>P2; P2\<Turnstile>(nabla2,s2)\<Rightarrow>P3\<rbrakk> \<Longrightarrow> P1\<Turnstile>(nabla2,(s2\<bullet>s1))\<Rightarrow>P3" |
+  cred_step[intro!]:   "\<lbrakk>P1\<turnstile>nabla1\<rightarrow>P2; P2\<Turnstile>(nabla2,[])\<Rightarrow>P3\<rbrakk> \<Longrightarrow> P1\<Turnstile>(nabla2\<union>nabla1,[])\<Rightarrow>P3"
 
 
 lemma mgu_idem: 
@@ -666,9 +666,28 @@ next
 qed (auto simp add: ext_subst_def all_solutions_def fresh_weak)
 
 
-lemma P1_to_P2_red_plus: "\<lbrakk>P1 \<Turnstile>(nabla,s)\<Rightarrow>P2\<rbrakk>\<Longrightarrow> (nabla1,s1)\<in>U P1 \<longrightarrow>
-  ((nabla1,s1)\<in>U P2)\<and>(nabla1\<Turnstile>subst (s1\<bullet>s)\<approx>subst s1)\<and>(nabla1\<Turnstile>(subst s1) nabla)"
-  sorry
+lemma P1_to_P2_red_plus: 
+  assumes "P1 \<Turnstile>(nabla,s)\<Rightarrow>P2"
+    and  "(nabla1,s1)\<in>U P1"
+  shows "((nabla1,s1)\<in>U P2)\<and>(nabla1\<Turnstile>subst (s1\<bullet>s)\<approx>subst s1)\<and>(nabla1\<Turnstile>(subst s1) nabla)"
+  using assms
+proof(induction rule: red_plus.induct)
+  case (sred_single P1 s P2)
+  have i: "(nabla1, s1) \<in> U P2"  
+      "nabla1 \<Turnstile> subst (s1 \<bullet> s) \<approx> subst s1"
+    using P1_to_P2_sred[OF sred_single(2) sred_single(1)] by simp+
+  then show ?case sorry
+next
+  case (cred_single P1 nabla1 P2)
+  then show ?case sorry
+next
+  case (sred_step P1 s1 P2 nabla2 s2 P3)
+  then show ?case sorry
+next
+  case (cred_step P1 nabla1 P2 nabla2 P3)
+  then show ?case sorry
+qed
+
 
 lemma P1_from_P2_red_plus: "\<lbrakk>P1 \<Turnstile>(nabla,s)\<Rightarrow>P2\<rbrakk>\<Longrightarrow>(nabla1,s1)\<in>U P2\<longrightarrow>
         nabla3\<Turnstile>(subst s1)(nabla)\<longrightarrow>(nabla1\<union>nabla3,(s1\<bullet>s))\<in>U P1"

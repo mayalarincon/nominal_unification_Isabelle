@@ -8,12 +8,6 @@ lemma equ_refl:
   "nabla \<turnstile> t \<approx> t"
   by(induct t, auto simp add: ds_def)
 
-(*lemma 
-  equ_symm:    "nabla \<turnstile> t1 \<approx> t2 \<Longrightarrow> nabla \<turnstile> t2 \<approx> t1" and
-  equ_trans:  "\<lbrakk>nabla \<turnstile> t1 \<approx> t2 ; nabla \<turnstile> t2 \<approx> t3\<rbrakk> \<Longrightarrow> nabla \<turnstile> t1 \<approx> t3" and
-  equ_equivariance: "nabla \<turnstile> t1 \<approx> t2 \<Longrightarrow> nabla \<turnstile> swap pi t1 \<approx> swap pi t2"
-  using big by blast+*)
-
 
 lemma equ_dec_pi:
   "nabla \<turnstile> swap pi t1 \<approx> swap pi t2 \<Longrightarrow> nabla \<turnstile> t1 \<approx> t2"

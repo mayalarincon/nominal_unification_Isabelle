@@ -53,6 +53,10 @@ lemma subst_equ_symm:
   using assms equ_symm subst_equ_def[of nabla s1 s2]
     subst_equ_def[of nabla s2 s1] Un_commute[of \<open>domn s1\<close> \<open>domn s2\<close>] by blast
 
+lemma subst_equ_refl:
+  shows "nabla \<Turnstile> s \<approx> s"
+  using equ_refl subst_equ_def Un_absorb by simp
+
 lemma not_in_domn: "X \<notin> (domn s)\<Longrightarrow> (s (Susp [] X)) = (Susp [] X)"
   using domn_def by simp
 
@@ -150,47 +154,71 @@ next
     by fastforce
 qed (auto)
 
-
-
 lemma unif_1: 
   assumes "nabla \<turnstile> subst s (Susp pi X) \<approx> subst s t"
   shows "nabla \<Turnstile> subst (s \<bullet> [(X, swap (rev pi) t)]) \<approx> subst s"
   using assms
-apply(simp only: subst_equ_def)
-  apply(case_tac "pi=[]")
-   apply(simp add: subst_susp comp_def)
-   apply(force intro: equ_symm equ_refl)
-  apply(subgoal_tac "domn (subst (s\<bullet>[(X,swap (rev pi) t)]))=domn(subst s)\<union>{X}")
-   apply(simp)
-   apply(rule conjI)
-    apply(simp add: subst_comp_expand)
-    apply(simp add: subst_susp)
-    apply(simp only: subst_swap_comm)
-    apply(simp only: equ_pi_to_left)
-    apply(rule equ_symm)
-    apply(assumption)
-   apply(rule ballI)
-   apply(simp only: subst_comp_expand)
-   apply(simp add: subst_susp)
-   apply(force intro: equ_symm equ_refl simp add: subst_swap_comm equ_pi_to_left)
-  apply(simp only: domn_def)
-  apply(auto)
-    apply(simp add: subst_comp_expand)
-    apply(simp add: subst_susp subst_swap_comm)
-   apply(simp only: subst_comp_expand)
-   apply(simp add: subst_susp subst_swap_comm)
-   apply(drule swap_empty)
-   apply(simp)
-  apply(simp only: subst_comp_expand)
-  apply(simp only: subst_susp)
-  apply(auto)
-  apply(case_tac "x=X")
-   apply(simp)
-   apply(simp add: subst_swap_comm)
-   apply(drule swap_empty)
-   apply(simp)
-  apply(simp add: subst_susp)
-  done
+  apply(simp only: subst_equ_def)
+proof
+  fix Xa
+  assume hyps: "nabla \<turnstile> subst s (Susp pi X) \<approx> subst s t"
+   "Xa \<in> domn (subst (s \<bullet> [(X, swap (rev pi) t)])) \<union> domn (subst s)"
+  show "nabla \<turnstile> subst (s \<bullet> [(X, swap (rev pi) t)]) (Susp [] Xa) \<approx> subst s (Susp [] Xa)"
+  proof-
+    have one: 
+      "nabla \<turnstile> subst (s \<bullet> [(X, swap (rev pi) t)]) (Susp pi Xa) \<approx> 
+       subst s (subst [(X, swap (rev pi) t)] (Susp pi Xa))"
+      using subst_comp_expand equ_refl by simp
+    have two: 
+      "nabla \<turnstile> subst s (subst [(X, swap (rev pi) t)] (Susp pi Xa)) \<approx> 
+      subst s (swap pi (look_up Xa [(X, swap (rev pi) t)]))"
+      using equ_refl subst_susp[of \<open>[(X, swap (rev pi)t)]\<close> pi Xa] 
+      by simp
+    have "nabla \<turnstile> subst (s \<bullet> [(X, swap (rev pi) t)]) (Susp pi Xa) \<approx> 
+    subst s (swap pi (look_up Xa [(X, swap (rev pi) t)]))"
+      using equ_trans[OF one two] by simp
+    hence  "nabla \<turnstile> swap pi (look_up Xa (s \<bullet> [(X, swap (rev pi) t)])) \<approx> 
+    subst s (swap pi (look_up Xa [(X, swap (rev pi) t)]))"
+      using subst_susp[of \<open>(s \<bullet> [(X, swap (rev pi) t)])\<close>] by simp
+    hence swap_pi_outside:  "nabla \<turnstile> swap pi (look_up Xa (s \<bullet> [(X, swap (rev pi) t)])) \<approx> 
+    swap pi (subst s (look_up Xa [(X, swap (rev pi) t)]))"
+      using subst_swap_comm by simp
+    hence "nabla \<turnstile> (look_up Xa (s \<bullet> [(X, swap (rev pi) t)])) \<approx> 
+    (subst s (look_up Xa [(X, swap (rev pi) t)]))"
+      using equ_dec_pi[OF swap_pi_outside] by simp
+    hence three: 
+    "nabla \<turnstile> subst (s \<bullet> [(X, swap (rev pi) t)]) (Susp [] Xa) \<approx> 
+    (subst s (look_up Xa [(X, swap (rev pi) t)]))" 
+      using subst_susp by simp
+    then show ?thesis
+      proof(cases "Xa = X")
+        case True
+        hence "subst s (look_up Xa [(X, swap (rev pi) t)]) = subst s (swap (rev pi) t)"
+          by simp
+        with three have
+          "nabla \<turnstile> subst (s \<bullet> [(X, swap (rev pi) t)]) (Susp [] Xa) \<approx> swap (rev pi) (subst s t)"
+          using subst_swap_comm by auto
+        hence i: "nabla \<turnstile> swap pi (subst (s \<bullet> [(X, swap (rev pi) t)]) (Susp [] Xa))
+          \<approx> subst s t" using swap_inv_side by simp
+        hence "nabla \<turnstile> swap pi (subst (s \<bullet> [(X, swap (rev pi) t)]) (Susp [] Xa))
+          \<approx> subst s (Susp pi Xa)"
+          using True equ_trans[OF i equ_symm[OF assms(1)]] by simp
+        hence "nabla \<turnstile> swap pi (subst (s \<bullet> [(X, swap (rev pi) t)]) (Susp [] Xa))
+          \<approx> swap pi (look_up Xa s)"
+          using subst_susp by simp
+        then show "nabla \<turnstile> (subst (s \<bullet> [(X, swap (rev pi) t)]) (Susp [] Xa))
+          \<approx> subst s (Susp [] Xa)"
+          using equ_dec_pi subst_susp by simp
+      next
+        case False
+        hence "subst s (look_up Xa [(X, swap (rev pi) t)]) = subst s (Susp [] Xa)"
+          by simp
+        with three show ?thesis by auto
+      qed
+    qed
+  qed
+
+
 
 lemma subst_equ_a:
   assumes "nabla \<Turnstile> (subst s1) \<approx> (subst s2)"
@@ -199,41 +227,102 @@ lemma subst_equ_a:
   using assms
 proof(induct t1 arbitrary: t2)
   case (Abst a t1')
-  then show ?case
-    using subst_abst equ_abst_aa equ_refl equ_trans
-    by metis
+  then obtain t2' b 
+    where t2: "t2 = Abst b t2'"
+    by(auto elim: equ.cases)
+  with Abst(3) have
+    i: "nabla \<turnstile> Abst a (subst s2 t1') \<approx> Abst b t2'"
+    using subst_abst by simp
+  then show ?case 
+  proof(cases "a=b")
+    case True
+    hence "nabla \<turnstile> (subst s2 t1') \<approx> t2'" 
+      using Equ_elims(7)[OF i] by auto
+    with Abst(1)[OF Abst(2), of t2']
+    have "nabla \<turnstile> subst s1 t1' \<approx> t2'" 
+      by simp
+    hence "nabla \<turnstile> Abst a (subst s1 t1') \<approx> Abst b t2'"
+      using True equ_abst_aa by simp
+    with t2 show ?thesis
+      using subst_abst[of s1 a t1'] by simp
+  next
+    case False
+    hence "nabla \<turnstile> (subst s2 t1') \<approx> swap [(a,b)] t2'"
+          and fresh: "nabla \<turnstile> a \<sharp> t2'"
+      using Equ_elims(7)[OF i] by auto
+     with Abst(1)[OF Abst(2), of \<open>swap [(a,b)] t2'\<close>]
+    have "nabla \<turnstile> subst s1 t1' \<approx>  swap [(a,b)] t2'" 
+      by simp
+    hence "nabla \<turnstile> Abst a (subst s1 t1') \<approx> Abst b t2'"
+      using equ_abst_ab[OF False fresh] by simp
+    with t2 show ?thesis
+      using subst_abst[of s1 a t1'] by simp
+  qed
 next
   case (Susp pi X)
-  then show ?case
-    by (smt (verit, best) Substs.subst_susp Un_def equ_pi_to_left equ_symm equ_trans
-        mem_Collect_eq not_in_domn subst_equ_def swap_id swap_inv_side)
-next
-  case Unit
-  then show ?case by simp
-next
-  case (Atom a)
-  then show ?case by simp
+  hence "nabla \<turnstile> swap pi (look_up X s2) \<approx> t2"
+    using subst_susp by simp
+  hence "nabla \<turnstile> (look_up X s2) \<approx> swap (rev pi) t2"
+    using subst_susp swap_inv_side by simp
+  hence i: "nabla \<turnstile> subst s2 (Susp [] X) \<approx> swap (rev pi) t2"
+    using subst_susp[of s2 \<open>[]\<close>] by simp
+
+  with Susp(1) subst_equ_def[of nabla \<open>subst s1\<close> \<open>subst s2\<close>]
+  have "nabla \<turnstile> subst s1 (Susp [] X) \<approx> subst s2 (Susp [] X)"
+    using UnCI equ_refl not_in_domn by metis
+
+  with i have "nabla \<turnstile> subst s1 (Susp [] X) \<approx> swap (rev pi) t2"
+    using equ_trans by blast
+  hence "nabla \<turnstile> (look_up X s1) \<approx> swap (rev pi) t2"
+    using subst_susp by simp
+  hence "nabla \<turnstile> swap pi (look_up X s1) \<approx>  t2"
+    using swap_inv_side by simp
+    then show ?case 
+      using subst_susp by simp
 next
   case (Paar t11 t12)
-  then show ?case 
-    using subst_paar[of s1 t11 t12] subst_paar[of s2 t11 t12] 
-      equ_paar equ_refl equ_trans
-    by (smt (verit, ccfv_SIG))
+  then obtain t21 t22
+    where t2: "t2 = Paar t21 t22"
+    by(auto elim: equ.cases)
+  with Paar(4) 
+  have paar_i: "nabla \<turnstile> subst s2 t11 \<approx> t21"
+    and paar_ii: "nabla \<turnstile> subst s2 t12 \<approx> t22"
+    by (auto elim: equ.cases)
+  from t2 show ?case
+    using equ_paar[OF Paar(1)[OF Paar(3) paar_i] Paar(2)[OF Paar(3) paar_ii]]
+    subst_paar by simp
 next
-  case (Func x1 t1)
-  then show ?case
-    using subst_func equ_func equ_refl equ_trans by metis
+  case (Func f t1')
+  then obtain t2' 
+    where t2: "t2 = Func f t2'"
+    by(auto elim: equ.cases)
+   with Func(3) 
+   have func: "nabla \<turnstile> subst s2 t1' \<approx> t2'"
+   by (auto elim: equ.cases)
+  from t2 show ?case
+    using equ_func[OF Func(1)[OF Func(2) func], of f] by simp
+qed (simp_all)
+
+
+
+lemma unif_2a: 
+  assumes "nabla\<Turnstile>subst s1\<approx>subst s2"
+  and "(nabla\<turnstile>subst s2 t1 \<approx> subst s2 t2)"             
+shows"(nabla\<turnstile>subst s1 t1 \<approx> subst s1 t2)"
+proof-
+  have i: "(nabla\<turnstile>subst s1 t1 \<approx> subst s2 t2)"
+    using subst_equ_a[OF assms(1,2)] by simp
+  show "(nabla\<turnstile>subst s1 t1 \<approx> subst s1 t2)"
+    using subst_equ_a[OF assms(1) equ_symm[OF i]] equ_symm by auto
 qed
 
 
 
-lemma unif_2a: "\<lbrakk>nabla\<Turnstile>subst s1\<approx>subst s2\<rbrakk>\<Longrightarrow> 
-                (nabla\<turnstile>subst s2 t1 \<approx> subst s2 t2) \<Longrightarrow> (nabla\<turnstile>subst s1 t1 \<approx> subst s1 t2)"
-by (meson equ_symm subst_equ_a)
-
-
-lemma unif_2b: 
-"\<lbrakk>nabla \<Turnstile> subst s1 \<approx> subst s2\<rbrakk> \<Longrightarrow> nabla \<turnstile> a \<sharp> subst s2 t \<Longrightarrow> nabla \<turnstile> a \<sharp> subst s1 t"
+lemma unif_2b:
+  assumes "nabla \<Turnstile> subst s1 \<approx> subst s2" 
+  and "nabla \<turnstile> a \<sharp> subst s2 t"
+shows "nabla \<turnstile> a \<sharp> subst s1 t" 
+  using assms
 proof(induct t)
   case (Abst b t')
   then show ?case
@@ -252,14 +341,6 @@ next
   then show ?case
     using equ_refl equ_symm l3_jud subst_equ_a by meson
 next
-  case Unit
-  then show ?case 
-    by simp
-next
-  case (Atom a)
-  then show ?case
-    by simp
-next
   case (Paar t1 t2)
   then show ?case 
     using Fresh_elims(5) subst_paar fresh_paar 
@@ -269,7 +350,7 @@ next
   then show ?case
     using Fresh_elims(6) subst_func fresh_func
     by metis
-qed
+qed (simp_all)
 
 lemma subst_equ_to_trm: "nabla \<Turnstile> subst s1 \<approx> subst s2 \<Longrightarrow> nabla\<turnstile>subst s1 t \<approx> subst s2 t"
   using equ_refl subst_equ_a by simp

@@ -664,35 +664,13 @@ next
 qed (auto simp add: ext_subst_def all_solutions_def fresh_weak)
 
 
-lemma P1_to_P2_red_plus:
-  assumes "P1 \<Turnstile>(nabla,s)\<Rightarrow>P2" 
-    and "(nabla1,s1)\<in>U P1" 
-  shows "((nabla1,s1)\<in>U P2)\<and>(nabla1\<Turnstile>subst (s1\<bullet>s)\<approx>subst s1)\<and>(nabla1\<Turnstile>(subst s1) nabla)"
-  using assms
-proof (induction arbitrary: nabla1 s1 nabla s rule: red_plus.induct)
-  case (sred_single P1 s2 P2)
-  then show ?case sorry
-next
-  case (cred_single P1 nabla1 P2)
-  then show ?case sorry
-next
-  case (sred_step P1 s1 P2 nabla2 s2 P3)
-  then show ?case sorry
-next
-  case (cred_step P1 nabla1 P2 nabla2 P3)
-  then show ?case sorry
-qed
-
+lemma P1_to_P2_red_plus: "\<lbrakk>P1 \<Turnstile>(nabla,s)\<Rightarrow>P2\<rbrakk>\<Longrightarrow> (nabla1,s1)\<in>U P1 \<longrightarrow>
+  ((nabla1,s1)\<in>U P2)\<and>(nabla1\<Turnstile>subst (s1\<bullet>s)\<approx>subst s1)\<and>(nabla1\<Turnstile>(subst s1) nabla)"
+  sorry
 
 lemma P1_from_P2_red_plus: "\<lbrakk>P1 \<Turnstile>(nabla,s)\<Rightarrow>P2\<rbrakk>\<Longrightarrow>(nabla1,s1)\<in>U P2\<longrightarrow>
         nabla3\<Turnstile>(subst s1)(nabla)\<longrightarrow>(nabla1\<union>nabla3,(s1\<bullet>s))\<in>U P1"
-apply(erule red_plus.induct)
-
-apply(rule impI)+
-apply(drule P1_from_P2_sred)
-apply(assumption)
   sorry
-
 
 lemma mgu: "\<lbrakk>P \<Turnstile>(nabla,s)\<Rightarrow>([],[])\<rbrakk>\<Longrightarrow> mgu P (nabla,s) \<and> idem (nabla,s)"
   sorry
