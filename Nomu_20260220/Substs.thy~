@@ -218,8 +218,6 @@ proof
     qed
   qed
 
-
-
 lemma subst_equ_a:
   assumes "nabla \<Turnstile> (subst s1) \<approx> (subst s2)"
     and "nabla \<turnstile> (subst s2 t1) \<approx> t2"
@@ -315,8 +313,6 @@ proof-
   show "(nabla\<turnstile>subst s1 t1 \<approx> subst s1 t2)"
     using subst_equ_a[OF assms(1) equ_symm[OF i]] equ_symm by auto
 qed
-
-
 
 lemma unif_2b:
   assumes "nabla \<Turnstile> subst s1 \<approx> subst s2" 
