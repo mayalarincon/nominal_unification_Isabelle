@@ -25,6 +25,11 @@ https://doi.org/10.4204/EPTCS.42.1
 Completeness in PVS of a Nominal Unification Algorithm. LSFA 2015: 57-74
 https://doi.org/10.1016/j.entcs.2016.06.005
 
+* Mauricio Ayala-Rincón, Washington de Carvalho Segundo, Maribel Fernández, Daniele Nantes Sobrinho, Ana Cristina RochaOliveira
+A formalisation of nominal α-equivalence with A, C, and AC function symbols
+
+
+
 Zoom link:
 * https://us02web.zoom.us/launch/edl?muid=500787ed-fffa-4cba-81f0-63ca100fec5b
 * Meeting ID: 845 3653 6475
