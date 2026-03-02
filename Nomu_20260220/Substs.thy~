@@ -378,5 +378,10 @@ next
         psub_trms.simps(4) by (metis)
 qed(auto)
 
+lemma ext_subst_strong:
+  assumes "nabla1 \<Turnstile> (subst s) (nabla2 \<union> nabla3)"
+  shows "nabla1 \<Turnstile> (subst s) (nabla2)" and "nabla1 \<Turnstile> (subst s) (nabla3)"
+  using assms
+  unfolding ext_subst_def by auto
 
 end
