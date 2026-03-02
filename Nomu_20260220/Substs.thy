@@ -384,4 +384,8 @@ lemma ext_subst_strong:
   using assms
   unfolding ext_subst_def by auto
 
+lemma ext_subst_id:
+  shows "nabla \<Turnstile> subst [] nabla"
+  unfolding ext_subst_def id_subst by auto
+
 end

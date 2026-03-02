@@ -806,7 +806,7 @@ next
     by (simp add: subst_equ_refl)
 qed
 
-lemma P1_from_P2_red_plus1:
+lemma P1_from_P2_red_plus:
   assumes "P1 \<Turnstile>(nabla,s)\<Rightarrow>P2"
     and "(nabla1,s1)\<in> U P2" and "nabla3\<Turnstile>(subst s1)(nabla)"
   shows "(nabla1\<union>nabla3,(s1 \<bullet> s))\<in> U P1"
@@ -859,7 +859,35 @@ next
     unfolding all_solutions_def using Un_absorb by simp
 qed
 
-lemma mgu: "\<lbrakk>P \<Turnstile>(nabla,s)\<Rightarrow>([],[])\<rbrakk>\<Longrightarrow> mgu P (nabla,s) \<and> idem (nabla,s)"
-  sorry
+thm mgu_idem
+
+lemma mgu: 
+  assumes "P \<Turnstile>(nabla,s)\<Rightarrow>([],[])"
+  shows "mgu P (nabla,s) \<and> idem (nabla,s)"
+proof(rule mgu_idem)
+  have i: "({},[]) \<in> U ([],[])"
+    unfolding all_solutions_def by simp
+  then show "(nabla, s) \<in> U P"
+    using P1_from_P2_red_plus[OF assms i] 
+      ext_subst_id  solution_comp_id(2) by simp
+                            
+  show "\<forall>(nabla2, s2)\<in> U P.  nabla2 \<Turnstile> subst s2 nabla \<and>  
+                       nabla2 \<Turnstile> subst (s2 \<bullet> s) \<approx> subst s2"
+  proof
+    fix x
+    assume "x \<in> U P"
+    then show "case x of (nabla2, s2) \<Rightarrow> 
+               nabla2 \<Turnstile> subst s2 nabla \<and>  
+                       nabla2 \<Turnstile> subst (s2 \<bullet> s) \<approx> subst s2"
+    proof (cases x)
+      case (Pair nabla2 s2)
+      hence "(nabla2,s2) \<in> U P"
+        using \<open>x \<in> U P\<close> by auto
+      hence "nabla2 \<Turnstile> subst s2 nabla \<and> nabla2 \<Turnstile> subst (s2 \<bullet> s) \<approx> subst s2"
+        using assms P1_to_P2_red_plus2 P1_to_P2_red_plus3 by auto+
+      with Pair show ?thesis by simp
+    qed
+  qed
+qed
 
 end
