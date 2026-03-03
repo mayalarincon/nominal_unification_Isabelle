@@ -1,7 +1,7 @@
 
 theory Atoms 
 
-imports Main Swap Terms
+imports Terms
 
 begin
 

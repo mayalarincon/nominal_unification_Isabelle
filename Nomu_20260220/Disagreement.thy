@@ -1,7 +1,7 @@
 
 theory Disagreement 
 
-imports Main Swap  Atoms
+imports Atoms
 
 begin
 
