@@ -46,7 +46,7 @@ lemma equ_pi_right:
   using assms
 proof(induct t arbitrary: pi)
    case (Abst b t')
-   have "swapas pi b = b \<or> swapas pi b \<noteq> b" by blast
+   have "swapas pi b = b \<or> swapas pi b \<noteq> b" by simp
   moreover 
   { assume eq: "swapas pi b = b"
     have "nabla \<turnstile> Abst b t' \<approx> Abst b (swap pi t')"
@@ -163,10 +163,6 @@ next
   then show ?case
     by simp
 qed
-
-
-
-
 
 lemma pi_comm: "nabla \<turnstile> (swap (pi @ [(a,b)]) t) \<approx> (swap ([(swapas pi a, swapas pi b)] @ pi) t)"
 proof(induct t)
@@ -663,7 +659,6 @@ proof(induction \<open>depth t1\<close> arbitrary: t1 t2 t3 rule: nat_less_induc
      using IH(2,3) by blast
  qed
 
-
 (**)
 
 lemma pi_right_equ_help:
@@ -734,10 +729,10 @@ proof(induction n arbitrary: t pi rule: nat_less_induct)
         using 5(3) calculation by simp
       then have "pi@pi1 = pi2" by simp
       hence "\<forall>c\<in>ds pi1 (pi@pi1). (c, X) \<in> nabla"
-        using 5(4) by blast
+        using 5(4) by simp
       then show ?thesis 
         using "5"(1,2) fresh_susp ds_cancel_pi_right[of _ _ "[]" _]
-          by force
+        by simp
     next
       case (6 nabla t1 t2 s1 s2)
       have deptht1: "depth t1 < n"

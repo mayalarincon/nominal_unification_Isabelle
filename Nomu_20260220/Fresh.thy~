@@ -70,6 +70,7 @@ next
 qed (auto elim: Fresh_elims)
 
 
+
 lemma fresh_swap_right: 
   assumes "nabla \<turnstile> swapas (rev pi) a \<sharp> t"
   shows "nabla \<turnstile> a \<sharp> swap pi t"

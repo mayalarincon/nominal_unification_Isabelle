@@ -1,5 +1,6 @@
 theory Termination 
-  imports Main Terms  Fresh  Equ  Substs  Mgu
+
+  imports Mgu
 
 begin
 

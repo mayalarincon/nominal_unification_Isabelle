@@ -1,6 +1,6 @@
 theory Substs
 
-imports Main  Terms  PreEqu  Equ
+imports Equ
 
 begin
 
@@ -39,7 +39,7 @@ definition domn :: "(trm \<Rightarrow> trm) \<Rightarrow> string set" where
 (* substitutions extending freshness environments *)
 
 definition ext_subst :: "fresh_envs \<Rightarrow> (trm \<Rightarrow> trm) \<Rightarrow> fresh_envs \<Rightarrow> bool" (" _ \<Turnstile> _ _ " [80,80,80] 80) where
-  "nabla1 \<Turnstile> s (nabla2) \<equiv> (\<forall>(a,X)\<in>nabla2. nabla1\<turnstile>a\<sharp> s (Susp [] X))"
+  "nabla1 \<Turnstile> s nabla2 \<equiv> (\<forall>(a,X)\<in>nabla2. nabla1\<turnstile>a\<sharp> s (Susp [] X))"
 
 (* alpha-equality for substitutions *)
 
@@ -385,7 +385,7 @@ lemma ext_subst_strong:
   unfolding ext_subst_def by auto
 
 lemma ext_subst_id:
-  shows "nabla \<Turnstile> subst [] nabla"
+  shows "nabla \<Turnstile> (subst []) nabla"
   unfolding ext_subst_def id_subst by auto
 
 end

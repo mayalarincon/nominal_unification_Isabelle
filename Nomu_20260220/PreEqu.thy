@@ -1,6 +1,6 @@
 theory PreEqu
 
-imports Main  Swap  Terms  Disagreement  Fresh
+imports Fresh
 
 begin
 

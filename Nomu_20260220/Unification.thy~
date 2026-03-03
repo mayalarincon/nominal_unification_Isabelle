@@ -5,51 +5,46 @@ imports Main Terms Fresh Equ Substs Mgu
 begin
 (* problems to which no reduction applies *)
 
-consts stuck :: "problem_type set"
-defs
+definition stuck :: "problem_type set" where
   stuck_def: "stuck \<equiv> { P1. \<not>(\<exists>P2 nabla s. P1 \<Turnstile>(nabla,s)\<Rightarrow>P2)}"
 
 (* all problems which are stuck and have no unifier *)
 
-consts fail :: "problem_type set"
-inductive fail
-intros
-[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>(Susp pi X\<approx>?Abst a t#xs,ys)\<in>fail"
-[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>(Susp pi X\<approx>?Func F t#xs,ys)\<in>fail"
-[intro!]: "\<lbrakk>occurs X t1\<or>occurs X t2\<rbrakk>\<Longrightarrow>(Susp pi X\<approx>?Paar t1 t2#xs,ys)\<in>fail"
-[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>(Abst a t\<approx>?Susp pi X#xs,ys)\<in>fail"
-[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>(Func F t\<approx>?Susp pi X#xs,ys)\<in>fail"
-[intro!]: "\<lbrakk>occurs X t1\<or>occurs X t2\<rbrakk>\<Longrightarrow>(Paar t1 t2\<approx>?Susp pi X#xs,ys)\<in>fail"
-[intro!,dest!]: "([],a\<sharp>? Atom a#ys)\<in>fail"
-[intro!]: "a\<noteq>b\<Longrightarrow>(Atom a\<approx>? Atom b#xs,ys)\<in>fail"
-[intro!,dest!]: "(Abst a t\<approx>?Unit#xs,ys)\<in>fail"
-[intro!,dest!]: "(Unit\<approx>?Abst a t#xs,ys)\<in>fail"
-[intro!,dest!]: "(Abst a t\<approx>?Atom b#xs,ys)\<in>fail"
-[intro!,dest!]: "(Atom b\<approx>?Abst a t#xs,ys)\<in>fail"
-[intro!,dest!]: "(Abst a t\<approx>?Paar t1 t2#xs,ys)\<in>fail"
-[intro!,dest!]: "(Paar t1 t2\<approx>?Abst a t#xs,ys)\<in>fail"
-[intro!,dest!]: "(Abst a t\<approx>?Func F t1#xs,ys)\<in>fail"
-[intro!,dest!]: "(Func F t1\<approx>?Abst a t#xs,ys)\<in>fail"
-[intro!,dest!]: "(Unit\<approx>?Atom b#xs,ys)\<in>fail"
-[intro!,dest!]: "(Atom b\<approx>?Unit#xs,ys)\<in>fail"
-[intro!,dest!]: "(Unit\<approx>?Paar t1 t2#xs,ys)\<in>fail"
-[intro!,dest!]: "(Paar t1 t2\<approx>?Unit#xs,ys)\<in>fail"
-[intro!,dest!]: "(Unit\<approx>?Func F t1#xs,ys)\<in>fail"
-[intro!,dest!]: "(Func F t1\<approx>?Unit#xs,ys)\<in>fail"
-[intro!,dest!]: "(Atom a\<approx>?Paar t1 t2#xs,ys)\<in>fail"
-[intro!,dest!]: "(Paar t1 t2\<approx>?Atom a#xs,ys)\<in>fail"
-[intro!,dest!]: "(Atom a\<approx>?Func F t1#xs,ys)\<in>fail"
-[intro!,dest!]: "(Func F t1\<approx>?Atom a#xs,ys)\<in>fail"
-[intro!,dest!]: "(Func F t\<approx>?Paar t1 t2#xs,ys)\<in>fail"
-[intro!,dest!]: "(Paar t1 t2\<approx>?Func F t#xs,ys)\<in>fail"
-[intro!]: "\<lbrakk>F1\<noteq>F2\<rbrakk>\<Longrightarrow>(Func F1 t1\<approx>?Func F2 t2#xs,ys)\<in>fail"
+inductive fail :: "problem_type set" where
+[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>(Susp pi X\<approx>?Abst a t#xs,ys)\<in> fail" |
+[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>(Susp pi X\<approx>?Func F t#xs,ys)\<in> fail" |
+[intro!]: "\<lbrakk>occurs X t1\<or>occurs X t2\<rbrakk>\<Longrightarrow>(Susp pi X\<approx>?Paar t1 t2#xs,ys)\<in>fail" |
+[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>(Abst a t\<approx>?Susp pi X#xs,ys)\<in>fail"|
+[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>(Func F t\<approx>?Susp pi X#xs,ys)\<in>fail" |
+[intro!]: "\<lbrakk>occurs X t1\<or>occurs X t2\<rbrakk>\<Longrightarrow>(Paar t1 t2\<approx>?Susp pi X#xs,ys)\<in>fail" |
+[intro!,dest!]: "([],a\<sharp>? Atom a#ys)\<in>fail"|
+[intro!]: "a\<noteq>b\<Longrightarrow>(Atom a\<approx>? Atom b#xs,ys)\<in>fail" |
+[intro!,dest!]: "(Abst a t\<approx>?Unit#xs,ys)\<in>fail" |
+[intro!,dest!]: "(Unit\<approx>?Abst a t#xs,ys)\<in>fail" |
+[intro!,dest!]: "(Abst a t\<approx>?Atom b#xs,ys)\<in>fail" |
+[intro!,dest!]: "(Atom b\<approx>?Abst a t#xs,ys)\<in>fail" |
+[intro!,dest!]: "(Abst a t\<approx>?Paar t1 t2#xs,ys)\<in>fail" | 
+[intro!,dest!]: "(Paar t1 t2\<approx>?Abst a t#xs,ys)\<in>fail"| 
+[intro!,dest!]: "(Abst a t\<approx>?Func F t1#xs,ys)\<in>fail" |
+[intro!,dest!]: "(Func F t1\<approx>?Abst a t#xs,ys)\<in>fail" |
+[intro!,dest!]: "(Unit\<approx>?Atom b#xs,ys)\<in>fail" |
+[intro!,dest!]: "(Atom b\<approx>?Unit#xs,ys)\<in>fail" |
+[intro!,dest!]: "(Unit\<approx>?Paar t1 t2#xs,ys)\<in>fail" |
+[intro!,dest!]: "(Paar t1 t2\<approx>?Unit#xs,ys)\<in>fail" |
+[intro!,dest!]: "(Unit\<approx>?Func F t1#xs,ys)\<in>fail" |
+[intro!,dest!]: "(Func F t1\<approx>?Unit#xs,ys)\<in>fail" | 
+[intro!,dest!]: "(Atom a\<approx>?Paar t1 t2#xs,ys)\<in>fail" |
+[intro!,dest!]: "(Paar t1 t2\<approx>?Atom a#xs,ys)\<in>fail" | 
+[intro!,dest!]: "(Atom a\<approx>?Func F t1#xs,ys)\<in>fail" |
+[intro!,dest!]: "(Func F t1\<approx>?Atom a#xs,ys)\<in>fail" | 
+[intro!,dest!]: "(Func F t\<approx>?Paar t1 t2#xs,ys)\<in>fail" | 
+[intro!,dest!]: "(Paar t1 t2\<approx>?Func F t#xs,ys)\<in>fail" |
+[intro!]: "\<lbrakk>F1\<noteq>F2\<rbrakk>\<Longrightarrow> (Func F1 t1\<approx>?Func F2 t2#xs,ys)\<in>fail"
 
 (* the results that are interesting are the stuck ones *)
 
-consts 
-  results :: "problem_type \<Rightarrow> problem_type set"
-defs
-  results_def: 
+definition 
+  results :: "problem_type \<Rightarrow> problem_type set" where 
   "results P1 \<equiv> if P1\<in>stuck then {P1} else {P2. \<exists>nabla s. P1\<Turnstile>(nabla,s)\<Rightarrow>P2 \<and> P2\<in>stuck}"
 
 (* a "failed" problem has no unifier *)

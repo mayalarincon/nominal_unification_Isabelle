@@ -22,16 +22,14 @@ fun swap  :: "(string \<times> string) list \<Rightarrow> trm \<Rightarrow> trm"
 | "swap  pi (Paar t1 t2)  = Paar (swap pi t1) (swap pi t2)"
 | "swap  pi (Func F t)    = Func F (swap pi t)"
 
-lemma [simp]: 
+lemma swap_id [simp]: 
   shows "swap [] t = t"
   by (induct_tac t) (auto)
 
 
 lemma swap_append: 
   shows "swap (pi1@pi2) t = swap pi1 (swap pi2 t)"
-  apply(induct t arbitrary: pi1 pi2)
-       apply(auto simp add: swapas_append)
-  done
+  using swapas_append by (induct t arbitrary: pi1 pi2) auto
 
 
 lemma swap_empty: 

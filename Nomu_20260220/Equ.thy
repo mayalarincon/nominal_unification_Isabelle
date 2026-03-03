@@ -1,6 +1,6 @@
 theory Equ
 
-imports Main  Terms  Fresh  PreEqu
+imports PreEqu
 
 begin
 

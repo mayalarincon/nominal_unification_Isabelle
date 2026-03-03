@@ -1,6 +1,6 @@
 theory Fresh
 
-imports Swap Terms Disagreement
+imports Disagreement
 
 begin
 
