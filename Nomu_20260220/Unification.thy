@@ -10,10 +10,40 @@ definition stuck :: "problem_type set" where
                                                         
 (* all problems which are stuck and have no unifier *)
 
-inductive teste :: "int \<Rightarrow> bool" where
-[intro!]: "teste 0" |
-[intro!]: "teste n \<Longrightarrow> teste (n+1)"
 
+inductive_set fail :: "problem_type set" where
+[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>(Susp pi X\<approx>?Abst a t#xs,ys)\<in>fail" |
+[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>(Susp pi X\<approx>?Func F t#xs,ys)\<in>fail" |
+[intro!]: "\<lbrakk>occurs X t1\<or>occurs X t2\<rbrakk>\<Longrightarrow>(Susp pi X\<approx>?Paar t1 t2#xs,ys)\<in>fail" |
+[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>(Abst a t\<approx>?Susp pi X#xs,ys)\<in>fail" |
+[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>(Func F t\<approx>?Susp pi X#xs,ys)\<in>fail" |
+[intro!]: "\<lbrakk>occurs X t1\<or>occurs X t2\<rbrakk>\<Longrightarrow>(Paar t1 t2\<approx>?Susp pi X#xs,ys)\<in>fail" |
+[intro!]: "([],a\<sharp>? Atom a#ys)\<in>fail" |
+[intro!]: "a\<noteq>b\<Longrightarrow>(Atom a\<approx>? Atom b#xs,ys)\<in>fail" |
+[intro!]: "(Abst a t\<approx>?Unit#xs,ys)\<in>fail" |
+[intro!]: "(Unit\<approx>?Abst a t#xs,ys)\<in>fail" |
+[intro!]: "(Abst a t\<approx>?Atom b#xs,ys)\<in>fail" |
+[intro!]: "(Atom b\<approx>?Abst a t#xs,ys)\<in>fail" |
+[intro!]: "(Abst a t\<approx>?Paar t1 t2#xs,ys)\<in>fail" |
+[intro!]: "(Paar t1 t2\<approx>?Abst a t#xs,ys)\<in>fail" |
+[intro!]: "(Abst a t\<approx>?Func F t1#xs,ys)\<in>fail" |
+[intro!]: "(Func F t1\<approx>?Abst a t#xs,ys)\<in>fail" |
+[intro!]: "(Unit\<approx>?Atom b#xs,ys)\<in>fail" |
+[intro!]: "(Atom b\<approx>?Unit#xs,ys)\<in>fail" |
+[intro!]: "(Unit\<approx>?Paar t1 t2#xs,ys)\<in>fail" |
+[intro!]: "(Paar t1 t2\<approx>?Unit#xs,ys)\<in>fail" |
+[intro!]: "(Unit\<approx>?Func F t1#xs,ys)\<in>fail" |
+[intro!]: "(Func F t1\<approx>?Unit#xs,ys)\<in>fail" |
+[intro!]: "(Atom a\<approx>?Paar t1 t2#xs,ys)\<in>fail"|
+[intro!]: "(Paar t1 t2\<approx>?Atom a#xs,ys)\<in>fail" |
+[intro!]: "(Atom a\<approx>?Func F t1#xs,ys)\<in>fail"|
+[intro!]: "(Func F t1\<approx>?Atom a#xs,ys)\<in>fail"|
+[intro!]: "(Func F t\<approx>?Paar t1 t2#xs,ys)\<in>fail"|
+[intro!]: "(Paar t1 t2\<approx>?Func F t#xs,ys)\<in>fail" |
+[intro!]: "\<lbrakk>F1\<noteq>F2\<rbrakk>\<Longrightarrow>( Func F1 t1\<approx>?Func F2 t2 #xs,ys)\<in>fail"
+
+
+(*
 inductive fail :: "problem_type \<Rightarrow> bool" where
 [intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow> fail ((Susp pi X \<approx>? Abst a t) # xs, ys)" |
 [intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow> fail (Susp pi X \<approx>?Func F t#xs,ys)" |
@@ -44,18 +74,22 @@ inductive fail :: "problem_type \<Rightarrow> bool" where
 [intro!]: "fail (Func F t\<approx>?Paar t1 t2#xs,ys)" | 
 [intro!]: "fail (Paar t1 t2\<approx>?Func F t#xs,ys)" |
 [intro!]: "\<lbrakk>F1\<noteq>F2\<rbrakk>\<Longrightarrow> fail (Func F1 t1\<approx>?Func F2 t2#xs,ys)"
+*)
 
-(* the results that are interesting are the stuck ones *)
 
 definition 
   results :: "problem_type \<Rightarrow> problem_type set" where 
-  "results P1 \<equiv> if P1\<in>stuck then {P1} else {P2. \<exists>nabla s. P1\<Turnstile>(nabla,s)\<Rightarrow>P2 \<and> P2\<in>stuck}"
+  "results P1 \<equiv> if P1 \<in> stuck then {P1} else {P2. \<exists>nabla s. P1\<Turnstile>(nabla,s)\<Rightarrow>P2 \<and> P2\<in>stuck}"
 
 (* a "failed" problem has no unifier *)
 
 lemma fail_then_empty: 
-  "(P1\<in>fail) \<Longrightarrow> (U P1 = {})"
-apply(erule fail.cases)
+  assumes "P1 \<in> fail"
+  shows "U P1 = {}"
+  using assms sorry
+(*proof(cases rule: fail.cases)*)
+
+(*apply(erule fail.cases)
 apply(simp add: all_solutions_def)
 apply(rule allI)+
 apply(rule impI)
@@ -167,11 +201,14 @@ apply(best)
 apply(rule psub_trm_not_equ)
 apply(simp add: all_solutions_def, fast dest!: fresh.cases)
 apply(simp add: all_solutions_def, fast dest!: equ.cases)+
-done
+done*)
 
 (* the only stuck problems are the "failed" problems and the empty problem *)
 
-lemma stuck_equiv: "stuck = {([],[])}\<union>fail"
+lemma stuck_equiv: 
+  shows "stuck = {([],[])} \<union> fail"
+  sorry
+(*
 apply(subgoal_tac "([],[])\<in>stuck")
 apply(subgoal_tac "\<forall>P\<in>fail. P\<in>stuck")
 apply(subgoal_tac "\<forall>P\<in>stuck. P=([],[]) \<or> P\<in>fail")
@@ -191,7 +228,7 @@ apply(simp)
 apply(case_tac ba)
 apply(simp_all)
 apply(case_tac "ab=lista")
-apply(force)
+sle
 apply(force)
 apply(force)
 apply(force)
@@ -414,11 +451,41 @@ apply(ind_cases "(([], []), s, a, b) \<in> s_red")
 apply(ind_cases "(([], []), nabla, a, b) \<in> c_red")
 apply(ind_cases "([], []) \<turnstile> s1 \<leadsto> P2")
 apply(ind_cases "([], []) \<turnstile> nabla1 \<rightarrow> P2")
-done
+done *)
 
 lemma u_empty_sred: 
-  "P1\<turnstile>s\<leadsto>P2 \<longrightarrow> U P2 ={} \<longrightarrow> U P1={}"
-apply(rule impI)
+  assumes "P1\<turnstile>s\<leadsto>P2" and "U P2 ={}"
+  shows "U P1 = {}"
+  using assms
+proof(induct rule: s_red.induct)
+  case (unit_sred xs ys)
+  then show ?case sorry
+next
+  case (paar_sred t1 t2 s1 s2 xs ys)
+  then show ?case sorry
+next
+  case (func_sred F t1 t2 xs ys)
+  then show ?case sorry
+next
+  case (abst_aa_sred a t1 t2 xs ys)
+  then show ?case sorry
+next
+  case (abst_ab_sred a b t1 t2 xs ys)
+  then show ?case sorry
+next
+  case (atom_sred a xs ys)
+  then show ?case sorry
+next
+  case (susp_sred pi1 X pi2 xs ys)
+  then show ?case sorry
+next
+  case (var_1_sred X t pi xs ys)
+  then show ?case sorry
+next
+  case (var_2_sred X t pi xs ys)
+  then show ?case sorry
+qed
+(*apply(rule impI)
 apply(ind_cases "P1 \<turnstile> s \<leadsto> P2")
 apply(rule impI, simp add: all_solutions_def)
 apply(rule impI, simp add: all_solutions_def)
@@ -476,12 +543,36 @@ apply(assumption)
 apply(simp)
 apply(drule_tac a="aa" and "t"="ba" in unif_2b)
 apply(simp add: subst_comp_expand)
-done
+done*)
 
-lemma u_empty_cred: 
-  "P1\<turnstile>nabla\<rightarrow>P2 \<longrightarrow> U P2 ={} \<longrightarrow> U P1={}"
-apply(rule impI)
-apply(ind_cases "P1 \<turnstile>nabla\<rightarrow>P2")
+lemma u_empty_cred:
+  assumes "P1\<turnstile>nabla\<rightarrow>P2" and "U P2 ={}"
+  shows "U P1={}"
+  using assms
+proof(induct rule: c_red.induct)
+  case (unit_cred a xs)
+  then show ?case sorry
+next
+  case (paar_cred a t1 t2 xs)
+  then show ?case sorry
+next
+  case (func_cred a F t xs)
+  then show ?case sorry
+next
+  case (abst_aa_cred a t xs)
+  then show ?case sorry
+next
+  case (abst_ab_cred a b t xs)
+  then show ?case sorry
+next
+  case (atom_cred a b xs)
+  then show ?case sorry
+next
+  case (susp_cred a pi X xs)
+  then show ?case sorry
+qed
+
+  (*apply(ind_cases "P1 \<turnstile>nabla\<rightarrow>P2")
 apply(rule impI, simp add: all_solutions_def)
 apply(rule impI, simp add: all_solutions_def)
 apply(fast dest!: fresh_paar_elim)
@@ -492,21 +583,34 @@ apply(rule impI, simp add: all_solutions_def)
 apply(force dest!: fresh_abst_ab_elim)
 apply(rule impI, simp add: all_solutions_def)
 apply(rule impI, simp add: all_solutions_def)
-done
+done*)
 
 lemma u_empty_red_plus: 
-  "P1\<Turnstile>(nabla,s)\<Rightarrow>P2 \<longrightarrow> U P2 ={} \<longrightarrow> U P1={}"
-apply(rule impI)
-apply(erule red_plus.induct)
-apply(drule u_empty_sred[THEN mp], assumption)
-apply(drule u_empty_cred[THEN mp], assumption)
-apply(drule u_empty_sred[THEN mp], force)
-apply(drule u_empty_cred[THEN mp], force)
-done
+  assumes "P1\<Turnstile>(nabla,s)\<Rightarrow>P2" and "U P2 ={}"
+  shows "U P1={}"
+  using assms
+proof(induct rule: red_plus.induct)
+  case (sred_single P1 s1 P2)
+  then show ?case sorry
+next
+  case (cred_single P1 nabla1 P2)
+  then show ?case sorry
+next
+  case (sred_step P1 s1 P2 nabla2 s2 P3)
+  then show ?case sorry
+next
+  case (cred_step P1 nabla1 P2 nabla2 P3)
+  then show ?case sorry
+qed
+
 
 (* all problems that cannot be solved produce "failed" problems only *)
 
-lemma empty_then_fail: "U P1={} \<longrightarrow> (\<forall>P\<in>results P1. P\<in>fail)"
+lemma empty_then_fail: 
+assumes "U P1={}"
+shows" (\<forall>P\<in>results P1. P\<in>fail)"
+  using assms sorry
+(*
 apply(simp add: results_def)
 apply(rule conjI)
 apply(rule impI)
@@ -524,16 +628,17 @@ apply(erule conjE)
 apply(simp add: stuck_equiv)
 apply(auto)
 apply(subgoal_tac "({},[])\<in>U ([],[])")
-apply(drule_tac "nabla3.0"="nabla" and "nabla1.0"="{}" and "s1.0"="[]" in P1_from_P2_red_plus)
+apply(rule_tac "nabla3.0"="nabla" and "nabla1.0"="{}" and "s1.0"="[]" in P1_from_P2_red_plus)
 apply(simp add: ext_subst_def)
 apply(auto)
 apply(simp add: all_solutions_def)
-done
+done*)
 
 (* if a problem can be solved then no "failed" problem is produced *)
 
-lemma not_empty_then_not_fail: "U P1\<noteq>{} \<longrightarrow> \<not>(\<exists>P\<in>results P1. P\<in>fail)"
-apply(rule impI)
+lemma not_empty_then_not_fail: 
+  assumes "U P1\<noteq>{}"
+  shows "\<not>(\<exists>P\<in>results P1. P\<in>fail)"
 apply(simp)
 apply(rule ballI)
 apply(clarify)
@@ -541,12 +646,7 @@ apply(simp add: results_def)
 apply(case_tac "P1\<in>stuck")
 apply(simp_all)
 apply(drule fail_then_empty)
-apply(simp)
-apply(drule fail_then_empty)
-apply(erule conjE)
-apply(clarify)
-apply(drule u_empty_red_plus[THEN mp])
-apply(simp)
-done
+   apply(clarify)
+  using assms fail_then_empty u_empty_red_plus by (auto, meson)
 
 end
