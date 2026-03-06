@@ -79,6 +79,10 @@ fun vars_trm :: "trm \<Rightarrow> string set"
 | "vars_trm (Abst a t)   = vars_trm t"
 | "vars_trm (Func F t)   = vars_trm t"
 
+lemma vars_swap:
+  shows "vars_trm (swap pi t) = vars_trm t"
+  by (induct t) auto
+
 
 (* subterms and proper subterms *)
 

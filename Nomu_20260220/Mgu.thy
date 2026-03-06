@@ -20,7 +20,6 @@ type_synonym problem_type = "((trm \<times> trm) list) \<times> ((string \<times
 
 type_synonym unifier_type = "fresh_envs \<times> substs"
 
-
 definition U:: "problem_type \<Rightarrow> (unifier_type set)"
   where all_solutions_def: 
     "U P  \<equiv> {(nabla, s). 
@@ -29,6 +28,11 @@ definition U:: "problem_type \<Rightarrow> (unifier_type set)"
 
 
 (* set of variables in unification problems *)
+
+type_synonym eprobs = "((trm \<times> trm) list)"
+type_synonym fprobs = "((string \<times> trm) list)"
+type_synonym probs = "eprobs \<times> fprobs"
+
 
 fun vars_fprobs:: "((string \<times> trm) list) \<Rightarrow> (string set)"
   where
@@ -59,6 +63,13 @@ definition idem :: "unifier_type \<Rightarrow> bool"
 
 
 (* application of a substitution to a problem *)
+
+
+definition apply_subst_eprobs :: "substs \<Rightarrow> eprobs \<Rightarrow> eprobs"
+  where "apply_subst_eprobs s P \<equiv> map (\<lambda>(t1, t2). (subst s t1 \<approx>? subst s t2)) P"
+
+definition apply_subst_fprobs :: "substs \<Rightarrow> fprobs \<Rightarrow> fprobs"
+  where "apply_subst_fprobs s P \<equiv> map (\<lambda>(a, t). (a \<sharp>? subst s t)) P"
 
 
 definition apply_subst :: "substs \<Rightarrow> problem_type \<Rightarrow> problem_type"
@@ -857,8 +868,6 @@ next
   then show "(nabla1 \<union> nabla3, s1 \<bullet> []) \<in> U P1"
     unfolding all_solutions_def using Un_absorb by simp
 qed
-
-thm mgu_idem
 
 lemma mgu: 
   assumes "P \<Turnstile>(nabla,s)\<Rightarrow>([],[])"

@@ -1,6 +1,6 @@
 theory Mgu
 
-imports Main  Terms  Fresh  Equ  Substs
+imports Substs
 
 begin
 (* unification problems *)
@@ -29,6 +29,11 @@ definition U:: "problem_type \<Rightarrow> (unifier_type set)"
 
 
 (* set of variables in unification problems *)
+
+type_synonym eprobs = "((trm \<times> trm) list)"
+type_synonym fprobs = "((string \<times> trm) list)"
+type_synonym probs = "eprobs \<times> fprobs"
+
 
 fun vars_fprobs:: "((string \<times> trm) list) \<Rightarrow> (string set)"
   where
@@ -96,7 +101,6 @@ inductive_cases s_red_elims:
 "((t\<approx>?Susp pi X)#xs,ys) \<turnstile>[(X,swap (rev pi) t)]\<leadsto> apply_subst [(X,swap (rev pi) t)] (xs,ys)"
 
 
-
 (*weakening of fresh*)
 
 lemma solution_weak:
@@ -138,9 +142,9 @@ inductive red_plus :: "problem_type \<Rightarrow> unifier_type \<Rightarrow> pro
 
 
 lemma mgu_idem: 
-  assumes "(nabla1,s1)\<in>U P"
-    and "\<forall>(nabla2,s2)\<in> U P. nabla2 \<Turnstile>(subst s2) nabla1 \<and>  nabla2\<Turnstile>subst(s2 \<bullet> s1)\<approx>subst s2"
-  shows "mgu P (nabla1,s1)\<and>idem (nabla1,s1)"
+  assumes "(nabla1,s1) \<in> U P"
+    and "\<forall>(nabla2,s2) \<in> U P. nabla2 \<Turnstile>(subst s2) nabla1 \<and>  nabla2\<Turnstile>subst(s2 \<bullet> s1)\<approx>subst s2"
+  shows "mgu P (nabla1,s1) \<and> idem (nabla1,s1)"
   using assms mgu_def idem_def by auto
 
 
@@ -589,7 +593,7 @@ next
   "nabla1 \<turnstile> b \<sharp> subst s1 (Susp pi X)" by simp
   hence "nabla1 \<turnstile> swapas (rev pi) b \<sharp> subst s1 (Susp [] X)"
     using fresh_swap_left subst_susp by simp
-  hence ext: "nabla1 \<Turnstile> subst s1 {(swapas (rev pi) b, X)}"
+  hence ext: "nabla1 \<Turnstile> (subst s1) {(swapas (rev pi) b, X)}"
     using ext_subst_def by simp
   from fresh eqs ext
     show ?case using all_solutions_def by simp
@@ -747,27 +751,27 @@ lemma P1_to_P2_red_plus3:
   using assms
 proof(induction P1\<equiv>"P1" nabla\<equiv>"(nabla, s)" P2\<equiv>"P2" arbitrary: s nabla1 nabla s1 P1 P2 rule: red_plus.induct)
   case (sred_single P1 s P2 nabla1 s1)
-  then show "nabla1 \<Turnstile> subst s1 {}" by (simp add: ext_subst_def) 
+  then show "nabla1 \<Turnstile> (subst s1) {}" by (simp add: ext_subst_def) 
 next
   case (cred_single P1 nabla1 P2 nabla2 s1)
   have "P1  \<turnstile> nabla1 \<rightarrow> P2" "(nabla2, s1) \<in> U P1" by fact+
-  then show "nabla2 \<Turnstile> subst s1 nabla1" using P1_to_P2_cred by blast
+  then show "nabla2 \<Turnstile> (subst s1) nabla1" using P1_to_P2_cred by blast
 next
   case (sred_step P1 s P2 nabla2 s2 P3 nabla1 s1)
   have "P1  \<turnstile> s \<leadsto> P2" "(nabla1, s1)\<in> U P1" by fact+ 
   then have "(nabla1, s1)\<in> U P2" using P1_to_P2_sred by blast 
-  moreover have IH: "(nabla1, s1)\<in> U P2 \<Longrightarrow>  nabla1 \<Turnstile> subst s1 nabla2" by fact 
-  ultimately show "nabla1 \<Turnstile> subst s1 nabla2" by simp 
+  moreover have IH: "(nabla1, s1)\<in> U P2 \<Longrightarrow>  nabla1 \<Turnstile> (subst s1) nabla2" by fact 
+  ultimately show "nabla1 \<Turnstile> (subst s1) nabla2" by simp 
 next
   case (cred_step P1 nabla1 P2 nabla2 P3 nabla3 s1)
-  have IH: "(nabla3, s1) \<in> U P2 \<Longrightarrow> nabla3 \<Turnstile> subst s1 nabla2" by fact
+  have IH: "(nabla3, s1) \<in> U P2 \<Longrightarrow> nabla3 \<Turnstile> (subst s1) nabla2" by fact
   have as: "P1 \<turnstile> nabla1 \<rightarrow> P2" "(nabla3, s1) \<in> U P1" by fact+ 
   
-  from as have "nabla3 \<Turnstile> subst s1 nabla1" using P1_to_P2_cred by blast    
+  from as have "nabla3 \<Turnstile> (subst s1) nabla1" using P1_to_P2_cred by blast    
   moreover 
   from as have "(nabla3, s1) \<in> U P2" using P1_to_P2_cred by blast 
-  then have "nabla3 \<Turnstile> subst s1 nabla2" using IH by blast
-  ultimately show "nabla3 \<Turnstile> subst s1 (nabla2 \<union> nabla1)"
+  then have "nabla3 \<Turnstile> (subst s1) nabla2" using IH by blast
+  ultimately show "nabla3 \<Turnstile> (subst s1) (nabla2 \<union> nabla1)"
     by(auto simp add: ext_subst_def)
 qed
 
@@ -799,7 +803,7 @@ next
     using P1_to_P2_sred by blast 
   ultimately
   show "nabla1 \<Turnstile> subst (s1 \<bullet> (s2 \<bullet> s)) \<approx> subst s1"
-    by (simp add: subst_assoc subst_trans)
+    using subst_assoc subst_trans by metis
 next
   case (cred_step P1 nabla1 P2 nabla2 P3)
   show "nabla1 \<Turnstile> subst (s1 \<bullet> []) \<approx> subst s1"
@@ -813,7 +817,7 @@ lemma P1_from_P2_red_plus:
   using assms
 proof(induction P1 \<equiv> "P1" nablas\<equiv>"(nabla, s)" P2\<equiv>"P2" arbitrary: s nabla1 nabla nabla3 s1 P1 P2 rule: red_plus.induct)
   case (sred_single P1 s P2 nabla1 nabla3)
-  have "P1 \<turnstile> s \<leadsto> P2"  "(nabla1, s1) \<in> U P2" by fact+
+  have "P1 \<turnstile> s \<leadsto> P2" "(nabla1, s1) \<in> U P2" by fact+
   then have "(nabla1, s1 \<bullet> s) \<in> U P1"
     using P1_from_P2_sred by simp
   then show "(nabla1 \<union> nabla3, s1 \<bullet> s) \<in> U P1"
@@ -822,7 +826,7 @@ next
   case (cred_single P1 nabla P2 nabla1 nabla3)
   have "P1 \<turnstile> nabla \<rightarrow> P2"
       "(nabla1, s1) \<in> U P2" 
-      "nabla3 \<Turnstile> subst s1 nabla" by fact+
+      "nabla3 \<Turnstile> (subst s1) nabla" by fact+
   hence "(nabla1 \<union> nabla3, s1) \<in> U P1"
     using P1_from_P2_cred by simp
   then show "(nabla1 \<union> nabla3, s1 \<bullet> []) \<in> U P1"
@@ -830,9 +834,9 @@ next
 next
   case (sred_step P1 s P2 nabla2 s2 P3 nabla1 nabla3)
   have IH: "(nabla1, s1) \<in> U P3 \<Longrightarrow>
-     nabla3 \<Turnstile> subst s1 nabla2  \<Longrightarrow> (nabla1 \<union> nabla3, s1 \<bullet> s2) \<in> U P2" by fact+
+     nabla3 \<Turnstile> (subst s1) nabla2  \<Longrightarrow> (nabla1 \<union> nabla3, s1 \<bullet> s2) \<in> U P2" by fact+
   have as: "(nabla1, s1) \<in> U P3" 
-    "nabla3 \<Turnstile> subst s1 nabla2" 
+    "nabla3 \<Turnstile> (subst s1) nabla2" 
     "P1 \<turnstile> s \<leadsto> P2" by fact+
   hence "(nabla1 \<union> nabla3, s1 \<bullet> s2) \<in> U P2"
     using IH by simp
@@ -844,12 +848,12 @@ next
 next
   case (cred_step P1 nabla P2 nabla2 P3)
   have IH: "(nabla1, s1) \<in> U P3 \<Longrightarrow>
-     nabla3 \<Turnstile> subst s1 nabla2  \<Longrightarrow> (nabla1 \<union> nabla3, s1 \<bullet> []) \<in> U P2" by fact
+     nabla3 \<Turnstile> (subst s1) nabla2  \<Longrightarrow> (nabla1 \<union> nabla3, s1 \<bullet> []) \<in> U P2" by fact
   have as: "P1 \<turnstile> nabla \<rightarrow> P2"
            "(nabla1, s1) \<in> U P3"
-           "nabla3 \<Turnstile> subst s1 (nabla2 \<union> nabla)" by fact+
-  have ext_substs: "nabla3 \<Turnstile> subst s1 (nabla2)" 
-    "nabla3 \<Turnstile> subst s1 nabla"
+           "nabla3 \<Turnstile> (subst s1) (nabla2 \<union> nabla)" by fact+
+  have ext_substs: "nabla3 \<Turnstile> (subst s1) (nabla2)" 
+    "nabla3 \<Turnstile> (subst s1) nabla"
     using ext_subst_strong[OF as(3)] by simp+
   hence a: "(nabla1 \<union> nabla3, s1 \<bullet> []) \<in> U P2"
     using IH as(2) by simp
@@ -858,8 +862,6 @@ next
   then show "(nabla1 \<union> nabla3, s1 \<bullet> []) \<in> U P1"
     unfolding all_solutions_def using Un_absorb by simp
 qed
-
-thm mgu_idem
 
 lemma mgu: 
   assumes "P \<Turnstile>(nabla,s)\<Rightarrow>([],[])"
@@ -871,21 +873,24 @@ proof(rule mgu_idem)
     using P1_from_P2_red_plus[OF assms i] 
       ext_subst_id  solution_comp_id(2) by simp
                             
-  show "\<forall>(nabla2, s2)\<in> U P.  nabla2 \<Turnstile> subst s2 nabla \<and>  
+  show "\<forall>(nabla2, s2)\<in> U P.  nabla2 \<Turnstile> (subst s2) nabla \<and>  
                        nabla2 \<Turnstile> subst (s2 \<bullet> s) \<approx> subst s2"
   proof
     fix x
     assume "x \<in> U P"
     then show "case x of (nabla2, s2) \<Rightarrow> 
-               nabla2 \<Turnstile> subst s2 nabla \<and>  
+               nabla2 \<Turnstile> (subst s2) nabla \<and>  
                        nabla2 \<Turnstile> subst (s2 \<bullet> s) \<approx> subst s2"
     proof (cases x)
       case (Pair nabla2 s2)
       hence "(nabla2,s2) \<in> U P"
         using \<open>x \<in> U P\<close> by auto
-      hence "nabla2 \<Turnstile> subst s2 nabla \<and> nabla2 \<Turnstile> subst (s2 \<bullet> s) \<approx> subst s2"
+      hence "nabla2 \<Turnstile> (subst s2) nabla \<and> nabla2 \<Turnstile> subst (s2 \<bullet> s) \<approx> subst s2"
         using assms P1_to_P2_red_plus2 P1_to_P2_red_plus3 by auto+
       with Pair show ?thesis by simp
     qed
   qed
 qed
+
+
+end

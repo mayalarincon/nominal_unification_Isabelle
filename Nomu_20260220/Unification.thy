@@ -7,7 +7,7 @@ begin
 
 definition stuck :: "problem_type set" where
   stuck_def: "stuck \<equiv> { P1. \<not>(\<exists>P2 nabla s. P1 \<Turnstile>(nabla,s)\<Rightarrow>P2)}"
-
+                                                        
 (* all problems which are stuck and have no unifier *)
 
 inductive teste :: "int \<Rightarrow> bool" where
@@ -54,7 +54,7 @@ definition
 (* a "failed" problem has no unifier *)
 
 lemma fail_then_empty: 
-  "(P1\<in>fail) \<Longrightarrow> (U P1={})"
+  "(P1\<in>fail) \<Longrightarrow> (U P1 = {})"
 apply(erule fail.cases)
 apply(simp add: all_solutions_def)
 apply(rule allI)+
