@@ -1,5 +1,5 @@
 # Nominal Alpha Unification 
-## Authors
+### Authors
 Guilherme Borges Brandão(*), Thomas Ammer(+) 
 Daniele Nantes Sobrinho(*), Mauricio Ayala-Rincón(*)
 Christian Urban(+),  Maribel Fernández(+)$, Mohammad Abdulaziz(+)
@@ -12,7 +12,7 @@ This theory verifies a non-deterministic procedure for nominal syntactic unifica
 
 The formalisation is updated according to the PVS Ana Cristina Rocha Oliveira et al. approach by proving the properties of symmetry, transitivity, and equivariance of the alpha-equivalence relation separately. This treatment of alpha-equivalence properties was also followed in the Coq formalisation by Washington Luís de Carvalho's et al.. In the PVS formalisation, nominal alpha-equivalence is presented as a functional recursive algorithm, proved sound and complete, from which executable code in Lisp can be extracted. In the Coq formalisation, a non-deterministic rule-based procedure was presented, following Urban's seminal approach, which is proved sound and complete; further, a recursive definition was presented, which is proved equivalent to the inductive procedure, and from which executable code was extracted.
 
-## REFERENCES
+### REFERENCES
 
 * Christian Urban, Andrew M. Pitts, Murdoch Gabbay:
 Nominal unification. Theor. Comput. Sci. 323(1-3): 473-497 (2004)
