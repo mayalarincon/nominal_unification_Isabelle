@@ -2,7 +2,7 @@
 ### Authors
 Guilherme Borges Brandão (*), Thomas Ammer (+) 
 Daniele Nantes Sobrinho (*), Mauricio Ayala-Rincón (*)
-Christian Urban (+),  Maribel Fernández(+)$, Mohammad Abdulaziz (+)
+Christian Urban (+),  Maribel Fernández (+), Mohammad Abdulaziz (+)
 
 (*) Universidade de Brasília, Brasília D.F., Brazil
 (+) King College London, London, U.K.
