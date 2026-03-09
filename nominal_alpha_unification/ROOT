@@ -1,0 +1,12 @@
+session nominal_alpha_unification = HOL +
+  options [browser_info, document = pdf, document_output = "output"]
+
+  sessions
+    "HOL-Library"
+
+  theories
+     "Mgu"
+
+  document_files
+    "root.tex"
+    "root.bib"

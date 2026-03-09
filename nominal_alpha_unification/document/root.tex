@@ -1,0 +1,74 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{isabelle,isabellesym}
+
+% further packages required for unusual symbols (see also
+% isabellesym.sty), use only when needed
+
+\usepackage{amssymb}
+  %for \<leadsto>, \<box>, \<diamond>, \<sqsupset>, \<mho>, \<Join>,
+  %\<lhd>, \<lesssim>, \<greatersim>, \<lessapprox>, \<greaterapprox>,
+  %\<triangleq>, \<yen>, \<lozenge>
+
+%\usepackage{eurosym}
+  %for \<euro>
+
+%\usepackage[only,bigsqcap,bigparallel,fatsemi,interleave,sslash]{stmaryrd}
+  %for \<Sqinter>, \<Parallel>, \<Zsemi>, \<Parallel>, \<sslash>
+
+%\usepackage{eufrak}
+  %for \<AA> ... \<ZZ>, \<aa> ... \<zz> (also included in amssymb)
+
+%\usepackage{textcomp}
+  %for \<onequarter>, \<onehalf>, \<threequarters>, \<degree>, \<cent>,
+  %\<currency>
+
+% this should be the last package used
+\usepackage{pdfsetup}
+
+% urls in roman style, theory text in math-similar italics
+\urlstyle{rm}
+\isabellestyle{it}
+
+% for uniform font size
+%\renewcommand{\isastyle}{\isastyleminor}
+
+
+\begin{document}
+
+\title{Nominal $\alpha$-Unification}
+\author{Guilherme Borges Brand\~ao$^\dag$ \and Thomas Ammer$^\ddag$ \and Daniele Nantes Sobrinho$^\dag$ \and Mauricio Ayala-Rinci\'on$^\dag$ \and  Christian Urban$^\ddag$ \and Maribel Fern\'andez$^\ddag$ \and Mohammad Abdulaziz$^\ddag$\\[2mm]
+\mbox{}$^\dag$ Universidade de Bras\'ilia, Bras\'ilia D.F., Brazil \\[1mm]
+\mbox{}$^\ddag$King's College London, London, U.K.
+ }
+
+\maketitle
+
+\begin{abstract}
+This theory verifies a non-deterministic procedure for nominal syntactic unification, i.e., nominal $\alpha$-unification. The procedure is presented as a set of inductive rules, following Urban's seminal Isabelle formalisation in Isabelle \cite{DBLP:journals/tcs/UrbanPG04,DBLP:journals/corr/abs-1012-4890}. 
+
+The formalisation is updated according to the PVS Rocha Oliveira et al. approach \cite{DBLP:journals/entcs/Ayala-RinconFO16,ACRochaOliveira2016}, by proving the properties of symmetry, transitivity, and equivariance of the $\alpha$-equivalence relation separately. This treatment of $\alpha$-equivalence properties was also followed in the Coq formalisation by de Carvalho's et al. \cite{DBLP:journals/tcs/Ayala-RinconSFN19,WLRdeCarvalho2019}. In the PVS formalisation, nominal $\alpha$-equivalence is presented as a functional recursive algorithm, proved sound and complete, from which executable code in Lisp can be extracted. In the Coq formalisation, a non-deterministic rule-based procedure was presented, following Urban's seminal approach, which is proved sound and complete; further, a recursive definition was presented, which is proved equivalent to the inductive procedure, and from which executable code was extracted. 
+
+\end{abstract}
+\tableofcontents
+
+% sane default for proof documents
+\parindent 0pt\parskip 0.5ex
+
+% generated text of all theories
+\input{session}
+
+% optional bibliography
+\addcontentsline{toc}{section}{References}
+\bibliographystyle{abbrv}
+\bibliography{root}
+
+
+
+%
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

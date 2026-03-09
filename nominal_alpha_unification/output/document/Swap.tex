@@ -1,0 +1,306 @@
+%
+\begin{isabellebody}%
+\setisabellecontext{Swap}%
+%
+\isadelimtheory
+%
+\endisadelimtheory
+%
+\isatagtheory
+\isacommand{theory}\isamarkupfalse%
+\ Swap\ \isanewline
+\ \ \isakeyword{imports}\ Main\isanewline
+\isakeyword{begin}%
+\endisatagtheory
+{\isafoldtheory}%
+%
+\isadelimtheory
+\isanewline
+%
+\endisadelimtheory
+\isanewline
+\isanewline
+\isanewline
+\isacommand{fun}\isamarkupfalse%
+\ swapa\ {\isacharcolon}{\kern0pt}{\isacharcolon}{\kern0pt}\ {\isachardoublequoteopen}{\isacharparenleft}{\kern0pt}string\ {\isasymtimes}\ string{\isacharparenright}{\kern0pt}\ {\isasymRightarrow}\ string\ {\isasymRightarrow}\ string{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}swapa\ {\isacharparenleft}{\kern0pt}b{\isacharcomma}{\kern0pt}c{\isacharparenright}{\kern0pt}\ a\ {\isacharequal}{\kern0pt}\ {\isacharparenleft}{\kern0pt}if\ b\ {\isacharequal}{\kern0pt}\ a\ then\ c\ else\ {\isacharparenleft}{\kern0pt}if\ c\ {\isacharequal}{\kern0pt}\ a\ then\ b\ else\ a{\isacharparenright}{\kern0pt}{\isacharparenright}{\kern0pt}{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{fun}\isamarkupfalse%
+\ swapas{\isacharcolon}{\kern0pt}{\isacharcolon}{\kern0pt}\ {\isachardoublequoteopen}{\isacharparenleft}{\kern0pt}string\ {\isasymtimes}\ string{\isacharparenright}{\kern0pt}\ list\ {\isasymRightarrow}\ string\ {\isasymRightarrow}\ string{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{where}\isanewline
+\ \ {\isachardoublequoteopen}swapas\ {\isacharbrackleft}{\kern0pt}{\isacharbrackright}{\kern0pt}\ \ \ \ \ a\ {\isacharequal}{\kern0pt}\ a{\isachardoublequoteclose}\isanewline
+{\isacharbar}{\kern0pt}\ {\isachardoublequoteopen}swapas\ {\isacharparenleft}{\kern0pt}x{\isacharhash}{\kern0pt}pi{\isacharparenright}{\kern0pt}\ a\ {\isacharequal}{\kern0pt}\ swapa\ x\ {\isacharparenleft}{\kern0pt}swapas\ pi\ a{\isacharparenright}{\kern0pt}{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ {\isacharbrackleft}{\kern0pt}simp{\isacharbrackright}{\kern0pt}{\isacharcolon}{\kern0pt}\ \isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}swapas\ {\isacharbrackleft}{\kern0pt}{\isacharparenleft}{\kern0pt}a{\isacharcomma}{\kern0pt}a{\isacharparenright}{\kern0pt}{\isacharbrackright}{\kern0pt}\ b{\isacharequal}{\kern0pt}b{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{by}\isamarkupfalse%
+\ simp%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ swapas{\isacharunderscore}{\kern0pt}ab{\isacharunderscore}{\kern0pt}ba{\isacharcolon}{\kern0pt}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}swapas\ {\isacharbrackleft}{\kern0pt}{\isacharparenleft}{\kern0pt}a{\isacharcomma}{\kern0pt}b{\isacharparenright}{\kern0pt}{\isacharbrackright}{\kern0pt}\ {\isacharequal}{\kern0pt}\ swapas\ {\isacharbrackleft}{\kern0pt}{\isacharparenleft}{\kern0pt}b{\isacharcomma}{\kern0pt}a{\isacharparenright}{\kern0pt}{\isacharbrackright}{\kern0pt}{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{by}\isamarkupfalse%
+\ auto%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ swapas{\isacharunderscore}{\kern0pt}append{\isacharcolon}{\kern0pt}\ \isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}swapas\ {\isacharparenleft}{\kern0pt}pi{\isadigit{1}}{\isacharat}{\kern0pt}pi{\isadigit{2}}{\isacharparenright}{\kern0pt}\ a\ {\isacharequal}{\kern0pt}\ swapas\ pi{\isadigit{1}}\ {\isacharparenleft}{\kern0pt}swapas\ pi{\isadigit{2}}\ a{\isacharparenright}{\kern0pt}{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}induct\ pi{\isadigit{1}}{\isacharparenright}{\kern0pt}\ auto%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\ \isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ swapas{\isacharunderscore}{\kern0pt}inv\ {\isacharbrackleft}{\kern0pt}simp{\isacharbrackright}{\kern0pt}{\isacharcolon}{\kern0pt}\ \isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isacharparenright}{\kern0pt}\ {\isacharparenleft}{\kern0pt}swapas\ pi\ a{\isacharparenright}{\kern0pt}\ {\isacharequal}{\kern0pt}\ a{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+%
+\endisadelimproof
+%
+\isatagproof
+\isacommand{apply}\isamarkupfalse%
+{\isacharparenleft}{\kern0pt}induct{\isacharunderscore}{\kern0pt}tac\ pi{\isacharparenright}{\kern0pt}\isanewline
+\isacommand{apply}\isamarkupfalse%
+{\isacharparenleft}{\kern0pt}auto\ simp\ add{\isacharcolon}{\kern0pt}\ swapas{\isacharunderscore}{\kern0pt}append{\isacharparenright}{\kern0pt}\isanewline
+\isacommand{done}\isamarkupfalse%
+%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ swapas{\isacharunderscore}{\kern0pt}rev{\isacharunderscore}{\kern0pt}pi{\isacharunderscore}{\kern0pt}a{\isacharcolon}{\kern0pt}\ \isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}swapas\ pi\ a\ {\isacharequal}{\kern0pt}\ b{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isacharparenright}{\kern0pt}\ b\ {\isacharequal}{\kern0pt}\ a{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+%
+\endisadelimproof
+%
+\isatagproof
+\isacommand{using}\isamarkupfalse%
+\ assms\ \isacommand{by}\isamarkupfalse%
+\ auto%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ swapas{\isacharunderscore}{\kern0pt}rev{\isacharunderscore}{\kern0pt}swapas{\isacharunderscore}{\kern0pt}id\ {\isacharbrackleft}{\kern0pt}simp{\isacharbrackright}{\kern0pt}{\isacharcolon}{\kern0pt}\ \isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}swapas\ pi\ {\isacharparenleft}{\kern0pt}swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isacharparenright}{\kern0pt}\ a{\isacharparenright}{\kern0pt}\ {\isacharequal}{\kern0pt}\ a{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}metis\ swapas{\isacharunderscore}{\kern0pt}rev{\isacharunderscore}{\kern0pt}pi{\isacharunderscore}{\kern0pt}a{\isacharparenright}{\kern0pt}%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ swapas{\isacharunderscore}{\kern0pt}rev{\isacharunderscore}{\kern0pt}pi{\isacharunderscore}{\kern0pt}b{\isacharcolon}{\kern0pt}\ \isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isacharparenright}{\kern0pt}\ a\ {\isacharequal}{\kern0pt}\ b{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}swapas\ pi\ b\ {\isacharequal}{\kern0pt}\ a{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+%
+\endisadelimproof
+%
+\isatagproof
+\isacommand{using}\isamarkupfalse%
+\ assms\ \isacommand{by}\isamarkupfalse%
+\ auto%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ swapas{\isacharunderscore}{\kern0pt}comm{\isacharcolon}{\kern0pt}\ \isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}{\isacharparenleft}{\kern0pt}swapas\ {\isacharparenleft}{\kern0pt}pi{\isacharat}{\kern0pt}{\isacharbrackleft}{\kern0pt}{\isacharparenleft}{\kern0pt}a{\isacharcomma}{\kern0pt}b{\isacharparenright}{\kern0pt}{\isacharbrackright}{\kern0pt}{\isacharparenright}{\kern0pt}\ c{\isacharparenright}{\kern0pt}\ {\isacharequal}{\kern0pt}\ {\isacharparenleft}{\kern0pt}swapas\ {\isacharparenleft}{\kern0pt}{\isacharbrackleft}{\kern0pt}{\isacharparenleft}{\kern0pt}swapas\ pi\ a{\isacharcomma}{\kern0pt}swapas\ pi\ b{\isacharparenright}{\kern0pt}{\isacharbrackright}{\kern0pt}{\isacharat}{\kern0pt}pi{\isacharparenright}{\kern0pt}\ c{\isacharparenright}{\kern0pt}{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}metis\ swapa{\isachardot}{\kern0pt}simps\ swapas{\isachardot}{\kern0pt}simps{\isacharparenleft}{\kern0pt}{\isadigit{1}}{\isacharcomma}{\kern0pt}{\isadigit{2}}{\isacharparenright}{\kern0pt}\ swapas{\isacharunderscore}{\kern0pt}append\ swapas{\isacharunderscore}{\kern0pt}rev{\isacharunderscore}{\kern0pt}pi{\isacharunderscore}{\kern0pt}a{\isacharparenright}{\kern0pt}%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isanewline
+%
+\isadelimtheory
+\isanewline
+%
+\endisadelimtheory
+%
+\isatagtheory
+\isacommand{end}\isamarkupfalse%
+%
+\endisatagtheory
+{\isafoldtheory}%
+%
+\isadelimtheory
+%
+\endisadelimtheory
+%
+\end{isabellebody}%
+\endinput
+%:%file=~/nominal_unification_Isabelle/nominal_alpha_unification/Swap.thy%:%
+%:%10=1%:%
+%:%11=1%:%
+%:%12=2%:%
+%:%13=3%:%
+%:%18=3%:%
+%:%21=4%:%
+%:%22=5%:%
+%:%23=6%:%
+%:%24=7%:%
+%:%25=7%:%
+%:%26=8%:%
+%:%27=9%:%
+%:%28=10%:%
+%:%29=11%:%
+%:%30=11%:%
+%:%31=12%:%
+%:%32=13%:%
+%:%33=14%:%
+%:%34=15%:%
+%:%35=16%:%
+%:%36=16%:%
+%:%37=17%:%
+%:%40=18%:%
+%:%44=18%:%
+%:%45=18%:%
+%:%50=18%:%
+%:%53=19%:%
+%:%54=20%:%
+%:%55=20%:%
+%:%56=21%:%
+%:%59=22%:%
+%:%63=22%:%
+%:%64=22%:%
+%:%69=22%:%
+%:%72=23%:%
+%:%73=24%:%
+%:%74=24%:%
+%:%75=25%:%
+%:%78=26%:%
+%:%82=26%:%
+%:%83=26%:%
+%:%88=26%:%
+%:%91=27%:%
+%:%92=28%:%
+%:%93=28%:%
+%:%94=29%:%
+%:%101=30%:%
+%:%102=30%:%
+%:%103=31%:%
+%:%104=31%:%
+%:%105=32%:%
+%:%111=32%:%
+%:%114=33%:%
+%:%115=34%:%
+%:%116=34%:%
+%:%117=35%:%
+%:%118=36%:%
+%:%125=37%:%
+%:%126=37%:%
+%:%127=37%:%
+%:%132=37%:%
+%:%135=38%:%
+%:%136=39%:%
+%:%137=40%:%
+%:%138=40%:%
+%:%139=41%:%
+%:%142=42%:%
+%:%146=42%:%
+%:%147=42%:%
+%:%152=42%:%
+%:%155=43%:%
+%:%156=44%:%
+%:%157=44%:%
+%:%158=45%:%
+%:%159=46%:%
+%:%166=47%:%
+%:%167=47%:%
+%:%168=47%:%
+%:%173=47%:%
+%:%176=48%:%
+%:%177=49%:%
+%:%178=49%:%
+%:%179=50%:%
+%:%182=51%:%
+%:%186=51%:%
+%:%187=51%:%
+%:%192=51%:%
+%:%195=52%:%
+%:%196=53%:%
+%:%199=54%:%
+%:%204=55%:%

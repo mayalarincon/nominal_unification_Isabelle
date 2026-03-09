@@ -1,0 +1,495 @@
+%
+\begin{isabellebody}%
+\setisabellecontext{Fresh}%
+%
+\isadelimtheory
+%
+\endisadelimtheory
+%
+\isatagtheory
+\isacommand{theory}\isamarkupfalse%
+\ Fresh\isanewline
+\isanewline
+\isakeyword{imports}\ Disagreement\isanewline
+\isanewline
+\isakeyword{begin}%
+\endisatagtheory
+{\isafoldtheory}%
+%
+\isadelimtheory
+\isanewline
+%
+\endisadelimtheory
+\isanewline
+\isacommand{type{\isacharunderscore}{\kern0pt}synonym}\isamarkupfalse%
+\ fresh{\isacharunderscore}{\kern0pt}envs\ {\isacharequal}{\kern0pt}\ {\isachardoublequoteopen}{\isacharparenleft}{\kern0pt}string\ {\isasymtimes}\ string{\isacharparenright}{\kern0pt}\ set{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{inductive}\isamarkupfalse%
+\ fresh\ {\isacharcolon}{\kern0pt}{\isacharcolon}{\kern0pt}\ {\isachardoublequoteopen}fresh{\isacharunderscore}{\kern0pt}envs\ {\isasymRightarrow}\ string\ {\isasymRightarrow}\ trm\ {\isasymRightarrow}\ bool{\isachardoublequoteclose}\ {\isacharparenleft}{\kern0pt}{\isachardoublequoteopen}\ {\isacharunderscore}{\kern0pt}\ {\isasymturnstile}\ {\isacharunderscore}{\kern0pt}\ {\isasymsharp}\ {\isacharunderscore}{\kern0pt}{\isachardoublequoteclose}\ {\isacharbrackleft}{\kern0pt}{\isadigit{8}}{\isadigit{0}}{\isacharcomma}{\kern0pt}{\isadigit{8}}{\isadigit{0}}{\isacharcomma}{\kern0pt}{\isadigit{8}}{\isadigit{0}}{\isacharbrackright}{\kern0pt}\ {\isadigit{8}}{\isadigit{0}}{\isacharparenright}{\kern0pt}\ \isanewline
+\ \ \isakeyword{where}\isanewline
+\ \ fresh{\isacharunderscore}{\kern0pt}abst{\isacharunderscore}{\kern0pt}ab{\isacharbrackleft}{\kern0pt}intro{\isacharbang}{\kern0pt}{\isacharbrackright}{\kern0pt}{\isacharcolon}{\kern0pt}\ {\isachardoublequoteopen}{\isasymlbrakk}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ t{\isacharsemicolon}{\kern0pt}\ a{\isasymnoteq}b{\isasymrbrakk}\ {\isasymLongrightarrow}\ nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ Abst\ b\ t{\isachardoublequoteclose}\ {\isacharbar}{\kern0pt}\isanewline
+\ \ fresh{\isacharunderscore}{\kern0pt}abst{\isacharunderscore}{\kern0pt}aa{\isacharbrackleft}{\kern0pt}intro{\isacharbang}{\kern0pt}{\isacharbrackright}{\kern0pt}{\isacharcolon}{\kern0pt}\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ Abst\ a\ t{\isachardoublequoteclose}\ {\isacharbar}{\kern0pt}\isanewline
+\ \ fresh{\isacharunderscore}{\kern0pt}unit{\isacharbrackleft}{\kern0pt}intro{\isacharbang}{\kern0pt}{\isacharbrackright}{\kern0pt}{\isacharcolon}{\kern0pt}\ \ \ \ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ Unit{\isachardoublequoteclose}\ {\isacharbar}{\kern0pt}\isanewline
+\ \ fresh{\isacharunderscore}{\kern0pt}atom{\isacharbrackleft}{\kern0pt}intro{\isacharbang}{\kern0pt}{\isacharbrackright}{\kern0pt}{\isacharcolon}{\kern0pt}\ \ \ \ {\isachardoublequoteopen}a\ {\isasymnoteq}\ b\ {\isasymLongrightarrow}\ nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ Atom\ b{\isachardoublequoteclose}\ {\isacharbar}{\kern0pt}\isanewline
+\ \ fresh{\isacharunderscore}{\kern0pt}susp{\isacharbrackleft}{\kern0pt}intro{\isacharbang}{\kern0pt}{\isacharbrackright}{\kern0pt}{\isacharcolon}{\kern0pt}\ \ \ \ {\isachardoublequoteopen}{\isacharparenleft}{\kern0pt}swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isacharparenright}{\kern0pt}\ a{\isacharcomma}{\kern0pt}X{\isacharparenright}{\kern0pt}\ {\isasymin}\ nabla\ {\isasymLongrightarrow}\ nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ Susp\ pi\ X{\isachardoublequoteclose}\ {\isacharbar}{\kern0pt}\isanewline
+\ \ fresh{\isacharunderscore}{\kern0pt}paar{\isacharbrackleft}{\kern0pt}intro{\isacharbang}{\kern0pt}{\isacharbrackright}{\kern0pt}{\isacharcolon}{\kern0pt}\ \ \ \ {\isachardoublequoteopen}{\isasymlbrakk}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ t{\isadigit{1}}{\isacharsemicolon}{\kern0pt}\ nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ t{\isadigit{2}}{\isasymrbrakk}\ {\isasymLongrightarrow}\ nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ Paar\ t{\isadigit{1}}\ t{\isadigit{2}}{\isachardoublequoteclose}\ {\isacharbar}{\kern0pt}\isanewline
+\ \ fresh{\isacharunderscore}{\kern0pt}func{\isacharbrackleft}{\kern0pt}intro{\isacharbang}{\kern0pt}{\isacharbrackright}{\kern0pt}{\isacharcolon}{\kern0pt}\ \ \ \ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ t\ {\isasymLongrightarrow}\ nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ Func\ F\ t{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{inductive{\isacharunderscore}{\kern0pt}cases}\isamarkupfalse%
+\ Fresh{\isacharunderscore}{\kern0pt}elims{\isacharcolon}{\kern0pt}\isanewline
+\ \ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ Abst\ b\ t{\isachardoublequoteclose}\isanewline
+\ \ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ Unit{\isachardoublequoteclose}\isanewline
+\ \ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ Atom\ b{\isachardoublequoteclose}\isanewline
+\ \ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ Susp\ pi\ X{\isachardoublequoteclose}\isanewline
+\ \ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ Paar\ t{\isadigit{1}}\ t{\isadigit{2}}{\isachardoublequoteclose}\isanewline
+\ \ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ Func\ F\ t{\isachardoublequoteclose}\isanewline
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ fresh{\isacharunderscore}{\kern0pt}swap{\isacharunderscore}{\kern0pt}eqvt{\isacharcolon}{\kern0pt}\ \isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ t{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ swapas\ pi\ a\ {\isasymsharp}\ swap\ pi\ t{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{using}\isamarkupfalse%
+\ assms\isanewline
+\ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}induct\ arbitrary{\isacharcolon}{\kern0pt}\ pi\ rule{\isacharcolon}{\kern0pt}\ fresh{\isachardot}{\kern0pt}induct{\isacharparenright}{\kern0pt}\isanewline
+{\isacharparenleft}{\kern0pt}auto\ simp\ add{\isacharcolon}{\kern0pt}\ swapas{\isacharunderscore}{\kern0pt}append\ dest{\isacharcolon}{\kern0pt}\ swapas{\isacharunderscore}{\kern0pt}rev{\isacharunderscore}{\kern0pt}pi{\isacharunderscore}{\kern0pt}a{\isacharparenright}{\kern0pt}%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ fresh{\isacharunderscore}{\kern0pt}swap{\isacharunderscore}{\kern0pt}left{\isacharcolon}{\kern0pt}\ \isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ swap\ pi\ t{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isacharparenright}{\kern0pt}\ a\ {\isasymsharp}\ t{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{using}\isamarkupfalse%
+\ assms\isanewline
+\isacommand{proof}\isamarkupfalse%
+{\isacharparenleft}{\kern0pt}induct\ t\ arbitrary{\isacharcolon}{\kern0pt}\ a\ pi{\isacharparenright}{\kern0pt}\isanewline
+\ \ \isacommand{case}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}Abst\ x{\isadigit{1}}\ t{\isacharparenright}{\kern0pt}\isanewline
+\ \ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ swap\ pi\ {\isacharparenleft}{\kern0pt}Abst\ x{\isadigit{1}}\ t{\isacharparenright}{\kern0pt}{\isachardoublequoteclose}\ \isacommand{by}\isamarkupfalse%
+\ fact\isanewline
+\ \ \isacommand{then}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isacharparenleft}{\kern0pt}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ swap\ pi\ t\ {\isasymand}\ a\ {\isasymnoteq}\ swapas\ pi\ x{\isadigit{1}}{\isacharparenright}{\kern0pt}\ {\isasymor}\ {\isacharparenleft}{\kern0pt}a\ {\isacharequal}{\kern0pt}\ swapas\ pi\ x{\isadigit{1}}{\isacharparenright}{\kern0pt}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}metis\ Fresh{\isacharunderscore}{\kern0pt}elims{\isacharparenleft}{\kern0pt}{\isadigit{1}}{\isacharparenright}{\kern0pt}\ swap{\isachardot}{\kern0pt}simps{\isacharparenleft}{\kern0pt}{\isadigit{4}}{\isacharparenright}{\kern0pt}{\isacharparenright}{\kern0pt}\isanewline
+\ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{{\isacharbraceleft}{\kern0pt}}\isamarkupfalse%
+\isanewline
+\ \ \ \ \isacommand{assume}\isamarkupfalse%
+\ as{\isacharcolon}{\kern0pt}\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ swap\ pi\ t\ {\isasymand}\ a\ {\isasymnoteq}\ swapas\ pi\ x{\isadigit{1}}{\isachardoublequoteclose}\ \isanewline
+\ \ \ \ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isacharparenright}{\kern0pt}\ a\ {\isasymsharp}\ Abst\ x{\isadigit{1}}\ t{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{using}\isamarkupfalse%
+\ Abst{\isachardot}{\kern0pt}hyps\ as\ \isacommand{by}\isamarkupfalse%
+\ auto\ \isanewline
+\ \ \isacommand{{\isacharbraceright}{\kern0pt}}\isamarkupfalse%
+\isanewline
+\ \ \isacommand{moreover}\isamarkupfalse%
+\ \isacommand{{\isacharbraceleft}{\kern0pt}}\isamarkupfalse%
+\isanewline
+\ \ \ \ \isacommand{assume}\isamarkupfalse%
+\ as{\isacharcolon}{\kern0pt}\ {\isachardoublequoteopen}a\ {\isacharequal}{\kern0pt}\ swapas\ pi\ x{\isadigit{1}}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{then}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isacharparenright}{\kern0pt}\ a\ {\isasymsharp}\ Abst\ x{\isadigit{1}}\ t{\isachardoublequoteclose}\isanewline
+\ \ \ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}simp\ add{\isacharcolon}{\kern0pt}\ fresh{\isacharunderscore}{\kern0pt}abst{\isacharunderscore}{\kern0pt}aa{\isacharparenright}{\kern0pt}\ \ \ \ \ \ \isanewline
+\ \ \isacommand{{\isacharbraceright}{\kern0pt}}\isamarkupfalse%
+\ \isanewline
+\ \ \isacommand{ultimately}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isacharparenright}{\kern0pt}\ a\ {\isasymsharp}\ Abst\ x{\isadigit{1}}\ t{\isachardoublequoteclose}\ \isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ argo\isanewline
+\isacommand{next}\isamarkupfalse%
+\isanewline
+\ \ \isacommand{case}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}Susp\ x{\isadigit{1}}\ x{\isadigit{2}}{\isacharparenright}{\kern0pt}\isanewline
+\ \ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ swap\ pi\ {\isacharparenleft}{\kern0pt}Susp\ x{\isadigit{1}}\ x{\isadigit{2}}{\isacharparenright}{\kern0pt}{\isachardoublequoteclose}\ \isacommand{by}\isamarkupfalse%
+\ fact\isanewline
+\ \ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}{\isacharparenleft}{\kern0pt}swapas\ {\isacharparenleft}{\kern0pt}rev\ x{\isadigit{1}}{\isacharparenright}{\kern0pt}\ {\isacharparenleft}{\kern0pt}swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isacharparenright}{\kern0pt}\ a{\isacharparenright}{\kern0pt}{\isacharcomma}{\kern0pt}\ x{\isadigit{2}}{\isacharparenright}{\kern0pt}\ {\isasymin}\ nabla{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}metis\ Fresh{\isacharunderscore}{\kern0pt}elims{\isacharparenleft}{\kern0pt}{\isadigit{4}}{\isacharparenright}{\kern0pt}\ Susp\ rev{\isacharunderscore}{\kern0pt}append\ swap{\isachardot}{\kern0pt}simps{\isacharparenleft}{\kern0pt}{\isadigit{3}}{\isacharparenright}{\kern0pt}\ swapas{\isacharunderscore}{\kern0pt}append{\isacharparenright}{\kern0pt}\ \isanewline
+\ \ \isacommand{then}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isacharparenright}{\kern0pt}\ a\ {\isasymsharp}\ Susp\ x{\isadigit{1}}\ x{\isadigit{2}}{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}simp\ add{\isacharcolon}{\kern0pt}\ fresh{\isacharunderscore}{\kern0pt}susp{\isacharparenright}{\kern0pt}\isanewline
+\isacommand{next}\isamarkupfalse%
+\isanewline
+\ \ \isacommand{case}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}Atom\ x{\isacharparenright}{\kern0pt}\isanewline
+\ \ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ swap\ pi\ {\isacharparenleft}{\kern0pt}Atom\ x{\isacharparenright}{\kern0pt}{\isachardoublequoteclose}\ \isacommand{by}\isamarkupfalse%
+\ fact\isanewline
+\ \ \isacommand{then}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}swapas\ pi\ x\ {\isasymnoteq}\ a{\isachardoublequoteclose}\ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}auto\ elim{\isacharcolon}{\kern0pt}\ Fresh{\isacharunderscore}{\kern0pt}elims{\isacharparenright}{\kern0pt}\isanewline
+\ \ \isacommand{then}\isamarkupfalse%
+\ \isacommand{have}\isamarkupfalse%
+\ {\isachardoublequoteopen}x\ {\isasymnoteq}\ swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isacharparenright}{\kern0pt}\ a{\isachardoublequoteclose}\ \isacommand{using}\isamarkupfalse%
+\ swapas{\isacharunderscore}{\kern0pt}rev{\isacharunderscore}{\kern0pt}pi{\isacharunderscore}{\kern0pt}b\ \isacommand{by}\isamarkupfalse%
+\ blast\ \ \isanewline
+\ \ \isacommand{then}\isamarkupfalse%
+\ \isacommand{show}\isamarkupfalse%
+\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isacharparenright}{\kern0pt}\ a\ {\isasymsharp}\ Atom\ x{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}simp\ add{\isacharcolon}{\kern0pt}\ fresh{\isacharunderscore}{\kern0pt}atom{\isacharparenright}{\kern0pt}\ \isanewline
+\isacommand{qed}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}auto\ elim{\isacharcolon}{\kern0pt}\ Fresh{\isacharunderscore}{\kern0pt}elims{\isacharparenright}{\kern0pt}%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isanewline
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ fresh{\isacharunderscore}{\kern0pt}swap{\isacharunderscore}{\kern0pt}right{\isacharcolon}{\kern0pt}\ \isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isacharparenright}{\kern0pt}\ a\ {\isasymsharp}\ t{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ swap\ pi\ t{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{using}\isamarkupfalse%
+\ assms\ fresh{\isacharunderscore}{\kern0pt}swap{\isacharunderscore}{\kern0pt}eqvt{\isacharbrackleft}{\kern0pt}of\ nabla\ {\isacartoucheopen}swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isacharparenright}{\kern0pt}\ a{\isacartoucheclose}\ t\ pi{\isacharbrackright}{\kern0pt}\ \isanewline
+\ \ \ \ swapas{\isacharunderscore}{\kern0pt}rev{\isacharunderscore}{\kern0pt}swapas{\isacharunderscore}{\kern0pt}id{\isacharbrackleft}{\kern0pt}of\ pi\ a{\isacharbrackright}{\kern0pt}\ \isacommand{by}\isamarkupfalse%
+\ simp%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ fresh{\isacharunderscore}{\kern0pt}weak{\isacharcolon}{\kern0pt}\ \isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}nabla{\isadigit{1}}\ {\isasymturnstile}\ a\ {\isasymsharp}\ t{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}{\isacharparenleft}{\kern0pt}nabla{\isadigit{1}}\ {\isasymunion}\ nabla{\isadigit{2}}{\isacharparenright}{\kern0pt}\ {\isasymturnstile}\ a\ {\isasymsharp}\ t{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{using}\isamarkupfalse%
+\ assms\isanewline
+\ \ \isacommand{by}\isamarkupfalse%
+{\isacharparenleft}{\kern0pt}induct\ rule{\isacharcolon}{\kern0pt}\ fresh{\isachardot}{\kern0pt}induct{\isacharparenright}{\kern0pt}{\isacharparenleft}{\kern0pt}auto{\isacharparenright}{\kern0pt}%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ ds{\isacharunderscore}{\kern0pt}empty{\isacharunderscore}{\kern0pt}fresh{\isacharunderscore}{\kern0pt}{\isadigit{1}}{\isacharcolon}{\kern0pt}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}ds\ pi{\isadigit{1}}\ pi{\isadigit{2}}\ {\isacharequal}{\kern0pt}\ {\isacharbraceleft}{\kern0pt}{\isacharbraceright}{\kern0pt}{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ swapas\ pi{\isadigit{1}}\ a\ {\isasymsharp}\ t\ {\isasymLongrightarrow}\ nabla\ {\isasymturnstile}\ swapas\ pi{\isadigit{2}}\ a\ {\isasymsharp}\ t{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{using}\isamarkupfalse%
+\ assms\ ds{\isacharunderscore}{\kern0pt}swapas{\isacharunderscore}{\kern0pt}eq\ \isacommand{by}\isamarkupfalse%
+\ simp%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ ds{\isacharunderscore}{\kern0pt}empty{\isacharunderscore}{\kern0pt}fresh{\isacharunderscore}{\kern0pt}{\isadigit{2}}{\isacharcolon}{\kern0pt}\isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}ds\ pi{\isadigit{1}}\ pi{\isadigit{2}}\ {\isacharequal}{\kern0pt}\ {\isacharbraceleft}{\kern0pt}{\isacharbraceright}{\kern0pt}{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ swap\ pi{\isadigit{1}}\ t\ {\isasymLongrightarrow}\ nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ swap\ pi{\isadigit{2}}\ t{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{using}\isamarkupfalse%
+\ assms\ \isanewline
+\isacommand{proof}\isamarkupfalse%
+{\isacharminus}{\kern0pt}\isanewline
+\ \ \isacommand{assume}\isamarkupfalse%
+\ assm{\isadigit{1}}{\isacharcolon}{\kern0pt}\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ a\ {\isasymsharp}\ swap\ pi{\isadigit{1}}\ t{\isachardoublequoteclose}\isanewline
+\ \ \isacommand{have}\isamarkupfalse%
+\ i{\isacharcolon}{\kern0pt}\ {\isachardoublequoteopen}swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isadigit{1}}{\isacharparenright}{\kern0pt}\ a\ {\isacharequal}{\kern0pt}\ swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isadigit{2}}{\isacharparenright}{\kern0pt}\ a{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{using}\isamarkupfalse%
+\ assms\ ds{\isacharunderscore}{\kern0pt}swapas{\isacharunderscore}{\kern0pt}eq\ swapas{\isacharunderscore}{\kern0pt}rev{\isacharunderscore}{\kern0pt}pi{\isacharunderscore}{\kern0pt}a\ \isacommand{by}\isamarkupfalse%
+\ metis\isanewline
+\ \ \isacommand{with}\isamarkupfalse%
+\ assms\ \isacommand{have}\isamarkupfalse%
+\ ii{\isacharcolon}{\kern0pt}\ {\isachardoublequoteopen}nabla\ {\isasymturnstile}\ swapas\ {\isacharparenleft}{\kern0pt}rev\ pi{\isadigit{2}}{\isacharparenright}{\kern0pt}\ a\ {\isasymsharp}\ t{\isachardoublequoteclose}\isanewline
+\ \ \ \ \isacommand{using}\isamarkupfalse%
+\ fresh{\isacharunderscore}{\kern0pt}swap{\isacharunderscore}{\kern0pt}left{\isacharbrackleft}{\kern0pt}OF\ assm{\isadigit{1}}{\isacharbrackright}{\kern0pt}\ i\ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\ \ \isacommand{show}\isamarkupfalse%
+\ {\isacharquery}{\kern0pt}thesis\ \isanewline
+\ \ \ \ \isacommand{using}\isamarkupfalse%
+\ fresh{\isacharunderscore}{\kern0pt}swap{\isacharunderscore}{\kern0pt}right{\isacharbrackleft}{\kern0pt}OF\ ii{\isacharbrackright}{\kern0pt}\ \isacommand{by}\isamarkupfalse%
+\ simp\isanewline
+\isacommand{qed}\isamarkupfalse%
+%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+%
+\isadelimtheory
+\isanewline
+%
+\endisadelimtheory
+%
+\isatagtheory
+\isacommand{end}\isamarkupfalse%
+%
+\endisatagtheory
+{\isafoldtheory}%
+%
+\isadelimtheory
+%
+\endisadelimtheory
+%
+\end{isabellebody}%
+\endinput
+%:%file=~/nominal_unification_Isabelle/nominal_alpha_unification/Fresh.thy%:%
+%:%10=1%:%
+%:%11=1%:%
+%:%12=2%:%
+%:%13=3%:%
+%:%14=4%:%
+%:%15=5%:%
+%:%20=5%:%
+%:%23=6%:%
+%:%24=7%:%
+%:%25=7%:%
+%:%26=8%:%
+%:%27=9%:%
+%:%28=9%:%
+%:%29=10%:%
+%:%30=11%:%
+%:%31=12%:%
+%:%32=13%:%
+%:%33=14%:%
+%:%34=15%:%
+%:%35=16%:%
+%:%36=17%:%
+%:%37=18%:%
+%:%38=19%:%
+%:%39=19%:%
+%:%40=20%:%
+%:%41=21%:%
+%:%42=22%:%
+%:%43=23%:%
+%:%44=24%:%
+%:%45=25%:%
+%:%46=26%:%
+%:%47=27%:%
+%:%48=27%:%
+%:%49=28%:%
+%:%50=29%:%
+%:%53=30%:%
+%:%57=30%:%
+%:%58=30%:%
+%:%59=31%:%
+%:%60=31%:%
+%:%61=32%:%
+%:%66=32%:%
+%:%69=33%:%
+%:%70=34%:%
+%:%71=35%:%
+%:%72=35%:%
+%:%73=36%:%
+%:%74=37%:%
+%:%77=38%:%
+%:%81=38%:%
+%:%82=38%:%
+%:%83=39%:%
+%:%84=39%:%
+%:%85=40%:%
+%:%86=40%:%
+%:%87=41%:%
+%:%88=41%:%
+%:%89=41%:%
+%:%90=42%:%
+%:%91=42%:%
+%:%92=42%:%
+%:%93=43%:%
+%:%94=43%:%
+%:%95=44%:%
+%:%96=44%:%
+%:%97=44%:%
+%:%98=45%:%
+%:%99=45%:%
+%:%100=46%:%
+%:%101=46%:%
+%:%102=47%:%
+%:%103=47%:%
+%:%104=47%:%
+%:%105=48%:%
+%:%106=48%:%
+%:%107=49%:%
+%:%108=49%:%
+%:%109=49%:%
+%:%110=50%:%
+%:%111=50%:%
+%:%112=51%:%
+%:%113=51%:%
+%:%114=51%:%
+%:%115=52%:%
+%:%116=52%:%
+%:%117=53%:%
+%:%118=53%:%
+%:%119=54%:%
+%:%120=54%:%
+%:%121=54%:%
+%:%122=55%:%
+%:%123=55%:%
+%:%124=56%:%
+%:%125=56%:%
+%:%126=57%:%
+%:%127=57%:%
+%:%128=58%:%
+%:%129=58%:%
+%:%130=58%:%
+%:%131=59%:%
+%:%132=59%:%
+%:%133=60%:%
+%:%134=60%:%
+%:%135=61%:%
+%:%136=61%:%
+%:%137=61%:%
+%:%138=62%:%
+%:%139=62%:%
+%:%140=63%:%
+%:%141=63%:%
+%:%142=64%:%
+%:%143=64%:%
+%:%144=65%:%
+%:%145=65%:%
+%:%146=65%:%
+%:%147=66%:%
+%:%148=66%:%
+%:%149=66%:%
+%:%150=66%:%
+%:%151=67%:%
+%:%152=67%:%
+%:%153=67%:%
+%:%154=67%:%
+%:%155=67%:%
+%:%156=68%:%
+%:%157=68%:%
+%:%158=68%:%
+%:%159=69%:%
+%:%160=69%:%
+%:%161=70%:%
+%:%162=70%:%
+%:%167=70%:%
+%:%170=71%:%
+%:%171=72%:%
+%:%172=73%:%
+%:%173=74%:%
+%:%174=74%:%
+%:%175=75%:%
+%:%176=76%:%
+%:%179=77%:%
+%:%183=77%:%
+%:%184=77%:%
+%:%185=78%:%
+%:%186=78%:%
+%:%191=78%:%
+%:%194=79%:%
+%:%195=80%:%
+%:%196=80%:%
+%:%197=81%:%
+%:%198=82%:%
+%:%201=83%:%
+%:%205=83%:%
+%:%206=83%:%
+%:%207=84%:%
+%:%208=84%:%
+%:%213=84%:%
+%:%216=85%:%
+%:%217=86%:%
+%:%218=86%:%
+%:%219=87%:%
+%:%220=88%:%
+%:%223=89%:%
+%:%227=89%:%
+%:%228=89%:%
+%:%229=89%:%
+%:%234=89%:%
+%:%237=90%:%
+%:%238=91%:%
+%:%239=91%:%
+%:%240=92%:%
+%:%241=93%:%
+%:%244=94%:%
+%:%248=94%:%
+%:%249=94%:%
+%:%250=95%:%
+%:%251=95%:%
+%:%252=96%:%
+%:%253=96%:%
+%:%254=97%:%
+%:%255=97%:%
+%:%256=98%:%
+%:%257=98%:%
+%:%258=98%:%
+%:%259=99%:%
+%:%260=99%:%
+%:%261=99%:%
+%:%262=100%:%
+%:%263=100%:%
+%:%264=100%:%
+%:%265=101%:%
+%:%266=101%:%
+%:%267=102%:%
+%:%268=102%:%
+%:%269=102%:%
+%:%270=103%:%
+%:%276=103%:%
+%:%281=104%:%
+%:%286=105%:%

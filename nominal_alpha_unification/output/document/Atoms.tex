@@ -1,0 +1,254 @@
+%
+\begin{isabellebody}%
+\setisabellecontext{Atoms}%
+%
+\isadelimtheory
+\isanewline
+%
+\endisadelimtheory
+%
+\isatagtheory
+\isacommand{theory}\isamarkupfalse%
+\ Atoms\ \isanewline
+\isanewline
+\isakeyword{imports}\ Terms\isanewline
+\isanewline
+\isakeyword{begin}%
+\endisatagtheory
+{\isafoldtheory}%
+%
+\isadelimtheory
+\isanewline
+%
+\endisadelimtheory
+\isanewline
+\isacommand{fun}\isamarkupfalse%
+\ atms\ {\isacharcolon}{\kern0pt}{\isacharcolon}{\kern0pt}\ {\isachardoublequoteopen}{\isacharparenleft}{\kern0pt}string\ {\isasymtimes}\ string{\isacharparenright}{\kern0pt}\ list\ {\isasymRightarrow}\ string\ set{\isachardoublequoteclose}\ \isakeyword{where}\isanewline
+{\isachardoublequoteopen}atms\ {\isacharbrackleft}{\kern0pt}{\isacharbrackright}{\kern0pt}\ {\isacharequal}{\kern0pt}\ {\isacharbraceleft}{\kern0pt}{\isacharbraceright}{\kern0pt}{\isachardoublequoteclose}\ {\isacharbar}{\kern0pt}\ \isanewline
+{\isachardoublequoteopen}atms\ {\isacharparenleft}{\kern0pt}x{\isacharhash}{\kern0pt}xs{\isacharparenright}{\kern0pt}\ {\isacharequal}{\kern0pt}\ {\isacharparenleft}{\kern0pt}{\isacharparenleft}{\kern0pt}atms\ xs{\isacharparenright}{\kern0pt}\ {\isasymunion}\ \ {\isacharbraceleft}{\kern0pt}fst{\isacharparenleft}{\kern0pt}x{\isacharparenright}{\kern0pt}{\isacharcomma}{\kern0pt}snd{\isacharparenleft}{\kern0pt}x{\isacharparenright}{\kern0pt}{\isacharbraceright}{\kern0pt}{\isacharparenright}{\kern0pt}{\isachardoublequoteclose}\isanewline
+\isanewline
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ {\isacharbrackleft}{\kern0pt}simp{\isacharbrackright}{\kern0pt}{\isacharcolon}{\kern0pt}\ \isanewline
+\ \ {\isachardoublequoteopen}atms\ {\isacharparenleft}{\kern0pt}xs{\isacharat}{\kern0pt}ys{\isacharparenright}{\kern0pt}\ {\isacharequal}{\kern0pt}\ atms\ xs\ {\isasymunion}\ atms\ ys{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}induct\ xs{\isacharparenright}{\kern0pt}\ auto%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ {\isacharbrackleft}{\kern0pt}simp{\isacharbrackright}{\kern0pt}{\isacharcolon}{\kern0pt}\ \isanewline
+\ \ {\isachardoublequoteopen}atms\ {\isacharparenleft}{\kern0pt}rev\ pi{\isacharparenright}{\kern0pt}\ {\isacharequal}{\kern0pt}\ atms\ pi{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}induct\ pi{\isacharparenright}{\kern0pt}\ auto%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ a{\isacharunderscore}{\kern0pt}not{\isacharunderscore}{\kern0pt}in{\isacharunderscore}{\kern0pt}atms{\isacharcolon}{\kern0pt}\ \isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}a\ {\isasymnotin}\ atms\ pi{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}a\ {\isacharequal}{\kern0pt}\ swapas\ pi\ a{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{using}\isamarkupfalse%
+\ assms\ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}induct\ pi{\isacharparenright}{\kern0pt}\ auto%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ swapas{\isacharunderscore}{\kern0pt}pi{\isacharunderscore}{\kern0pt}ineq{\isacharunderscore}{\kern0pt}a{\isacharcolon}{\kern0pt}\ \isanewline
+\ \ \isakeyword{assumes}\ \ {\isachardoublequoteopen}swapas\ pi\ a\ {\isasymnoteq}\ a{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}a\ {\isasymin}\ atms\ pi{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{using}\isamarkupfalse%
+\ a{\isacharunderscore}{\kern0pt}not{\isacharunderscore}{\kern0pt}in{\isacharunderscore}{\kern0pt}atms\ assms\ \isacommand{by}\isamarkupfalse%
+\ force%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ a{\isacharunderscore}{\kern0pt}ineq{\isacharunderscore}{\kern0pt}swapas{\isacharunderscore}{\kern0pt}pi{\isacharcolon}{\kern0pt}\ \isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}a\ {\isasymnoteq}\ swapas\ pi\ a{\isachardoublequoteclose}\isanewline
+\ \ \isakeyword{shows}\ {\isachardoublequoteopen}a\ {\isasymin}\ atms\ pi{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{using}\isamarkupfalse%
+\ a{\isacharunderscore}{\kern0pt}not{\isacharunderscore}{\kern0pt}in{\isacharunderscore}{\kern0pt}atms\ assms\ \isacommand{by}\isamarkupfalse%
+\ blast%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+\isanewline
+\isacommand{lemma}\isamarkupfalse%
+\ swapas{\isacharunderscore}{\kern0pt}pi{\isacharunderscore}{\kern0pt}in{\isacharunderscore}{\kern0pt}atms{\isacharcolon}{\kern0pt}\ \isanewline
+\ \ \isakeyword{assumes}\ {\isachardoublequoteopen}a\ {\isasymin}\ atms\ pi{\isachardoublequoteclose}\ \isanewline
+\ \ \isakeyword{shows}{\isachardoublequoteopen}swapas\ pi\ a\ {\isasymin}\ atms\ pi{\isachardoublequoteclose}\isanewline
+%
+\isadelimproof
+\ \ %
+\endisadelimproof
+%
+\isatagproof
+\isacommand{using}\isamarkupfalse%
+\ assms\ \isacommand{by}\isamarkupfalse%
+\ {\isacharparenleft}{\kern0pt}metis\ a{\isacharunderscore}{\kern0pt}not{\isacharunderscore}{\kern0pt}in{\isacharunderscore}{\kern0pt}atms\ swapas{\isacharunderscore}{\kern0pt}rev{\isacharunderscore}{\kern0pt}pi{\isacharunderscore}{\kern0pt}a{\isacharparenright}{\kern0pt}%
+\endisatagproof
+{\isafoldproof}%
+%
+\isadelimproof
+\isanewline
+%
+\endisadelimproof
+\isanewline
+%
+\isadelimtheory
+\isanewline
+%
+\endisadelimtheory
+%
+\isatagtheory
+\isacommand{end}\isamarkupfalse%
+%
+\endisatagtheory
+{\isafoldtheory}%
+%
+\isadelimtheory
+%
+\endisadelimtheory
+%
+\end{isabellebody}%
+\endinput
+%:%file=~/nominal_unification_Isabelle/nominal_alpha_unification/Atoms.thy%:%
+%:%6=1%:%
+%:%11=2%:%
+%:%12=2%:%
+%:%13=3%:%
+%:%14=4%:%
+%:%15=5%:%
+%:%16=6%:%
+%:%21=6%:%
+%:%24=7%:%
+%:%25=8%:%
+%:%26=8%:%
+%:%27=9%:%
+%:%28=10%:%
+%:%29=11%:%
+%:%30=12%:%
+%:%31=13%:%
+%:%32=13%:%
+%:%33=14%:%
+%:%36=15%:%
+%:%40=15%:%
+%:%41=15%:%
+%:%46=15%:%
+%:%49=16%:%
+%:%50=17%:%
+%:%51=18%:%
+%:%52=18%:%
+%:%53=19%:%
+%:%56=20%:%
+%:%60=20%:%
+%:%61=20%:%
+%:%66=20%:%
+%:%69=21%:%
+%:%70=22%:%
+%:%71=23%:%
+%:%72=23%:%
+%:%73=24%:%
+%:%74=25%:%
+%:%77=26%:%
+%:%81=26%:%
+%:%82=26%:%
+%:%83=26%:%
+%:%88=26%:%
+%:%91=27%:%
+%:%92=28%:%
+%:%93=29%:%
+%:%94=29%:%
+%:%95=30%:%
+%:%96=31%:%
+%:%99=32%:%
+%:%103=32%:%
+%:%104=32%:%
+%:%105=32%:%
+%:%110=32%:%
+%:%113=33%:%
+%:%114=34%:%
+%:%115=35%:%
+%:%116=35%:%
+%:%117=36%:%
+%:%118=37%:%
+%:%121=38%:%
+%:%125=38%:%
+%:%126=38%:%
+%:%127=38%:%
+%:%132=38%:%
+%:%135=39%:%
+%:%136=40%:%
+%:%137=41%:%
+%:%138=41%:%
+%:%139=42%:%
+%:%140=43%:%
+%:%143=44%:%
+%:%147=44%:%
+%:%148=44%:%
+%:%149=44%:%
+%:%154=44%:%
+%:%157=45%:%
+%:%160=46%:%
+%:%165=47%:%
