@@ -7,7 +7,7 @@ Christian Urban(+),  Maribel Fernández(+)$, Mohammad Abdulaziz(+)
 (*) Universidade de Brasília, Brasília D.F., Brazil
 (+) King College London, London, U.K.
 
-This theory verifies a non-deterministic procedure for nominal syntactic unification, i.e., nominal alpha-unification. The procedure is presented as a set of inductive rules, followingfollowing Christian Urban's seminal Isabelle formalisation in Isabelle.  
+This theory verifies a non-deterministic procedure for nominal syntactic unification, i.e., nominal alpha-unification. The procedure is presented as a set of inductive rules, following Christian Urban's seminal Isabelle formalisation.  
 
 The formalisation is updated according to the PVS Ana Cristina Rocha Oliveira et al. approach by proving the properties of symmetry, transitivity, and equivariance of the alpha-equivalence relation separately. This treatment of alpha-equivalence properties was also followed in the Coq formalisation by Washington Luís de Carvalho's et al.. In the PVS formalisation, nominal alpha-equivalence is presented as a functional recursive algorithm, proved sound and complete, from which executable code in Lisp can be extracted. In the Coq formalisation, a non-deterministic rule-based procedure was presented, following Urban's seminal approach, which is proved sound and complete; further, a recursive definition was presented, which is proved equivalent to the inductive procedure, and from which executable code was extracted.
 
@@ -32,6 +32,6 @@ Unification, Confluence, and Intersection Types for Nominal Rewriting Systems. P
 A formalisation of nominal α-equivalence with A, C, and AC function symbols. Theoretical Computer Science 781: 3-23 (2019)
 https://doi.org/10.1016/j.tcs.2019.02.020
 
-Washington Luís Ribeiro de Carvalho Segundo:
+* Washington Luís Ribeiro de Carvalho Segundo:
 Nominal Equational Problems Modulo Associativity, Commutativity and Associativity-Commutativity. PhD thesis, Graduate Program in Informatics, University of Brasília, 2019. in English.
 
