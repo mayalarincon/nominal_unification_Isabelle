@@ -2,10 +2,9 @@
 ### Authors
 Guilherme Borges Brandão<sup>(\*)</sup>, Thomas Ammer<sup>(+)</sup>\
 Daniele Nantes Sobrinho<sup>(\*)</sup>, Mauricio Ayala-Rincón<sup>(\*)</sup>,\
-Christian Urban<sup>(+)</sup>,  Maribel Fernández<sup>(+)</sup>, Mohammad Abdulaziz<sup>(+)</sup>\
+Christian Urban<sup>(+)</sup>,  Maribel Fernández<sup>(+)</sup>, Mohammad Abdulaziz<sup>(+)</sup>
 
-<sup>**(\*)**</sup> Universidade de Brasília, Brasília D.F., Brazil
-
+<sup>**(\*)**</sup> Universidade de Brasília, Brasília D.F., Brazil\
 <sup>**(+)**</sup> King College London, London, U.K.
 
 ## Contents
