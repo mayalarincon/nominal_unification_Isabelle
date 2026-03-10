@@ -20,14 +20,14 @@ Nominal unification. *Theor. Comput. Sci.* 323(1-3): 473-497 (2004)
 https://doi.org/10.1016/j.tcs.2004.06.016
 
 * Christian Urban:
-Nominal Unification Revisited. UNIF 2010: 1-11
+Nominal Unification Revisited. In Proc. UNIF 2010, EPTCS 42, 2010, pp. 1-11
 https://doi.org/10.4204/EPTCS.42.1
 
 * Mauricio Ayala-Rincón, Maribel Fernández, Ana Cristina Rocha Oliveira:
-Completeness in PVS of a Nominal Unification Algorithm. LSFA 2015: 57-74
+Completeness in PVS of a Nominal Unification Algorithm. In Proc. LSFA 2015: 57-74
 https://doi.org/10.1016/j.entcs.2016.06.005
 
-* Ana Cristina Rocha Oliveirai: 
+* Ana Cristina Rocha Oliveira: 
 Unification, Confluence, and Intersection Types for Nominal Rewriting Systems. PhD thesis, Graduate Program in Informatics, University of Brasília, 2016. in English.
 http://repositorio.unb.br/handle/10482/22387
 
