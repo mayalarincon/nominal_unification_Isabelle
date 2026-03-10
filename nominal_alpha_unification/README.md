@@ -1,8 +1,8 @@
 # Nominal Alpha Unification 
 ### Authors
-Guilherme Borges Brandão<sup>(\*)</sup>, Thomas Ammer<sup>(+)</sup>
-Daniele Nantes Sobrinho<sup>(\*)</sup>, Mauricio Ayala-Rincón<sup>(\*)</sup>,
-Christian Urban<sup>(+)</sup>,  Maribel Fernández<sup>(+)</sup>, Mohammad Abdulaziz<sup>(+)</sup>
+Guilherme Borges Brandão<sup>(\*)</sup>, Thomas Ammer<sup>(+)</sup>\
+Daniele Nantes Sobrinho<sup>(\*)</sup>, Mauricio Ayala-Rincón<sup>(\*)</sup>,\
+Christian Urban<sup>(+)</sup>,  Maribel Fernández<sup>(+)</sup>, Mohammad Abdulaziz<sup>(+)</sup>\
 
 <sup>**(\*)**</sup> Universidade de Brasília, Brasília D.F., Brazil
 
