@@ -1,6 +1,6 @@
 # Nominal Alpha Unification 
 ### Authors
-Guilherme Borges Brandão[*], Thomas Ammer[+] 
+Guilherme Borges Brandão<sup>(*)</sup>, Thomas Ammer[+] 
 Daniele Nantes Sobrinho[*], Mauricio Ayala-Rincón[*]
 Christian Urban[+],  Maribel Fernández[+], Mohammad Abdulaziz[+]
 
