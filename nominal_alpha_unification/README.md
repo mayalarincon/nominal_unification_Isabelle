@@ -24,7 +24,7 @@ Nominal Unification Revisited. In Proc. UNIF 2010, EPTCS 42, 2010, pp. 1-11
 https://doi.org/10.4204/EPTCS.42.1
 
 * Mauricio Ayala-Rincón, Maribel Fernández, Ana Cristina Rocha Oliveira:
-Completeness in PVS of a Nominal Unification Algorithm. In Proc. LSFA 2015: 57-74
+Completeness in PVS of a Nominal Unification Algorithm. In Proc. LSFA 2015, : 57-74
 https://doi.org/10.1016/j.entcs.2016.06.005
 
 * Ana Cristina Rocha Oliveira: 
