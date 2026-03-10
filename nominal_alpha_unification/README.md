@@ -20,11 +20,11 @@ Nominal unification. *Theor. Comput. Sci.* 323(1-3): 473-497 (2004)
 https://doi.org/10.1016/j.tcs.2004.06.016
 
 * Christian Urban:
-Nominal Unification Revisited. In Proc. UNIF 2010, EPTCS 42, 2010, pp. 1-11
+Nominal Unification Revisited. In Proc. UNIF 2010, EPTCS 42:1-11 (2010)
 https://doi.org/10.4204/EPTCS.42.1
 
 * Mauricio Ayala-Rincón, Maribel Fernández, Ana Cristina Rocha Oliveira:
-Completeness in PVS of a Nominal Unification Algorithm. In Proc. LSFA 2015, : 57-74
+Completeness in PVS of a Nominal Unification Algorithm. In Proc. LSFA 2015, ENTCS 323:57-74 (2016)
 https://doi.org/10.1016/j.entcs.2016.06.005
 
 * Ana Cristina Rocha Oliveira: 
