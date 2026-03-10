@@ -4,9 +4,9 @@ Guilherme Borges Brandão<sup>(\*)</sup>, Thomas Ammer<sup>(+)</sup>
 Daniele Nantes Sobrinho<sup>(\*)</sup>, Mauricio Ayala-Rincón<sup>(\*)</sup>,
 Christian Urban<sup>(+)</sup>,  Maribel Fernández<sup>(+)</sup>, Mohammad Abdulaziz<sup>(+)</sup>
 
-(*) Universidade de Brasília, Brasília D.F., Brazil
+<sup**(\*)**</sup> Universidade de Brasília, Brasília D.F., Brazil
 
-(+) King College London, London, U.K.
+<sup>**(+)**</sup> King College London, London, U.K.
 
 ## Contents
 
