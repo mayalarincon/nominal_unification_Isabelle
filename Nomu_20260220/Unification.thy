@@ -11,70 +11,24 @@ definition stuck :: "problem_type set" where
 (* all problems which are stuck and have no unifier *)
 
 
-inductive_set fail :: "problem_type set" where
-[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>(Susp pi X\<approx>?Abst a t#xs,ys)\<in>fail" |
-[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>(Susp pi X\<approx>?Func F t#xs,ys)\<in>fail" |
-[intro!]: "\<lbrakk>occurs X t1\<or>occurs X t2\<rbrakk>\<Longrightarrow>(Susp pi X\<approx>?Paar t1 t2#xs,ys)\<in>fail" |
-[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>(Abst a t\<approx>?Susp pi X#xs,ys)\<in>fail" |
-[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>(Func F t\<approx>?Susp pi X#xs,ys)\<in>fail" |
-[intro!]: "\<lbrakk>occurs X t1\<or>occurs X t2\<rbrakk>\<Longrightarrow>(Paar t1 t2\<approx>?Susp pi X#xs,ys)\<in>fail" |
-[intro!]: "([],a\<sharp>? Atom a#ys)\<in>fail" |
-[intro!]: "a\<noteq>b\<Longrightarrow>(Atom a\<approx>? Atom b#xs,ys)\<in>fail" |
-[intro!]: "(Abst a t\<approx>?Unit#xs,ys)\<in>fail" |
-[intro!]: "(Unit\<approx>?Abst a t#xs,ys)\<in>fail" |
-[intro!]: "(Abst a t\<approx>?Atom b#xs,ys)\<in>fail" |
-[intro!]: "(Atom b\<approx>?Abst a t#xs,ys)\<in>fail" |
-[intro!]: "(Abst a t\<approx>?Paar t1 t2#xs,ys)\<in>fail" |
-[intro!]: "(Paar t1 t2\<approx>?Abst a t#xs,ys)\<in>fail" |
-[intro!]: "(Abst a t\<approx>?Func F t1#xs,ys)\<in>fail" |
-[intro!]: "(Func F t1\<approx>?Abst a t#xs,ys)\<in>fail" |
-[intro!]: "(Unit\<approx>?Atom b#xs,ys)\<in>fail" |
-[intro!]: "(Atom b\<approx>?Unit#xs,ys)\<in>fail" |
-[intro!]: "(Unit\<approx>?Paar t1 t2#xs,ys)\<in>fail" |
-[intro!]: "(Paar t1 t2\<approx>?Unit#xs,ys)\<in>fail" |
-[intro!]: "(Unit\<approx>?Func F t1#xs,ys)\<in>fail" |
-[intro!]: "(Func F t1\<approx>?Unit#xs,ys)\<in>fail" |
-[intro!]: "(Atom a\<approx>?Paar t1 t2#xs,ys)\<in>fail"|
-[intro!]: "(Paar t1 t2\<approx>?Atom a#xs,ys)\<in>fail" |
-[intro!]: "(Atom a\<approx>?Func F t1#xs,ys)\<in>fail"|
-[intro!]: "(Func F t1\<approx>?Atom a#xs,ys)\<in>fail"|
-[intro!]: "(Func F t\<approx>?Paar t1 t2#xs,ys)\<in>fail"|
-[intro!]: "(Paar t1 t2\<approx>?Func F t#xs,ys)\<in>fail" |
-[intro!]: "\<lbrakk>F1\<noteq>F2\<rbrakk>\<Longrightarrow>( Func F1 t1\<approx>?Func F2 t2 #xs,ys)\<in>fail"
-
-
-(*
 inductive fail :: "problem_type \<Rightarrow> bool" where
-[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow> fail ((Susp pi X \<approx>? Abst a t) # xs, ys)" |
-[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow> fail (Susp pi X \<approx>?Func F t#xs,ys)" |
-[intro!]: "\<lbrakk>occurs X t1\<or>occurs X t2\<rbrakk>\<Longrightarrow> fail (Susp pi X\<approx>?Paar t1 t2#xs,ys)" |
-[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>fail (Abst a t\<approx>?Susp pi X#xs,ys)"|
-[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow> fail (Func F t\<approx>?Susp pi X#xs,ys)" |
-[intro!]: "\<lbrakk>occurs X t1\<or>occurs X t2\<rbrakk>\<Longrightarrow> fail (Paar t1 t2\<approx>?Susp pi X#xs,ys)" |
-[intro!]: "fail ([],a\<sharp>? Atom a#ys)"|
-[intro!]: "a\<noteq>b\<Longrightarrow> fail (Atom a\<approx>? Atom b#xs,ys)" |
-[intro!]: " fail (Abst a t\<approx>?Unit#xs,ys)" |
-[intro!]: "fail (Unit\<approx>?Abst a t#xs,ys)" |
-[intro!]: "fail (Abst a t\<approx>?Atom b#xs,ys)" |
-[intro!]: "fail (Atom b\<approx>?Abst a t#xs,ys)" |
-[intro!]: "fail (Abst a t\<approx>?Paar t1 t2#xs,ys)" | 
-[intro!]: "fail (Paar t1 t2\<approx>?Abst a t#xs,ys)"| 
-[intro!]: "fail (Abst a t\<approx>?Func F t1#xs,ys)" |
-[intro!]: "fail (Func F t1\<approx>?Abst a t#xs,ys)" |
-[intro!]: "fail (Unit\<approx>?Atom b#xs,ys)" |
-[intro!]: "fail (Atom b\<approx>?Unit#xs,ys)" |
-[intro!]: "fail (Unit\<approx>?Paar t1 t2#xs,ys)" |
-[intro!]: "fail (Paar t1 t2\<approx>?Unit#xs,ys)" |
-[intro!]: "fail (Unit\<approx>?Func F t1#xs,ys)" |
-[intro!]: "fail (Func F t1\<approx>?Unit#xs,ys)" | 
-[intro!]: "fail (Atom a\<approx>?Paar t1 t2#xs,ys)" |
-[intro!]: "fail (Paar t1 t2\<approx>?Atom a#xs,ys)" | 
-[intro!]: "fail (Atom a\<approx>?Func F t1#xs,ys)" |
-[intro!]: "fail (Func F t1\<approx>?Atom a#xs,ys)" | 
-[intro!]: "fail (Func F t\<approx>?Paar t1 t2#xs,ys)" | 
-[intro!]: "fail (Paar t1 t2\<approx>?Func F t#xs,ys)" |
-[intro!]: "\<lbrakk>F1\<noteq>F2\<rbrakk>\<Longrightarrow> fail (Func F1 t1\<approx>?Func F2 t2#xs,ys)"
-*)
+fail_occur_abst [intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow> fail ((Susp pi X \<approx>? Abst a t) # xs, ys)" |
+fail_occur_func [intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow> fail (Susp pi X \<approx>?Func F t#xs,ys)" |
+fail_occur_paar [intro!]: "\<lbrakk>occurs X t1\<or>occurs X t2\<rbrakk>\<Longrightarrow> fail (Susp pi X\<approx>?Paar t1 t2#xs,ys)" |
+fail_fresh_atom [intro!]: "fail ([],a\<sharp>? Atom a#ys)"|
+fail_diff_atoms [intro!]: "a\<noteq>b\<Longrightarrow> fail (Atom a\<approx>? Atom b#xs,ys)" |
+fail_abst_unit [intro!]: " fail (Abst a t\<approx>?Unit#xs,ys)" |
+fail_abst_atom [intro!]: "fail (Abst a t\<approx>?Atom b#xs,ys)" |
+fail_abst_paar [intro!]: "fail (Abst a t\<approx>?Paar t1 t2#xs,ys)" | 
+fail_func_abst [intro!]: "fail (Func F t1\<approx>?Abst a t#xs,ys)" |
+fail_atom_unit [intro!]: "fail (Atom b\<approx>?Unit#xs,ys)" |
+fail_paar_unit [intro!]: "fail (Paar t1 t2\<approx>?Unit#xs,ys)" |
+fail_func_unit [intro!]: "fail (Func F t1\<approx>?Unit#xs,ys)" | 
+fail_atom_paar [intro!]: "fail (Atom a\<approx>?Paar t1 t2#xs,ys)" |
+fail_func_atom [intro!]: "fail (Func F t1\<approx>?Atom a#xs,ys)" | 
+fail_func_paar [intro!]: "fail (Func F t\<approx>?Paar t1 t2#xs,ys)" |
+fail_diff_func [intro!]: "\<lbrakk>F1\<noteq>F2\<rbrakk>\<Longrightarrow> fail (Func F1 t1\<approx>?Func F2 t2#xs,ys)" |
+fail_sym [intro!]: "fail (s \<approx>? t # xs, ys) \<Longrightarrow> fail (t \<approx>? s # xs, ys)"
 
 
 definition 
@@ -83,11 +37,78 @@ definition
 
 (* a "failed" problem has no unifier *)
 
+
 lemma fail_then_empty: 
-  assumes "P1 \<in> fail"
+  assumes "fail P1"
   shows "U P1 = {}"
-  using assms sorry
-(*proof(cases rule: fail.cases)*)
+  using assms
+proof(induct rule: fail.induct)
+  case (fail_occur_abst X t pi a xs ys)
+  then show ?case sorry
+next
+  case (fail_occur_func X t pi F xs ys)
+  then show ?case sorry
+next
+  case (fail_occur_paar X t1 t2 pi xs ys)
+  then show ?case sorry
+next
+  case (fail_fresh_atom a ys)
+  let ?P = "([], a \<sharp>? Atom a # ys)"
+  have "\<nexists> nabla s. nabla \<turnstile> a \<sharp> subst s (Atom a)"
+    using subst_atom Fresh_elims(3) by auto
+  hence "\<forall>(a, t) \<in> set ((a, Atom a)#ys). nabla \<turnstile> a \<sharp> subst s t \<Longrightarrow> False"
+    for nabla s
+    by simp
+  thus "U ?P = {}"
+    using all_solutions_def by force
+next
+  case (fail_diff_atoms a b xs ys)
+  let ?P = "(Atom a \<approx>? Atom b # xs, ys)"
+  have "\<nexists> nabla s. nabla \<turnstile> subst s (Atom a) \<approx> subst s (Atom b)"
+    using \<open>a \<noteq> b\<close> subst_atom Equ_elims(1) by auto
+  hence "\<forall>(t1, t2) \<in> set ((Atom a, Atom b)#xs). nabla \<turnstile> subst s t1 \<approx> subst s t2 \<Longrightarrow> False"
+    for nabla s
+    by simp
+  thus "U ?P = {}"
+    using all_solutions_def by force
+next
+  case (fail_abst_unit a t xs ys)
+  then show ?case sorry
+next
+  case (fail_abst_atom a t b xs ys)
+  then show ?case sorry
+next
+  case (fail_abst_paar a t t1 t2 xs ys)
+  then show ?case sorry
+next
+  case (fail_func_abst F t1 a t xs ys)
+  then show ?case sorry
+next
+  case (fail_atom_unit b xs ys)
+  then show ?case sorry
+next
+  case (fail_paar_unit t1 t2 xs ys)
+  then show ?case sorry
+next
+  case (fail_func_unit F t1 xs ys)
+  then show ?case sorry
+next
+  case (fail_atom_paar a t1 t2 xs ys)
+  then show ?case sorry
+next
+  case (fail_func_atom F t1 a xs ys)
+  then show ?case sorry
+next
+  case (fail_func_paar F t t1 t2 xs ys)
+  then show ?case sorry
+next
+  case (fail_diff_func F1 F2 t1 t2 xs ys)
+  then show ?case sorry
+next
+  case (fail_sym s t xs ys)
+  then show ?case sorry
+qed
+
 
 (*apply(erule fail.cases)
 apply(simp add: all_solutions_def)
