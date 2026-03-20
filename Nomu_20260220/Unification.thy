@@ -56,27 +56,29 @@ next
   let ?P = "([], a \<sharp>? Atom a # ys)"
   have "\<nexists> nabla s. nabla \<turnstile> a \<sharp> subst s (Atom a)"
     using subst_atom Fresh_elims(3) by auto
-  hence "\<forall>(a, t) \<in> set ((a, Atom a)#ys). nabla \<turnstile> a \<sharp> subst s t \<Longrightarrow> False"
-    for nabla s
-    by simp
   thus "U ?P = {}"
-    using all_solutions_def by force
+    using all_solutions_def by simp
 next
   case (fail_diff_atoms a b xs ys)
   let ?P = "(Atom a \<approx>? Atom b # xs, ys)"
-  have "\<nexists> nabla s. nabla \<turnstile> subst s (Atom a) \<approx> subst s (Atom b)"
-    using \<open>a \<noteq> b\<close> subst_atom Equ_elims(1) by auto
-  hence "\<forall>(t1, t2) \<in> set ((Atom a, Atom b)#xs). nabla \<turnstile> subst s t1 \<approx> subst s t2 \<Longrightarrow> False"
-    for nabla s
-    by simp
+  from \<open>a \<noteq> b\<close> have "\<nexists> nabla s. nabla \<turnstile> subst s (Atom a) \<approx> subst s (Atom b)"
+    using Equ_elims(1) by auto
   thus "U ?P = {}"
-    using all_solutions_def by force
+    using all_solutions_def by simp
 next
   case (fail_abst_unit a t xs ys)
-  then show ?case sorry
+  let ?P = "(Abst a t \<approx>? Unit # xs, ys)"
+  have "\<nexists> nabla s. nabla \<turnstile> subst s (Abst a t) \<approx> subst s Unit"
+    by (auto elim: equ.cases)
+  thus "U ?P = {}" 
+    using all_solutions_def by simp
 next
   case (fail_abst_atom a t b xs ys)
-  then show ?case sorry
+  let ?P = "(Abst a t \<approx>? Atom b # xs, ys)"
+  have "\<nexists> nabla s. nabla \<turnstile> subst s (Abst a t) \<approx> subst s (Atom b)"
+     by (auto elim: equ.cases)
+  thus "U ?P = {}" 
+    using all_solutions_def by simp
 next
   case (fail_abst_paar a t t1 t2 xs ys)
   then show ?case sorry
