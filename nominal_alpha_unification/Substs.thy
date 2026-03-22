@@ -1,10 +1,15 @@
+(*<*)
 theory Substs
-
 imports Equ
-
 begin
+(*>*)
 
-(* substitutions *)
+section \<open>Substitutions\<close>
+
+text \<open>
+  Defines substitutions and composition of substitutions, and establishes some 
+  facts of substitution and the equivalence relation.
+\<close>
 
 type_synonym substs = "(string \<times> trm) list"
 
@@ -22,7 +27,10 @@ fun subst :: "substs \<Rightarrow> trm \<Rightarrow> trm" where
 
 declare subst_susp [simp del]
 
-(* composition of substitutions (adapted from Martin Coen) *)
+text \<open>
+ The notion of composition of substitutions (adapted from Martin Coen's Classical 
+ Computational Logic).
+\<close>
 
 fun alist_rec :: "substs \<Rightarrow> substs \<Rightarrow> (string\<Rightarrow>trm\<Rightarrow>substs\<Rightarrow>substs\<Rightarrow>substs) \<Rightarrow> substs" where
   "alist_rec [] c d = c" |
@@ -31,17 +39,23 @@ fun alist_rec :: "substs \<Rightarrow> substs \<Rightarrow> (string\<Rightarrow>
 definition comp ::  "substs \<Rightarrow> substs \<Rightarrow> substs" (infixl \<open>\<bullet>\<close> 81) where
  "s1 \<bullet> s2 \<equiv> alist_rec s2 s1 (\<lambda> x y xs g. (x,subst s1 y) # g)"
 
-(* domain of substitutions *)
+text \<open>
+  The domain of substitutions.
+\<close>
 
 definition domn :: "(trm \<Rightarrow> trm) \<Rightarrow> string set" where
   "domn s \<equiv> {X. (s (Susp [] X)) \<noteq> (Susp [] X)}" 
 
-(* substitutions extending freshness environments *)
+text \<open>
+  substitutions extend freshness environments.
+\<close>
 
 definition ext_subst :: "fresh_envs \<Rightarrow> (trm \<Rightarrow> trm) \<Rightarrow> fresh_envs \<Rightarrow> bool" (" _ \<Turnstile> _ _ " [80,80,80] 80) where
   "nabla1 \<Turnstile> s nabla2 \<equiv> (\<forall>(a,X)\<in>nabla2. nabla1\<turnstile>a\<sharp> s (Susp [] X))"
 
-(* alpha-equality for substitutions *)
+text \<open>
+  Alpha-equality for substitutions 
+\<close>
 
 definition subst_equ :: "fresh_envs \<Rightarrow> (trm\<Rightarrow>trm) \<Rightarrow> (trm\<Rightarrow>trm) \<Rightarrow> bool" (" _ \<Turnstile> _ \<approx> _" [80,80,80] 80)
   where
@@ -57,29 +71,34 @@ lemma subst_equ_refl:
   shows "nabla \<Turnstile> s \<approx> s"
   using equ_refl subst_equ_def Un_absorb by simp
 
-lemma not_in_domn: "X \<notin> (domn s)\<Longrightarrow> (s (Susp [] X)) = (Susp [] X)"
-  using domn_def by simp
+lemma not_in_domn: 
+  assumes "X \<notin> (domn s)"
+  shows "s (Susp [] X) = (Susp [] X)"
+  using assms domn_def by simp
 
-lemma subst_swap_comm: "subst s (swap pi t) = swap pi (subst s t)"
+lemma subst_swap_comm: 
+  shows "subst s (swap pi t) = swap pi (subst s t)"
   using swap_append subst_susp by (induct t) auto
 
 lemma subst_not_occurs: 
- "\<not>(occurs X t) \<Longrightarrow> subst [(X,t2)] t = t"
+  assumes "\<not>(occurs X t)"
+  shows "subst [(X,t2)] t = t"
 proof-
   have i: "\<not>(occurs X t) \<longrightarrow> subst [(X,t2)] t = t"
     using subst_susp by (induct t) auto
-  assume "\<not>(occurs X t)"
-  with i show ?thesis by simp
+  then show ?thesis using assms by simp
 qed
 
-
-lemma id_subst [simp]: "subst [] t = t"
+lemma id_subst [simp]: 
+  shows "subst [] t = t"
   using subst_susp by (induct t) auto
 
-lemma subst_comp_id [simp]: "subst (s \<bullet> []) = subst s"
+lemma subst_comp_id [simp]: 
+  shows "subst (s \<bullet> []) = subst s"
   using comp_def by simp
 
-lemma id_comp_subst [simp]: "subst ([] \<bullet> s) = subst s"
+lemma id_comp_subst [simp]: 
+  shows "subst ([] \<bullet> s) = subst s"
 proof(rule ext)
   fix t
   show "subst ([] \<bullet> s) t = subst s t"
@@ -98,8 +117,8 @@ proof(rule ext)
   qed (simp_all)
 qed
 
-
-lemma subst_comp_expand: "subst (s1 \<bullet> s2) t = subst s1 (subst s2 t)"
+lemma subst_comp_expand: 
+  shows "subst (s1 \<bullet> s2) t = subst s1 (subst s2 t)"
 proof(induct t)
   case (Susp x1 x2)
   then show ?case 
@@ -112,9 +131,8 @@ proof(induct t)
   qed
 qed (simp_all)
 
-
-
-lemma subst_assoc: "subst (s1 \<bullet> (s2 \<bullet> s3))=subst ((s1 \<bullet> s2) \<bullet> s3)"
+lemma subst_assoc: 
+  shows "subst (s1 \<bullet> (s2 \<bullet> s3)) = subst ((s1 \<bullet> s2) \<bullet> s3)"
 proof(rule ext)
   fix t 
   show "subst (s1 \<bullet> (s2 \<bullet> s3)) t = subst (s1 \<bullet> s2 \<bullet> s3) t"
@@ -123,7 +141,6 @@ proof(rule ext)
     then show ?case using subst_comp_expand by simp
   qed (simp_all)
 qed
-
 
 lemma fresh_subst:
   assumes "nabla1 \<turnstile> a \<sharp> t"
@@ -136,7 +153,6 @@ proof(induction rule: fresh.induct)
     using ext_subst_def subst_susp fresh_swap_right 
     by auto
 qed (auto)
-
 
 lemma equ_subst:
   assumes "nabla1\<turnstile> t1 \<approx>t2"
@@ -301,8 +317,6 @@ next
     using equ_func[OF Func(1)[OF Func(2) func], of f] by simp
 qed (simp_all)
 
-
-
 lemma unif_2a: 
   assumes "nabla\<Turnstile>subst s1\<approx>subst s2"
   and "(nabla\<turnstile>subst s2 t1 \<approx> subst s2 t2)"             
@@ -348,23 +362,30 @@ next
     by metis
 qed (simp_all)
 
-lemma subst_equ_to_trm: "nabla \<Turnstile> subst s1 \<approx> subst s2 \<Longrightarrow> nabla\<turnstile>subst s1 t \<approx> subst s2 t"
-  using equ_refl subst_equ_a by simp
-
+lemma subst_equ_to_trm: 
+  assumes "nabla \<Turnstile> subst s1 \<approx> subst s2"
+  shows "nabla\<turnstile>subst s1 t \<approx> subst s2 t"
+  using assms equ_refl subst_equ_a by simp
 
 lemma subst_cancel_right: 
-"\<lbrakk>nabla\<Turnstile>(subst s1)\<approx>(subst s2)\<rbrakk>\<Longrightarrow>nabla\<Turnstile>(subst (s1\<bullet>s))\<approx>(subst (s2\<bullet>s))" 
-  using subst_comp_expand subst_equ_def subst_equ_to_trm
+  assumes "nabla\<Turnstile>(subst s1)\<approx>(subst s2)"
+  shows "nabla\<Turnstile>(subst (s1\<bullet>s))\<approx>(subst (s2\<bullet>s))" 
+  using assms subst_comp_expand subst_equ_def subst_equ_to_trm
   by simp
 
-lemma subst_trans: "\<lbrakk>nabla\<Turnstile>subst s1 \<approx> subst s2; nabla \<Turnstile> subst s2 \<approx> subst s3\<rbrakk>\<Longrightarrow>nabla\<Turnstile>subst s1\<approx>subst s3"
-  using equ_trans subst_equ_def subst_equ_to_trm by meson
+lemma subst_trans: 
+  assumes "nabla\<Turnstile>subst s1 \<approx> subst s2" "nabla \<Turnstile> subst s2 \<approx> subst s3"
+  shows "nabla\<Turnstile>subst s1\<approx>subst s3"
+  using assms equ_trans subst_equ_def subst_equ_to_trm by meson
 
-
-(* if occurs holds, then one subterm is equal to (subst s (Susp pi X)) *)
+text \<open>
+  If occurs holds, then one subterm is equal to (subst s (Susp pi X))
+\<close>
 
 lemma occurs_sub_trm_equ: 
-  "occurs X t1 \<Longrightarrow> (\<exists> t2 \<in> sub_trms (subst s t1). (\<exists>pi.(nabla\<turnstile>subst s (Susp pi1 X)\<approx>(swap pi t2))))" 
+  assumes "occurs X t1"
+  shows "\<exists> t2 \<in> sub_trms (subst s t1). (\<exists>pi.(nabla\<turnstile>subst s (Susp pi1 X)\<approx>(swap pi t2)))" 
+  using assms
 proof(induct t1)
   case (Susp pi' X)
   then show ?case 
@@ -380,7 +401,7 @@ qed(auto)
 
 lemma ext_subst_strong:
   assumes "nabla1 \<Turnstile> (subst s) (nabla2 \<union> nabla3)"
-  shows "nabla1 \<Turnstile> (subst s) (nabla2)" and "nabla1 \<Turnstile> (subst s) (nabla3)"
+  shows "nabla1 \<Turnstile> (subst s) nabla2" and "nabla1 \<Turnstile> (subst s) nabla3"
   using assms
   unfolding ext_subst_def by auto
 
@@ -388,4 +409,6 @@ lemma ext_subst_id:
   shows "nabla \<Turnstile> (subst []) nabla"
   unfolding ext_subst_def id_subst by auto
 
+(*<*)
 end
+(*>*)

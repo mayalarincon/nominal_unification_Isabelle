@@ -1,8 +1,10 @@
-theory Swap 
+(*<*)
+theory Swap
   imports Main
 begin
+(*>*)
 
-(* theory about swappings *)
+section \<open>Swappings of Pairs of Atoms\<close>
 
 fun swapa :: "(string \<times> string) \<Rightarrow> string \<Rightarrow> string"
   where
@@ -27,15 +29,12 @@ lemma swapas_append:
  
 lemma swapas_inv [simp]: 
   shows "swapas (rev pi) (swapas pi a) = a"
-apply(induct_tac pi)
-apply(auto simp add: swapas_append)
-done
+  by (induct_tac pi) (auto simp add: swapas_append)
 
 lemma swapas_rev_pi_a: 
   assumes "swapas pi a = b"
   shows "swapas (rev pi) b = a"
 using assms by auto
-
 
 lemma swapas_rev_swapas_id [simp]: 
   shows "swapas pi (swapas (rev pi) a) = a"
@@ -50,6 +49,6 @@ lemma swapas_comm:
   shows "(swapas (pi@[(a,b)]) c) = (swapas ([(swapas pi a,swapas pi b)]@pi) c)"
   by (metis swapa.simps swapas.simps(1,2) swapas_append swapas_rev_pi_a)
 
-
-
+(*<*)
 end
+(*>*)

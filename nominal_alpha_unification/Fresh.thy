@@ -1,8 +1,14 @@
+(*<*)
 theory Fresh
-
 imports Disagreement
-
 begin
+(*>*)
+
+section \<open>Freshness\<close>
+
+text \<open>
+Defines the freshness relation and shows facts about its behaviour under swappings.
+\<close>
 
 type_synonym fresh_envs = "(string \<times> string) set"
 
@@ -69,8 +75,6 @@ next
     by (simp add: fresh_atom) 
 qed (auto elim: Fresh_elims)
 
-
-
 lemma fresh_swap_right: 
   assumes "nabla \<turnstile> swapas (rev pi) a \<sharp> t"
   shows "nabla \<turnstile> a \<sharp> swap pi t"
@@ -102,4 +106,6 @@ proof-
     using fresh_swap_right[OF ii] by simp
 qed
 
+(*<*)
 end 
+(*>*)

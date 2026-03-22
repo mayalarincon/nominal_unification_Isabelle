@@ -1,9 +1,15 @@
+(*<*)
 theory PreEqu
-
 imports Fresh
-
 begin
+(*>*)
 
+section \<open>Pre-Equality\<close>
+
+text \<open>
+  Defines the relation which captures the notion of alpha-equivalence (on open terms) 
+  and proves this relation is an equivalence relation.
+\<close>
 
 inductive equ :: "fresh_envs \<Rightarrow> trm \<Rightarrow> trm \<Rightarrow> bool" (" _ \<turnstile> _ \<approx> _" [80,80,80] 80) where
 equ_abst_ab[intro!]: "\<lbrakk>a\<noteq>b;(nabla \<turnstile> a \<sharp> t2);(nabla \<turnstile> t1 \<approx> (swap [(a,b)] t2))\<rbrakk> 
@@ -24,14 +30,13 @@ inductive_cases Equ_elims:
 "nabla \<turnstile> Abst a t1 \<approx> Abst a t2"
 "nabla \<turnstile> Abst a t1 \<approx> Abst b t2"
 
-
 lemma equ_depth: 
   assumes "nabla \<turnstile> t1 \<approx> t2"
   shows "depth t1 = depth t2"
   using assms by (rule equ.induct, simp_all)
 
-
-lemma rev_pi_pi_equ: "(nabla \<turnstile> swap (rev pi) (swap pi t) \<approx> t)"
+lemma rev_pi_pi_equ: 
+  shows "(nabla \<turnstile> swap (rev pi) (swap pi t) \<approx> t)"
 proof(induct t)
   case (Susp pi' X)
   then show ?case 
@@ -39,7 +44,6 @@ proof(induct t)
     ds_rev_pi_pi elem_ds ds_rev_pi_id by auto
 qed (auto)
   
-
 lemma equ_pi_right: 
   assumes "\<forall>a \<in> ds [] pi. nabla \<turnstile> a \<sharp> t"
   shows "nabla \<turnstile> t \<approx> swap pi t"
@@ -50,13 +54,7 @@ proof(induct t arbitrary: pi)
   moreover 
   { assume eq: "swapas pi b = b"
     have "nabla \<turnstile> Abst b t' \<approx> Abst b (swap pi t')"
-      apply (rule equ_abst_aa)
-      apply (rule Abst.hyps)
-      apply (rule ballI)
-      subgoal for a 
-        apply (rule Fresh_elims(1)[of nabla a b t'])
-        using Abst.prems elem_ds[of a pi] eq by auto
-      done
+      by (metis Abst.hyps Abst.prems Fresh_elims(1) elem_ds eq equ_abst_aa)
     then have "nabla \<turnstile> Abst b t' \<approx> swap pi (Abst b t')" using eq by simp
   }
   moreover
@@ -118,9 +116,7 @@ proof(induct t arbitrary: pi)
     qed
    then have "nabla \<turnstile> Abst b t' \<approx> swap pi (Abst b t')" using neq c_def by force
  }
-
   ultimately show ?case by argo
-
 next
   case (Susp pi' X)
   have "\<forall>a\<in>ds [] pi. nabla \<turnstile> a \<sharp> Susp pi' X" by fact
@@ -143,28 +139,22 @@ next
   case (Paar t1 t2)
   then have hypsp1: "(\<forall>a\<in>ds [] pi.  nabla \<turnstile> a \<sharp> t1)"
     and hypsp2: "(\<forall>a\<in>ds [] pi.  nabla \<turnstile> a \<sharp> t2)"
-    using Paar.prems Fresh_elims(5) 
-     apply meson
-    using Paar.prems Fresh_elims(5) by blast
+    using Paar.prems Fresh_elims(5) by meson+
   have "nabla \<turnstile> Paar t1 t2 \<approx> Paar (swap pi t1) (swap pi t2)"
-    apply(rule equ_paar)
-     apply(rule Paar.hyps)
-     apply (simp add: hypsp1)
-    by (simp add: Paar.hyps(2) hypsp2)
+    using Paar.hyps(1,2) hypsp1 hypsp2 by blast
   then show ?case by simp
 next
   case (Func f t')
   then have hypsf: "\<forall>a\<in>ds [] pi. nabla \<turnstile> a \<sharp> t'" using fresh_func
     by (metis Fresh_elims(6))
   have "nabla \<turnstile> Func f t' \<approx> Func f (swap pi t')"
-    apply(rule equ_func)
-    apply(rule Func.hyps)
-    using hypsf by auto
+    using Func.hyps hypsf by blast
   then show ?case
     by simp
 qed
 
-lemma pi_comm: "nabla \<turnstile> (swap (pi @ [(a,b)]) t) \<approx> (swap ([(swapas pi a, swapas pi b)] @ pi) t)"
+lemma pi_comm: 
+  shows "nabla \<turnstile> (swap (pi @ [(a,b)]) t) \<approx> (swap ([(swapas pi a, swapas pi b)] @ pi) t)"
 proof(induct t)
   case (Abst c t)
   then show ?case using swapas_comm by force
@@ -197,7 +187,6 @@ next
   case (Func f t)
   then show ?case by force
 qed
-
 
 lemma l3_jud: 
   assumes "(nabla \<turnstile> t1 \<approx> t2)"
@@ -235,9 +224,6 @@ next
   then show ?case 
     using Fresh_elims(6) by blast
 qed
-
-
-(**)
 
 lemma ds_empty_equiv_1:
   assumes "ds pi1 pi2 = {}"
@@ -298,7 +284,6 @@ next
     using ds_swapas_eq[OF Atom(2), of a]
     by (auto elim: equ.cases)
 qed (auto elim: equ.cases)
-
 
 lemma ds_empty_equiv_2:
   assumes "ds pi1 pi2 = {}"
@@ -367,7 +352,6 @@ next
   then show ?case
     using ds_swapas_eq by (auto elim: equ.cases)
 qed (auto elim: equ.cases)
-
 
 lemma equ_equivariance:
   assumes "nabla \<turnstile> t1 \<approx> t2"
@@ -444,7 +428,6 @@ lemma equ_equiv_pi:
   using assms equ_pi_right[of \<open>rev pi1 @ pi2\<close> nabla t]
     swap_inv_side[of nabla pi1 t \<open>swap pi2 t\<close>] ds_rev swap_append by simp
 
-
 lemma equ_symm:
   shows "(nabla \<turnstile> t1 \<approx> t2) \<Longrightarrow> (nabla \<turnstile> t2 \<approx> t1)"
 proof(induction rule: equ.induct)
@@ -481,7 +464,6 @@ next
   then show ?case 
     using equ.equ_func[OF equ_func(2), of f] by simp
 qed
-
 
 lemma equ_trans:
   assumes "nabla \<turnstile> t1 \<approx> t2" "nabla \<turnstile> t2 \<approx> t3"
@@ -659,8 +641,6 @@ proof(induction \<open>depth t1\<close> arbitrary: t1 t2 t3 rule: nat_less_induc
      using IH(2,3) by blast
  qed
 
-(**)
-
 lemma pi_right_equ_help:
   assumes "(n = depth t)"
   shows "nabla \<turnstile> t \<approx> swap pi t \<Longrightarrow> \<forall> a \<in> ds [] pi. nabla \<turnstile> a \<sharp> t"
@@ -758,5 +738,6 @@ proof(induction n arbitrary: t pi rule: nat_less_induct)
     qed
   qed
 
-
+(*<*)
 end 
+(*>*)

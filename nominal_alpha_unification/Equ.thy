@@ -1,29 +1,34 @@
+(*<*)
 theory Equ
-
 imports PreEqu
-
 begin
+(*>*)
+
+section \<open>Equality\<close>
+
+text \<open>
+  Proves various facts about the equivalence relation.
+\<close>
 
 lemma equ_refl: 
-  "nabla \<turnstile> t \<approx> t"
+  shows "nabla \<turnstile> t \<approx> t"
   by(induct t, auto simp add: ds_def)
 
 
 lemma equ_dec_pi:
-  "nabla \<turnstile> swap pi t1 \<approx> swap pi t2 \<Longrightarrow> nabla \<turnstile> t1 \<approx> t2"
+  assumes "nabla \<turnstile> swap pi t1 \<approx> swap pi t2"
+  shows "nabla \<turnstile> t1 \<approx> t2"
 proof-
   have i: "nabla \<turnstile> swap (rev pi) (swap pi t1) \<approx> t1"
     "nabla \<turnstile> swap (rev pi) (swap pi t2) \<approx> t2"
     using rev_pi_pi_equ by auto
-  assume "nabla \<turnstile> swap pi t1 \<approx> swap pi t2"
   then have "nabla \<turnstile> swap (rev pi) (swap pi t1) \<approx> swap (rev pi) (swap pi t2)"
-    using equ_equivariance by simp
+    using equ_equivariance assms by simp
   then show ?thesis using i equ_symm equ_trans by meson 
 qed
 
-
 lemma equ_involutive_left: 
-  "nabla \<turnstile> swap (rev pi) (swap pi t1) \<approx> t2 = nabla \<turnstile> t1 \<approx> t2"
+  shows "nabla \<turnstile> swap (rev pi) (swap pi t1) \<approx> t2 = nabla \<turnstile> t1 \<approx> t2"
 proof(auto)
   have i: "nabla \<turnstile> t1 \<approx> swap (rev pi) (swap pi t1)"
     using rev_pi_pi_equ equ_symm by blast
@@ -33,9 +38,8 @@ proof(auto)
     using i equ_trans equ_symm by blast
 qed
 
-
 lemma equ_pi_to_left: 
-  "nabla \<turnstile> swap (rev pi) t1 \<approx> t2 = nabla \<turnstile> t1 \<approx> swap pi t2"
+  shows "nabla \<turnstile> swap (rev pi) t1 \<approx> t2 = nabla \<turnstile> t1 \<approx> swap pi t2"
 proof
 
   {assume i: "nabla \<turnstile> swap (rev pi) t1 \<approx> t2"
@@ -57,9 +61,8 @@ proof
 
 qed
     
-
 lemma equ_pi_to_right: 
-  "nabla\<turnstile>t1 \<approx> swap (rev pi) t2 = nabla\<turnstile>swap pi t1\<approx>t2"
+  shows "nabla\<turnstile>t1 \<approx> swap (rev pi) t2 = nabla\<turnstile>swap pi t1\<approx>t2"
 proof
   {assume i: "nabla \<turnstile> t1 \<approx> swap (rev pi) t2"
     then show "nabla \<turnstile> swap pi t1 \<approx>  t2"
@@ -69,52 +72,50 @@ proof
       using equ_involutive_left equ_equivariance by blast}
 qed
 
-
 lemma equ_involutive_right: 
-  "nabla \<turnstile> t1 \<approx> swap (rev pi) (swap pi t2) = nabla \<turnstile> t1 \<approx> t2"
+  shows "nabla \<turnstile> t1 \<approx> swap (rev pi) (swap pi t2) = nabla \<turnstile> t1 \<approx> t2"
   using equ_dec_pi[of nabla pi t1 t2] equ_equivariance[of nabla t1 t2 pi] 
     equ_pi_to_right[of nabla t1 pi \<open>swap pi t2\<close>]
   by auto
 
 lemma equ_pi1_pi2_add: 
-  "(\<forall>a\<in> ds pi1 pi2. nabla\<turnstile>a\<sharp>t) \<Longrightarrow> (nabla\<turnstile>swap pi1 t \<approx> swap pi2 t)"
+  assumes "\<forall>a\<in> ds pi1 pi2. nabla\<turnstile>a\<sharp>t"
+  shows "nabla\<turnstile>swap pi1 t \<approx> swap pi2 t"
 proof-
-  assume "(\<forall>a\<in> ds pi1 pi2. nabla\<turnstile>a\<sharp>t)"
-  hence "nabla \<turnstile> t \<approx> swap (rev pi1 @ pi2) t" 
-    using ds_rev equ_pi_right by simp
+  have "nabla \<turnstile> t \<approx> swap (rev pi1 @ pi2) t" 
+    using assms ds_rev equ_pi_right by simp
   hence "nabla \<turnstile> t \<approx> swap (rev pi1) (swap pi2 t)"
     using swap_append by auto
   then show "nabla\<turnstile>swap pi1 t \<approx> swap pi2 t"
     using equ_pi_to_right by simp
 qed
 
-
-
-lemma pi_right_equ: "(nabla \<turnstile> t \<approx> swap pi t) \<Longrightarrow> (\<forall>a\<in> ds [] pi. nabla \<turnstile> a \<sharp> t)"
-  using pi_right_equ_help by blast
-
+lemma pi_right_equ: 
+  assumes "nabla \<turnstile> t \<approx> swap pi t"
+  shows "\<forall>a\<in> ds [] pi. nabla \<turnstile> a \<sharp> t"
+  using assms pi_right_equ_help by blast
 
 lemma equ_pi1_pi2_dec:  
-  "(nabla \<turnstile> swap pi1 t \<approx> swap pi2 t) \<Longrightarrow> (\<forall> a \<in> ds pi1 pi2. nabla\<turnstile>a \<sharp> t)"
+  assumes "nabla \<turnstile> swap pi1 t \<approx> swap pi2 t"
+  shows "\<forall> a \<in> ds pi1 pi2. nabla\<turnstile>a \<sharp> t"
 proof-
-  assume assm: "nabla \<turnstile> swap pi1 t \<approx> swap pi2 t"
-  then have "nabla \<turnstile> t \<approx> swap ((rev pi1) @ pi2) t"
-    using equ_pi_to_right swap_append by simp
+  have "nabla \<turnstile> t \<approx> swap ((rev pi1) @ pi2) t"
+    using assms equ_pi_to_right swap_append by simp
   then show "\<forall> a \<in> ds pi1 pi2. nabla\<turnstile>a \<sharp> t"
     using pi_right_equ ds_rev[of pi1 pi2] by simp
 qed
 
 lemma equ_weak: 
-  "nabla1 \<turnstile> t1 \<approx> t2 \<Longrightarrow> (nabla1 \<union> nabla2) \<turnstile> t1 \<approx> t2"
-  by(erule equ.induct, auto simp add: fresh_weak)
+  assumes "nabla1 \<turnstile> t1 \<approx> t2"
+  shows "(nabla1 \<union> nabla2) \<turnstile> t1 \<approx> t2"
+  using assms by (erule_tac equ.induct) (auto simp add: fresh_weak)
 
-
-
-(* no term can be equal to one of its proper subterm *)
-
+text \<open>
+  No term can be equal to one of its proper subterm.
+\<close>
 
 lemma psub_trm_not_equ: 
-  "\<forall> t2 \<in> psub_trms t1. (\<not>(\<exists> pi. (nabla \<turnstile> t1 \<approx> swap pi t2)))"
+  shows "\<forall> t2 \<in> psub_trms t1. (\<not>(\<exists> pi. (nabla \<turnstile> t1 \<approx> swap pi t2)))"
 proof
   fix t2
   assume i: "t2 \<in> psub_trms t1"
@@ -137,4 +138,6 @@ proof
   qed
 qed
 
+(*<*)
 end 
+(*>*)

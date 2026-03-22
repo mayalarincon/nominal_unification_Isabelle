@@ -1,10 +1,15 @@
+(*<*)
 theory Mgu
-
 imports Substs
-
 begin
-(* unification problems *)
+(*>*)
 
+section \<open>Most General Unifiers\<close>
+
+text \<open>
+ Defines the notion of unification problems and reduction rules over sets of
+ such problems; proves that every reduction leading to the empty set produces an mgu.
+\<close>
 
 syntax equ_prob :: "trm \<Rightarrow> trm \<Rightarrow> (trm \<times> trm)"  (infix "\<approx>?" 81)
   fresh_prob :: "string \<Rightarrow> trm \<Rightarrow> (string \<times> trm)" (infix "\<sharp>?" 81)
@@ -12,9 +17,9 @@ translations
  "t1 \<approx>? t2" \<rightharpoonup> "(t1, t2)"
  "a \<sharp>? t"  \<rightharpoonup> "(a,t)"
 
-
-
-(* all solutions for a unification problem *)
+text \<open>
+  All solutions for a unification problem.
+\<close>
 
 type_synonym problem_type = "((trm \<times> trm) list) \<times> ((string \<times> trm) list)"
 
@@ -26,13 +31,11 @@ definition U:: "problem_type \<Rightarrow> (unifier_type set)"
              (\<forall> (t1,t2) \<in> set (fst P). nabla \<turnstile> subst s t1 \<approx> subst s t2) \<and> 
              (\<forall> (a,t) \<in> set (snd P). nabla \<turnstile> a \<sharp> subst s t)}"
 
-
-(* set of variables in unification problems *)
+text \<open>The set of variables in unification problems.\<close>
 
 type_synonym eprobs = "((trm \<times> trm) list)"
 type_synonym fprobs = "((string \<times> trm) list)"
 type_synonym probs = "eprobs \<times> fprobs"
-
 
 fun vars_fprobs:: "((string \<times> trm) list) \<Rightarrow> (string set)"
   where
@@ -47,8 +50,7 @@ fun  vars_eprobs :: "((trm \<times> trm) list) \<Rightarrow> (string set)"
 definition vars_probs :: "problem_type \<Rightarrow> nat"
   where "vars_probs P \<equiv> card((vars_fprobs (snd P))\<union>(vars_eprobs (fst P)))"
 
-
-(* most general unifier *)
+text \<open>Most general unifier\<close>
 
 definition mgu :: "problem_type \<Rightarrow> unifier_type \<Rightarrow> bool"
   where "mgu P unif \<equiv> 
@@ -56,14 +58,12 @@ definition mgu :: "problem_type \<Rightarrow> unifier_type \<Rightarrow> bool"
                               (nabla \<Turnstile> subst (s2 \<bullet>(snd unif)) \<approx> subst s1))"
 
 
-(* idempotency of a unifier *)
+text \<open>Idempotency of a unifier\<close>
 
 definition idem :: "unifier_type \<Rightarrow> bool"
   where "idem unif \<equiv> (fst unif)\<Turnstile> subst ((snd unif)\<bullet>(snd unif)) \<approx> subst (snd unif)"
 
-
-(* application of a substitution to a problem *)
-
+text \<open>Application of a substitution to a problem\<close>
 
 definition apply_subst_eprobs :: "substs \<Rightarrow> eprobs \<Rightarrow> eprobs"
   where "apply_subst_eprobs s P \<equiv> map (\<lambda>(t1, t2). (subst s t1 \<approx>? subst s t2)) P"
@@ -71,13 +71,11 @@ definition apply_subst_eprobs :: "substs \<Rightarrow> eprobs \<Rightarrow> epro
 definition apply_subst_fprobs :: "substs \<Rightarrow> fprobs \<Rightarrow> fprobs"
   where "apply_subst_fprobs s P \<equiv> map (\<lambda>(a, t). (a \<sharp>? subst s t)) P"
 
-
 definition apply_subst :: "substs \<Rightarrow> problem_type \<Rightarrow> problem_type"
   where "apply_subst s P \<equiv> (map (\<lambda>(t1, t2). (subst s t1 \<approx>? subst s t2)) (fst P),
                       map (\<lambda>(a, t). (a \<sharp>? (subst s t))) (snd P))"
 
-
-(* equality reductions *)
+text \<open>Equality reductions\<close>
 
 inductive s_red :: "problem_type \<Rightarrow> substs \<Rightarrow> problem_type \<Rightarrow> bool"  ("_ \<turnstile> _ \<leadsto> _ " [80,80,80] 80)
   where
@@ -106,8 +104,7 @@ inductive_cases s_red_elims:
 "((Susp pi X\<approx>?t)#xs,ys) \<turnstile>[(X,swap (rev pi) t)]\<leadsto> apply_subst [(X,swap (rev pi) t)] (xs,ys)"
 "((t\<approx>?Susp pi X)#xs,ys) \<turnstile>[(X,swap (rev pi) t)]\<leadsto> apply_subst [(X,swap (rev pi) t)] (xs,ys)"
 
-
-(*weakening of fresh*)
+text \<open>Weakening of freshness\<close>
 
 lemma solution_weak:
   assumes "(nabla1, s) \<in> U P"
@@ -124,7 +121,7 @@ lemma solutions_subst_assoc:
    "((nabla, s1 \<bullet> (s2 \<bullet> s3)) \<in> U P) = ((nabla, (s1 \<bullet> s2) \<bullet> s3) \<in> U P)"
   unfolding all_solutions_def using subst_assoc by simp
 
-(* freshness reductions *)
+text \<open>Freshness reductions\<close>
 
 inductive c_red :: "problem_type \<Rightarrow> fresh_envs \<Rightarrow> problem_type \<Rightarrow> bool" ("_ \<turnstile> _ \<rightarrow> _ " [80,80,80] 80)
   where
@@ -136,8 +133,7 @@ inductive c_red :: "problem_type \<Rightarrow> fresh_envs \<Rightarrow> problem_
   atom_cred[intro!]:    "a\<noteq>b \<Longrightarrow>([],(a \<sharp>? Atom b)#xs) \<turnstile>{}\<rightarrow> ([],xs)" |
   susp_cred[intro!]:    "([],(a \<sharp>? Susp pi X)#xs) \<turnstile> {((swapas (rev pi) a),X)}\<rightarrow> ([],xs)"
 
-
-(* unification reduction sequence *)
+text \<open>Unification reduction sequences\<close>
 
 inductive red_plus :: "problem_type \<Rightarrow> unifier_type \<Rightarrow> problem_type \<Rightarrow> bool" ("_ \<Turnstile> _ \<Rightarrow> _ " [80,80,80] 80)
   where
@@ -146,18 +142,17 @@ inductive red_plus :: "problem_type \<Rightarrow> unifier_type \<Rightarrow> pro
   sred_step[intro!]:   "\<lbrakk>P1\<turnstile>s1\<leadsto>P2; P2\<Turnstile>(nabla2,s2)\<Rightarrow>P3\<rbrakk> \<Longrightarrow> P1\<Turnstile>(nabla2,(s2\<bullet>s1))\<Rightarrow>P3" |
   cred_step[intro!]:   "\<lbrakk>P1\<turnstile>nabla1\<rightarrow>P2; P2\<Turnstile>(nabla2,[])\<Rightarrow>P3\<rbrakk> \<Longrightarrow> P1\<Turnstile>(nabla2\<union>nabla1,[])\<Rightarrow>P3"
 
-
 lemma mgu_idem: 
   assumes "(nabla1,s1) \<in> U P"
     and "\<forall>(nabla2,s2) \<in> U P. nabla2 \<Turnstile>(subst s2) nabla1 \<and>  nabla2\<Turnstile>subst(s2 \<bullet> s1)\<approx>subst s2"
   shows "mgu P (nabla1,s1) \<and> idem (nabla1,s1)"
   using assms mgu_def idem_def by auto
 
-
-lemma problem_subst_comm: "((nabla,s2) \<in> U (apply_subst s1 P)) = ((nabla,(s2\<bullet>s1))\<in>U P)"
+lemma problem_subst_comm: 
+  shows "((nabla,s2) \<in> U (apply_subst s1 P)) = ((nabla,(s2\<bullet>s1))\<in>U P)"
   using all_solutions_def apply_subst_def subst_comp_expand by auto
 
-(*preservations of solutions*)
+text \<open>Preservation of solutions\<close>
 
 lemma P1_to_P2_sred:
   assumes "(nabla1,s1) \<in> U P1" and "P1 \<turnstile>s2 \<leadsto> P2"
@@ -379,7 +374,7 @@ proof(induction arbitrary: nabla1 s1 rule: s_red.induct[OF \<open>P1 \<turnstile
   show ?case by simp
 qed
 
-(*auxiliary for completeness*)
+text \<open>Auxiliary lemma for completeness\<close>
 
 lemma P1_from_P2_sred: 
   assumes "(nabla1,s1)\<in> U P2" and "P1\<turnstile>s2\<leadsto>P2"
@@ -537,7 +532,6 @@ next
     using all_solutions_def by simp
 qed
 
-
 lemma P1_to_P2_cred: 
   assumes "(nabla1,s1)\<in> U P1"
   and "P1 \<turnstile>nabla2 \<rightarrow> P2"
@@ -604,7 +598,6 @@ next
   from fresh eqs ext
     show ?case using all_solutions_def by simp
 qed (auto simp add: all_solutions_def ext_subst_def)
-
 
 lemma P1_from_P2_cred:
   assumes "(nabla1,s1)\<in>U P2"
@@ -691,32 +684,6 @@ next
   with weak2 show ?case 
     using ext_subst_def all_solutions_def by simp
 qed (auto simp add: ext_subst_def all_solutions_def fresh_weak)
-
-(*
-lemma P1_to_P2_red_plus: 
-  assumes "P1 \<Turnstile>nablas\<Rightarrow>P2"
- and "(nabla1,s1)\<in>U P1"
-shows "((nabla1,s1)\<in>U P2)\<and>
-       (nabla1\<Turnstile>subst (s1\<bullet>(snd nablas))\<approx>subst s1)\<and>(nabla1\<Turnstile>(subst s1) (fst nablas))"
-  using assms
-proof(induction arbitrary: s1 nabla1 rule: red_plus.induct)
-  case (sred_single P1 s1 P2)
-  then show ?case
-    by (simp add: P1_to_P2_sred ext_subst_def) 
-next
-  case (cred_single P1 nabla1 P2)
-  then show ?case
-    by (simp add: P1_to_P2_cred subst_equ_refl) 
-next
-  case (sred_step P1 s1 P2 nabla2 s2 P3)
-  then show ?case
-    by (metis P1_to_P2_sred fst_conv snd_conv subst_assoc subst_cancel_right subst_trans) 
-next
-  case (cred_step P1 nabla1 P2 nabla2 P3)
-  then show ?case
-    by (metis P1_to_P2_cred UnE ext_subst_def split_pairs2) 
-qed*)
-
 
 lemma P1_to_P2_red_plus1: 
   assumes "P1 \<Turnstile> (nabla,s) \<Rightarrow> P2"
@@ -898,5 +865,6 @@ proof(rule mgu_idem)
   qed
 qed
 
-
+(*<*)
 end
+(*>*)

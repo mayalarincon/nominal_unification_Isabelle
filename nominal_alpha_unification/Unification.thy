@@ -86,6 +86,7 @@ definition
 lemma fail_then_empty: 
   assumes "P1 \<in> fail"
   shows "U P1 = {}"
+proof(induct rule: fail_cases)
   using assms sorry
 (*proof(cases rule: fail.cases)*)
 

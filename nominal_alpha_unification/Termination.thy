@@ -1,16 +1,22 @@
-theory Termination 
-
-  imports Mgu
-
+(*<*)
+theory Termination
+imports Mgu
 begin
+(*>*)
 
+section \<open>Termination\<close>
+
+text \<open>
+  Shows that every reduction reduces a (well-founded) measure, thus proves that 
+  every reduction sequence must terminate.
+\<close>
 
 lemma apply_subst_equivalence: 
   shows "apply_subst s P = (apply_subst_eprobs s (fst P), apply_subst_fprobs s (snd P))"
   unfolding apply_subst_def apply_subst_eprobs_def apply_subst_fprobs_def by simp
 
-
-lemma[simp]: "vars_trm (swap pi t) = vars_trm t"
+lemma[simp]: 
+  shows "vars_trm (swap pi t) = vars_trm t"
   by (induct t) auto
 
 fun size_trm :: "trm \<Rightarrow> nat"
@@ -30,10 +36,10 @@ fun size_fprobs :: "fprobs \<Rightarrow> nat"
 fun size_eprobs :: "eprobs \<Rightarrow> nat"
   where
  "size_eprobs [] = 0" | 
-  "size_eprobs (x#xs) = (size_trm (fst x))+(size_trm (snd x))+(size_eprobs xs)"
+ "size_eprobs (x#xs) = (size_trm (fst x))+(size_trm (snd x))+(size_eprobs xs)"
 
-
-lemma size_swap [simp]: "size_trm (swap pi t) = size_trm t"
+lemma size_swap [simp]: 
+  shows "size_trm (swap pi t) = size_trm t"
   by (induct t) auto
 
 definition measure_relation :: 
@@ -45,17 +51,19 @@ fun rank :: "probs \<Rightarrow> (nat\<times>nat\<times>nat)"
   where
   "rank (eprobs,fprobs) = (card (vars_eprobs eprobs),size_eprobs eprobs, size_fprobs fprobs)"
 
-
-lemma vars_term_finite [simp]: "finite (vars_trm t)"
+lemma vars_term_finite [simp]: 
+  shows "finite (vars_trm t)"
   by (induct t) auto
 
-
-lemma vars_eprobs_finite [simp]: "finite (vars_eprobs P)"
+lemma vars_eprobs_finite [simp]: 
+  shows "finite (vars_eprobs P)"
   by (induct P) auto
 
-
-lemma union_assoc: "A\<union>(B\<union>C)=(A\<union>B)\<union>C"
+(*
+lemma union_assoc: 
+  shows "A\<union>(B\<union>C)=(A\<union>B)\<union>C"
   by auto
+*)
 
 lemma card_union:
 assumes "finite A" "finite B"
@@ -80,22 +88,33 @@ proof-
   qed 
 qed
 
-lemma card_insert: "\<lbrakk>finite B\<rbrakk>\<Longrightarrow>(card B < card (insert X B)) \<or> (card B = card (insert X B))"
+lemma card_insert: 
+  assumes "finite B"
+  shows "(card B < card (insert X B)) \<or> (card B = card (insert X B))"
  using psubset_card_mono card_insert_le order_le_imp_less_or_eq by fast
 
-lemma subseteq_card: "\<lbrakk>A\<subseteq>B ; finite B\<rbrakk> \<Longrightarrow> (card A \<le> card B)"
-  using card_mono le_eq_less_or_eq by auto
+lemma subseteq_card: 
+  assumes "A\<subseteq>B" "finite B"
+  shows "card A \<le> card B"
+  using assms card_mono le_eq_less_or_eq by auto
 
-lemma not_occurs_trm: "\<not>occurs X t \<longrightarrow> X\<notin> vars_trm t"
-  by (induct t) auto
+lemma not_occurs_trm: 
+  assumes "\<not>occurs X t"
+  shows "X\<notin> vars_trm t"
+  using assms 
+  apply (induct t rule: occurs.induct) apply auto
+  apply presburger
+  by presburger
+  
+lemma not_occurs_subst: 
+  assumes "\<not>occurs X t1"
+  shows "X\<notin> vars_trm (subst [(X,swap pi2 t1)] t2)" 
+  using assms subst_susp not_occurs_trm by (induct t2) auto
 
-lemma not_occurs_subst: "\<not>occurs X t1\<longrightarrow> X\<notin> vars_trm (subst [(X,swap pi2 t1)] t2)" 
-  using subst_susp not_occurs_trm by (induct t2) auto
-
-lemma not_occurs_list: "\<not> occurs X t \<longrightarrow>
-  X \<notin> vars_eprobs (apply_subst_eprobs [(X, swap pi t)] xs)"
-  using not_occurs_subst apply_subst_eprobs_def by (induct xs) auto
-
+lemma not_occurs_list: 
+  assumes "\<not> occurs X t"
+  shows "X \<notin> vars_eprobs (apply_subst_eprobs [(X, swap pi t)] xs)"
+  using assms not_occurs_subst apply_subst_eprobs_def by (induct xs) auto
 
 lemma vars_equ: 
   assumes "\<not>occurs X t1" and "occurs X t2"
@@ -141,7 +160,6 @@ next
     vars_trm t1 \<union> vars_trm (Paar t21 t22) - {X}" by auto
   qed
 qed (simp_all)
-
 
 lemma vars_subseteq:
   assumes "\<not>occurs X t "
@@ -234,7 +252,6 @@ next
     qed
   qed
 qed
-
 
 lemma vars_decrease: 
   assumes "\<not>occurs X t"
@@ -343,8 +360,6 @@ next
     using measure_relation_def by auto
 qed
   
-
-
 lemma rank_sred: 
   assumes "P1\<turnstile> s \<leadsto>P2"
   shows "(rank P2) \<lless> (rank P1)"
@@ -511,14 +526,19 @@ next
      using vars_decrease[OF 9(4)] measure_relation_def by auto
 qed
 
+lemma rank_trans: 
+  assumes "rank P1 \<lless> rank P2" "rank P2 \<lless> rank P3"
+  shows "rank P1 \<lless> rank P3"
+  using assms measure_relation_def trans_less_than trans_lex_prod transE by metis
 
-lemma rank_trans: "\<lbrakk>rank P1 \<lless> rank P2; rank P2 \<lless> rank P3\<rbrakk>\<Longrightarrow> rank P1 \<lless> rank P3"
-  using measure_relation_def trans_less_than trans_lex_prod transE by metis
+text \<open>All reduction are well-founded with respect to the rank.\<close>
 
-(* all reduction are well-founded under \<lless> *)
+lemma rank_red_plus: 
+  assumes "P1\<Turnstile> (s,nabla)\<Rightarrow>P2"
+  shows "(rank P2) \<lless> (rank P1)"
+  using assms 
+  by (erule_tac red_plus.induct)(auto dest: rank_sred rank_cred rank_trans)
 
-lemma rank_red_plus: "\<lbrakk>P1\<Turnstile> (s,nabla)\<Rightarrow>P2\<rbrakk> \<Longrightarrow>(rank P2) \<lless> (rank P1)"
- by (erule red_plus.induct)(auto dest: rank_sred rank_cred rank_trans)
-
+(*<*)
 end
-
+(*>*)

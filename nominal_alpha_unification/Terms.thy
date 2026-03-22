@@ -1,8 +1,14 @@
-theory Terms 
+(*<*)
+theory Terms
   imports Swap
 begin
+(*>*)
 
-(* terms *)
+section \<open>Terms\<close>
+
+text \<open>
+Definions for terms, occurs check and the notion of subterms.
+\<close>
 
 datatype trm = Abst string  trm   
              | Susp "(string \<times> string) list" string
@@ -11,7 +17,7 @@ datatype trm = Abst string  trm
              | Paar trm trm                          
              | Func string trm                       
 
-(* swapping operation on terms *)
+text \<open>The swapping operation on terms.\<close>
 
 fun swap  :: "(string \<times> string) list \<Rightarrow> trm \<Rightarrow> trm"
   where
@@ -26,19 +32,16 @@ lemma swap_id [simp]:
   shows "swap [] t = t"
   by (induct_tac t) (auto)
 
-
 lemma swap_append: 
   shows "swap (pi1@pi2) t = swap pi1 (swap pi2 t)"
   using swapas_append by (induct t arbitrary: pi1 pi2) auto
-
 
 lemma swap_empty: 
   assumes "swap pi t = Susp [] X" 
   shows "pi = []"
   using assms swap.elims by blast
 
-
-(* depth of terms *)
+text \<open>The depth of terms used as measure.\<close>
 
 fun depth :: "trm \<Rightarrow> nat"
   where
@@ -58,8 +61,7 @@ lemma swap_depth [simp]:
   shows "depth (swap pi t) = depth t" 
   by (induct t) (auto)
 
-
-(* occurs predicate and variables in terms *)
+text \<open>The occurs predicate and variables inside terms.\<close>
 
 fun occurs :: "string \<Rightarrow> trm \<Rightarrow> bool"
   where 
@@ -83,8 +85,7 @@ lemma vars_swap:
   shows "vars_trm (swap pi t) = vars_trm t"
   by (induct t) auto
 
-
-(* subterms and proper subterms *)
+text \<open>Subterms and proper subterms.\<close>
 
 fun sub_trms :: "trm \<Rightarrow> trm set"
   where 
@@ -110,36 +111,29 @@ lemma psub_sub_trms:
   using assms
   by(induct t2)(auto)
 
-
 lemma t_sub_trms_t: 
   shows "t \<in> sub_trms t"
   by (induct t) (auto)
-
-
 
 lemma abst_psub_trms: 
   assumes "Abst a t1 \<in> sub_trms t2"
   shows "t1 \<in> psub_trms t2"
   using assms
-apply(induct t2 arbitrary: t1)
-apply(auto simp add: t_sub_trms_t intro: psub_sub_trms)
-done
+  by (induct t2 arbitrary: t1)
+  (auto simp add: t_sub_trms_t intro: psub_sub_trms)
 
 lemma func_psub_trms: 
   assumes "Func F t1 \<in> sub_trms t2"
   shows "t1 \<in> psub_trms t2"
   using assms
-apply(induct t2)
-apply(auto simp add: t_sub_trms_t intro: psub_sub_trms)
-done
+  by (induct t2)
+     (auto simp add: t_sub_trms_t intro: psub_sub_trms)
 
 lemma paar_psub_trms: 
   assumes "Paar t1 t2 \<in> sub_trms t3"
   shows "t1 \<in> psub_trms t3" and "t2 \<in> psub_trms t3"
   using assms
-apply(induct t3)
-apply(auto simp add: t_sub_trms_t intro: psub_sub_trms)
-  done
+  by (induct t3) (auto simp add: t_sub_trms_t intro: psub_sub_trms)
 
 lemma t_not_in_psub_trms_t: 
   shows "t \<notin> psub_trms t"
@@ -173,7 +167,6 @@ lemma if_sub_not_eq_then_psub:
   using assms
   by (induct t2) auto
 
-
 lemma depth_psub_trms: 
   assumes "t1 \<in> psub_trms t2"
   shows "depth t1 < depth t2"
@@ -206,4 +199,6 @@ next
     by fastforce
 qed
 
+(*<*)
 end
+(*>*)
