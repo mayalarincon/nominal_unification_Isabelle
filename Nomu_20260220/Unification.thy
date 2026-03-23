@@ -228,105 +228,42 @@ qed
 (* the only stuck problems are the "failed" problems and the empty problem *)
 
 lemma stuck_equiv: 
-  shows "stuck = {([],[])} \<union> {P1. fail P1}"
+  shows "stuck = {([],[])} \<union> {P1. fail P1}"      
   sorry
 
 
 lemma u_empty_sred: 
   assumes "P1\<turnstile>s\<leadsto>P2" and "U P2 ={}"
   shows "U P1 = {}"
-  using assms
-proof(induct rule: s_red.induct)
-  case (unit_sred xs ys)
-  then show ?case sorry
-next
-  case (paar_sred t1 t2 s1 s2 xs ys)
-  then show ?case sorry
-next
-  case (func_sred F t1 t2 xs ys)
-  then show ?case sorry
-next
-  case (abst_aa_sred a t1 t2 xs ys)
-  then show ?case sorry
-next
-  case (abst_ab_sred a b t1 t2 xs ys)
-  then show ?case sorry
-next
-  case (atom_sred a xs ys)
-  then show ?case sorry
-next
-  case (susp_sred pi1 X pi2 xs ys)
-  then show ?case sorry
-next
-  case (var_1_sred X t pi xs ys)
-  then show ?case sorry
-next
-  case (var_2_sred X t pi xs ys)
-  then show ?case sorry
-qed
+  using assms P1_from_P2_sred all_solutions_def P1_to_P2_sred by blast
 
 
 lemma u_empty_cred:
   assumes "P1\<turnstile>nabla\<rightarrow>P2" and "U P2 ={}"
   shows "U P1={}"
-  using assms
-proof(induct rule: c_red.induct)
-  case (unit_cred a xs)
-  then show ?case sorry
-next
-  case (paar_cred a t1 t2 xs)
-  then show ?case sorry
-next
-  case (func_cred a F t xs)
-  then show ?case sorry
-next
-  case (abst_aa_cred a t xs)
-  then show ?case sorry
-next
-  case (abst_ab_cred a b t xs)
-  then show ?case sorry
-next
-  case (atom_cred a b xs)
-  then show ?case sorry
-next
-  case (susp_cred a pi X xs)
-  then show ?case sorry
-qed
+  using assms P1_from_P2_cred all_solutions_def P1_to_P2_cred by blast
 
 
 lemma u_empty_red_plus: 
   assumes "P1\<Turnstile>(nabla,s)\<Rightarrow>P2" and "U P2 ={}"
   shows "U P1={}"
-  using assms
-proof(induct rule: red_plus.induct)
-  case (sred_single P1 s1 P2)
-  then show ?case sorry
-next
-  case (cred_single P1 nabla1 P2)
-  then show ?case sorry
-next
-  case (sred_step P1 s1 P2 nabla2 s2 P3)
-  then show ?case sorry
-next
-  case (cred_step P1 nabla1 P2 nabla2 P3)
-  then show ?case sorry
-qed
-
+  using assms P1_from_P2_red_plus all_solutions_def P1_to_P2_red_plus1 by fast
 
 (* all problems that cannot be solved produce "failed" problems only *)
 
 lemma empty_then_fail: 
 assumes "U P1={}"
-shows" (\<forall>P\<in>results P1. fail P)"
-  using assms sorry
-(*
+shows" (\<forall>P \<in> results P1. fail P)"
+  using assms
+proof-
+
 apply(simp add: results_def)
-apply(rule conjI)
-apply(rule impI)
-apply(rule impI)
-apply(simp add: stuck_equiv)
-apply(erule disjE)
-apply(subgoal_tac "({},[])\<in>U ([],[])")
+  apply(rule conjI)
+  apply(rule impI)
+  apply(simp add: stuck_equiv)
+  apply(erule disjE)
+   apply(subgoal_tac "({},[])\<in>U ([],[])")
+
 apply(simp)
 apply(simp add: all_solutions_def)
 apply(assumption)
@@ -337,7 +274,7 @@ apply(erule conjE)
 apply(simp add: stuck_equiv)
 apply(auto)
 apply(subgoal_tac "({},[])\<in>U ([],[])")
-apply(rule_tac "nabla3.0"="nabla" and "nabla1.0"="{}" and "s1.0"="[]" in P1_from_P2_red_plus)
+apply(simp add: P1_from_P2_red_plus)
 apply(simp add: ext_subst_def)
 apply(auto)
 apply(simp add: all_solutions_def)
