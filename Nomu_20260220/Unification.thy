@@ -706,8 +706,19 @@ next
     unfolding stuck_def by simp
 next
   case (fail_sym s t xs ys)
-  then show "((t, s) # xs, ys) \<in> stuck"
-    sorry
+  hence not_reduce: "\<nexists> P2 nabla s1. ((s, t) # xs, ys) \<Turnstile> (nabla, s1) \<Rightarrow> P2"
+    unfolding stuck_def by simp
+  have"\<nexists> P2 nabla s1. ((t, s) # xs, ys) \<Turnstile> (nabla, s1) \<Rightarrow> P2"
+  proof
+    assume "\<exists>P2 nabla s1. ((t, s) # xs, ys) \<Turnstile> (nabla, s1) \<Rightarrow> P2"
+    then obtain P2 nabla s1 where 
+      reduces: "((t, s) # xs, ys) \<Turnstile> (nabla, s1) \<Rightarrow> P2"
+      by auto
+    hence "\<exists> P3 nabla1 s2. ((s, t) # xs, ys) \<Turnstile> (nabla1, s2) \<Rightarrow> P3"
+      using red_plus_symm[of \<open>((t, s) # xs, ys)\<close> t s xs ys nabla s1 P2] by auto
+    with not_reduce show False by simp
+  qed
+  then show "((t, s) # xs, ys) \<in> stuck" unfolding stuck_def by simp
 qed
 
 
