@@ -3,10 +3,12 @@ theory Unification
 imports Mgu
 
 begin
+
 (* problems to which no reduction applies *)
 
 definition stuck :: "problem_type set" where
   stuck_def: "stuck \<equiv> { P1. \<not>(\<exists>P2 nabla s. P1 \<Turnstile>(nabla,s)\<Rightarrow>P2)}"
+
                                                         
 (* all problems which are stuck and have no unifier *)
 
@@ -30,6 +32,8 @@ fail_func_paar [intro!]: "fail (Func F t\<approx>?Paar t1 t2#xs,ys)" |
 fail_diff_func [intro!]: "\<lbrakk>F1\<noteq>F2\<rbrakk>\<Longrightarrow> fail (Func F1 t1\<approx>?Func F2 t2#xs,ys)" |
 fail_sym [intro!]: "fail (s \<approx>? t # xs, ys) \<Longrightarrow> fail (t \<approx>? s # xs, ys)"
 
+
+(*definition of normal form of a problem*)
 
 definition 
   normal_form :: "problem_type \<Rightarrow> problem_type set" where 
@@ -223,8 +227,8 @@ next
    using all_solutions_def U_equ_symm by simp
 qed
 
-(* the only stuck problems are the "failed" problems and the empty problem *)
 
+(* the only stuck problems are the "failed" problems and the empty problem *)
 
 lemma not_reduce_then_fail:
   assumes "\<not> (\<exists>nabla s P'. ((t1 \<approx>? t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P')"
@@ -487,6 +491,113 @@ next
 qed (simp add: cred_single, blast+)
 
 
+lemma empty_stuck:
+  shows "([],[]) \<in> stuck"
+proof-
+  have "\<not> (\<exists>P2 nabla s. ([],[]) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  thus "([],[]) \<in> stuck"
+    unfolding stuck_def by auto
+qed
+
+lemma fail_is_stuck:
+  assumes "fail P"
+  shows "P \<in> stuck"
+  using assms
+proof(induct rule: fail.induct)
+  case (fail_occur_abst X t pi a xs ys)
+  then show ?case sorry
+next
+  case (fail_occur_func X t pi F xs ys)
+  then show ?case sorry
+next
+  case (fail_occur_paar X t1 t2 pi xs ys)
+  then show ?case sorry
+next
+  case (fail_fresh_atom a ys)
+  have "\<not> (\<exists>P2 nabla s. ([], (a, Atom a) # ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "([], (a, Atom a) # ys) \<in> stuck" 
+    unfolding stuck_def by simp
+next
+  case (fail_diff_atoms a b xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Atom a, Atom b) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Atom a, Atom b) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_abst_unit a t xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Abst a t, Unit) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Abst a t, Unit) # xs, ys) \<in> stuck"
+     unfolding stuck_def by simp
+next
+  case (fail_abst_atom a t b xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Abst a t, Atom b) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Abst a t, Atom b) # xs, ys) \<in> stuck"
+     unfolding stuck_def by simp
+next
+  case (fail_abst_paar a t t1 t2 xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Abst a t, Paar t1 t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Abst a t, Paar t1 t2) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_func_abst F t1 a t xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Func F t1, Abst a t) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Func F t1, Abst a t) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_atom_unit b xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Atom b, Unit) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Atom b, Unit) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_paar_unit t1 t2 xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Paar t1 t2, Unit) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Paar t1 t2, Unit) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_func_unit F t1 xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Func F t1, Unit) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Func F t1, Unit) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_atom_paar a t1 t2 xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Atom a, Paar t1 t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Atom a, Paar t1 t2) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_func_atom F t1 a xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Func F t1, Atom a) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Func F t1, Atom a) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_func_paar F t t1 t2 xs ys)
+   hence "\<not> (\<exists>P2 nabla s. ((Func F t, Paar t1 t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Func F t, Paar t1 t2) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_diff_func F1 F2 t1 t2 xs ys)
+   hence "\<not> (\<exists>P2 nabla s. ((Func F1 t1, Func F2 t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Func F1 t1, Func F2 t2) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_sym s t xs ys)
+  then show "((t, s) # xs, ys) \<in> stuck"
+    sorry
+qed
+
+
 lemma stuck_equiv: 
   shows "stuck = {([],[])} \<union> {P1. fail P1}"      
 proof (rule set_eqI, rule iffI)
@@ -522,10 +633,13 @@ proof (rule set_eqI, rule iffI)
   qed }
 
   {assume "P \<in> {([], [])} \<union> {P1. fail P1}"
-    then show "P \<in> stuck" sorry
+    then show "P \<in> stuck" 
+      using empty_stuck fail_is_stuck by blast
       }
 qed
 
+
+(*if reduces to a non-solvable problem, then it is non-solvable *)
 
 lemma u_empty_sred: 
   assumes "P1\<turnstile>s\<leadsto>P2" and "U P2 ={}"
@@ -543,6 +657,7 @@ lemma u_empty_red_plus:
   assumes "P1\<Turnstile>(nabla,s)\<Rightarrow>P2" and "U P2 ={}"
   shows "U P1={}"
   using assms P1_from_P2_red_plus all_solutions_def P1_to_P2_red_plus1 by fast
+
 
 (* all problems that cannot be solved produce "failed" problems only *)
 
@@ -590,14 +705,35 @@ qed
 lemma not_empty_then_not_fail: 
   assumes "U P1\<noteq>{}"
   shows "\<not>(\<exists>P\<in> normal_form P1. fail P)"
-apply(simp)
-apply(rule ballI)
-apply(clarify)
-apply(simp add: normal_form_def)
-apply(case_tac "P1\<in>stuck")
-apply(simp_all)
-apply(drule fail_then_empty)
-   apply(clarify)
-  using assms fail_then_empty u_empty_red_plus by (auto, meson)
+proof(simp, rule ballI)
+  fix P
+  assume P_is_nf: "P \<in> normal_form P1"
+  show "\<not> fail P"
+  proof
+    assume P_fails: "fail P"
+    show False
+    proof(cases "P1\<in> stuck")
+      case True
+      have "normal_form P1 = {P1}"
+        unfolding normal_form_def using True by simp
+      hence "P = P1" using P_is_nf by simp
+      with P_fails have "U P1 = {}"
+        using fail_then_empty by simp
+      thus False using assms by simp
+      next
+        case False
+        with P_is_nf
+        obtain nabla s where P1_goes_to_P: "P1 \<Turnstile> (nabla, s) \<Rightarrow> P"
+          unfolding normal_form_def by auto
+        moreover have "U P = {}" 
+          using P_fails fail_then_empty by simp
+        ultimately have "U P1 = {}" 
+          using u_empty_red_plus by simp
+        then show False 
+          using assms by simp
+      qed
+    qed
+  qed
+
 
 end
