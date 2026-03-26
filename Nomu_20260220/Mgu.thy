@@ -136,6 +136,11 @@ inductive c_red :: "problem_type \<Rightarrow> fresh_envs \<Rightarrow> problem_
   atom_cred[intro!]:    "a\<noteq>b \<Longrightarrow>([],(a \<sharp>? Atom b)#xs) \<turnstile>{}\<rightarrow> ([],xs)" |
   susp_cred[intro!]:    "([],(a \<sharp>? Susp pi X)#xs) \<turnstile> {((swapas (rev pi) a),X)}\<rightarrow> ([],xs)"
 
+lemma c_red_eqs_empty:
+  assumes "P1 \<turnstile> s \<rightarrow> P2"
+  shows "fst P1 = []"
+  using assms by (auto elim: c_red.cases)
+
 
 (* unification reduction sequence *)
 
@@ -804,7 +809,7 @@ corollary P1_to_P2_red_plus:
 
 lemma P1_from_P2_red_plus:
   assumes "P1 \<Turnstile>(nabla,s)\<Rightarrow>P2"
-    and "(nabla1,s1)\<in> U P2" and "nabla3\<Turnstile>(subst s1)(nabla)"
+    and "(nabla1,s1)\<in> U P2" and "nabla3 \<Turnstile>(subst s1)(nabla)"
   shows "(nabla1\<union>nabla3,(s1 \<bullet> s))\<in> U P1"
   using assms
 proof(induction P1 \<equiv> "P1" nablas\<equiv>"(nabla, s)" P2\<equiv>"P2" arbitrary: s nabla1 nabla nabla3 s1 P1 P2 rule: red_plus.induct)
