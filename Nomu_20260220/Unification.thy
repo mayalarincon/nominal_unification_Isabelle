@@ -32,8 +32,8 @@ fail_sym [intro!]: "fail (s \<approx>? t # xs, ys) \<Longrightarrow> fail (t \<a
 
 
 definition 
-  results :: "problem_type \<Rightarrow> problem_type set" where 
-  "results P1 \<equiv> if P1 \<in> stuck then {P1} else {P2. \<exists>nabla s. P1\<Turnstile>(nabla,s)\<Rightarrow>P2 \<and> P2\<in>stuck}"
+  normal_form :: "problem_type \<Rightarrow> problem_type set" where 
+  "normal_form P1 \<equiv> if P1 \<in> stuck then {P1} else {P2. \<exists>nabla s. P1\<Turnstile>(nabla,s)\<Rightarrow>P2 \<and> P2\<in>stuck}"
 
 (*the solutions of a problem are the same for symmetric equations -- MOVE to Mgu.thy*)
 
@@ -43,7 +43,6 @@ lemma U_equ_symm:
 
 
 (* a "failed" problem has no unifier *)
-
 
 lemma fail_then_empty: 
   assumes "fail P1"
@@ -226,104 +225,235 @@ qed
 
 (* the only stuck problems are the "failed" problems and the empty problem *)
 
-lemma red_plus_first_step:
-  assumes "P \<Turnstile> (nabla,s) \<Rightarrow> P'"
-  shows
-    "(\<exists>s1 P2. P \<turnstile> s1 \<leadsto> P2) \<or>
-     (\<exists>nabla1 P2. P \<turnstile> nabla1 \<rightarrow> P2)"
-  using assms by (cases rule: red_plus.cases) blast+
-
-lemma c_red_empty_eqs:
-  assumes "P \<turnstile> nabla \<rightarrow> P'"
-  shows "fst P = []"
-  using assms by (cases rule: c_red.cases) auto
-
-lemma c_red_not_nonempty_eqs:
-  shows "\<not> ((t1 \<approx>? t2) # xs, ys) \<turnstile> nabla \<rightarrow> P'"
-proof
-  assume assm: "((t1 \<approx>? t2) # xs, ys) \<turnstile> nabla \<rightarrow> P'"
-  then show False
-    using c_red_empty_eqs[OF assm]
-      fst_conv[of \<open>(t1 \<approx>? t2) # xs\<close> ys] list.distinct[of \<open>(t1 \<approx>? t2)\<close> xs]
-    by simp
-qed
-
-lemma sred_exists_if_same_shape:
-  assumes "(t1 = Paar t11 t12 \<and> t2 = Paar t21 t22) \<or>
-     ( t1 = Func F t1' \<and> t2 = Func F t2') \<or>
-     ( t1 = Abst a t1' \<and> t2 = Abst a t2') \<or>
-     ( t1 = Abst a t1' \<and> t2 = Abst b t2' \<and> (a\<noteq>b)) \<or>
-     ( t1 = Atom a \<and> t2 = Atom a) \<or>
-     ( t1 = Susp pi1 X \<and> t2 = Susp pi2 X) \<or>
-     (t1 = Susp pi X \<and> t2 = t \<and> (\<not> occurs X t)) \<or>
-     ( t1 = t \<and> t2 = Susp pi X \<and> (\<not> occurs X t)) \<or> (t1 = Unit \<and> t2 = Unit)"
-  shows "\<exists> s P'. ((t1 \<approx>? t2) # xs, ys) \<turnstile> s \<leadsto> P'"
-  using assms
-  apply auto
-proof-
-  {assume "t1 = Abst a t1'" "t2 = Abst b t2'" "(a\<noteq>b)"
-  then have "((Abst a t1' \<approx>? Abst a t2')#xs,ys) \<turnstile>[]\<leadsto> ((t1'\<approx>?t2')#xs,ys)"
-    using abst_ab_sred by auto
-  thus "\<exists>s aa ba. ((Abst a t1', Abst b t2') # xs, ys) \<turnstile> s  \<leadsto> (aa, ba)"
-    by blast}
-
-  {assume "t1 = Susp pi X" "\<not> occurs X t" "t2 = t"
-  then have "((Susp pi X\<approx>?t)#xs,ys) 
-                               \<turnstile>[(X,swap (rev pi) t)]\<leadsto> apply_subst [(X,swap (rev pi) t)] (xs,ys)"
-    using var_1_sred by simp
-  thus "\<exists>s a b. ((Susp pi X, t) # xs, ys) \<turnstile> s \<leadsto> (a, b)" 
-    using prod.collapse by metis}
-
-  {assume "t2 = Susp pi X" "\<not> occurs X t" "t1 = t"
-  then have "((t\<approx>?Susp pi X)#xs,ys) 
-                               \<turnstile>[(X,swap (rev pi) t)]\<leadsto> apply_subst [(X,swap (rev pi) t)] (xs,ys)"
-    using var_2_sred by simp
-  thus "\<exists>s a b. ((t, Susp pi X) # xs, ys) \<turnstile> s \<leadsto> (a, b)" 
-    using prod.collapse by metis}
-qed
-
-lemma red_plus_exists_if_same_shape:
-  assumes
-    "(t1 = Paar t11 t12 \<and> t2 = Paar t21 t22) \<or>
-     (t1 = Func F t1' \<and> t2 = Func F t2') \<or>
-     (t1 = Abst a t1' \<and> t2 = Abst a t2') \<or>
-     (t1 = Abst a t1' \<and> t2 = Abst b t2' \<and> (a\<noteq>b)) \<or>
-     (t1 = Atom a \<and> t2 = Atom a) \<or>
-     (t1 = Susp pi1 X \<and> t2 = Susp pi2 X) \<or>
-     (t1 = Susp pi X \<and> t2 = t \<and> (\<not> occurs X t)) \<or>
-     (t1 = t \<and> t2 = Susp pi X \<and> (\<not> occurs X t)) \<or>
-     (t1 = Unit \<and> t2 = Unit)"
-  shows "\<exists>nabla s P'. ((t1 \<approx>? t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P'"
-using assms
-proof -
-  have "\<exists> s P2. ((t1 \<approx>? t2) # xs, ys) \<turnstile> s \<leadsto> P2"
-    using sred_exists_if_same_shape[OF assms] by simp
-  then obtain s P2 where
-  step: "((t1 \<approx>? t2) # xs, ys) \<turnstile> s \<leadsto> P2"
-    by auto
-  then have "((t1 \<approx>? t2) # xs, ys) \<Turnstile> ({}, s) \<Rightarrow> P2"
-    using sred_single by simp
-  then show ?thesis by blast
-qed
-
 
 lemma not_reduce_then_fail:
   assumes "\<not> (\<exists>nabla s P'. ((t1 \<approx>? t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P')"
   shows "fail ((t1 \<approx>? t2) # xs, ys)"
   using assms
-proof-
-  have no_shape:
-  "\<not> ((t1 = Paar t11 t12 \<and> t2 = Paar t21 t22) \<or>
-      (t1 = Func F t1' \<and> t2 = Func F t2') \<or>
-      (t1 = Abst a t1' \<and> t2 = Abst a t2') \<or>
-      (t1 = Abst a t1' \<and> t2 = Abst b t2' \<and> a \<noteq> b) \<or>
-      (t1 = Atom a \<and> t2 = Atom a) \<or>
-      (t1 = Susp pi1 X \<and> t2 = Susp pi2 X) \<or>
-      (t1 = Susp pi X \<and> t2 = t \<and> \<not> occurs X t) \<or>
-      (t1 = t \<and> t2 = Susp pi X \<and> \<not> occurs X t) \<or>
-      (t1 = Unit \<and> t2 = Unit))"
-  for t11 t12 t21 t22 F t1' t2' a b pi1 pi2 pi X t
-    using assms red_plus_exists_if_same_shape by blast 
+proof(cases t1)
+  case (Abst a t1')
+  have t1_def: "t1 = Abst a t1'" by fact
+  then show "fail ((t1, t2) # xs, ys)"
+  proof(cases t2)
+    case (Abst b t2')
+    with t1_def
+    have "((t1 \<approx>? t2)#xs,ys) \<turnstile>[]\<leadsto> ((t1'\<approx>?t2')#xs,ys) \<or> 
+    ((t1\<approx>? t2)#xs,ys) \<turnstile>[]\<leadsto> ((t1'\<approx>?swap [(a,b)] t2')#xs,(a\<sharp>?t2')#ys)"
+      using abst_aa_sred abst_ab_sred by (cases "a=b") auto
+    hence "\<exists> P2. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},[])\<Rightarrow>P2"
+      using sred_single by blast
+    thus "fail ((t1, t2) # xs, ys)"
+      using assms by simp
+  next
+    case (Susp pi X)
+    have t2_def: "t2 = Susp pi X" by fact
+    with t1_def
+    show "fail ((t1, t2) # xs, ys)" 
+    proof(cases "occurs X t1'")
+      case True
+      with t1_def t2_def
+      show "fail ((t1, t2) # xs, ys)" 
+      using fail_sym[OF fail_occur_abst[OF True]] by simp
+    next
+      case False
+      with t1_def 
+      have not_occurs: "\<not> occurs X t1" by simp
+      hence "((t1\<approx>? Susp pi X)#xs,ys) 
+                    \<turnstile>[(X,swap (rev pi) t1)]\<leadsto> apply_subst [(X,swap (rev pi) t1)] (xs,ys)"
+        using t1_def var_2_sred[OF not_occurs] by simp
+       hence "\<exists> P2 s. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},s)\<Rightarrow>P2"
+         using t1_def t2_def sred_single by blast
+       thus "fail ((t1, t2) # xs, ys)" 
+         using assms by simp
+    qed
+  qed (auto)
+next
+  case (Susp pi X)
+  have t1_def: "t1 = Susp pi X" by fact
+  then show "fail ((t1, t2) # xs, ys)"
+  proof(cases "occurs X t2")
+    case True
+    then show "fail ((t1, t2) # xs, ys)"
+    proof(cases t2)
+      case (Abst a t2')
+      have t2_def: "t2 = Abst a t2'" by fact
+      with True
+      have "occurs X t2'" unfolding occurs.simps(4) t2_def by argo
+      thus "fail ((t1, t2) # xs, ys)"
+        using t1_def t2_def fail_occur_abst by simp
+    next
+      case (Susp pi' Y)
+      have t2_def: "t2 = Susp pi' Y" by fact
+      have "X = Y" 
+        using True unfolding t2_def occurs.simps(3)
+        by argo
+      hence "((Susp pi X\<approx>?Susp pi' Y)#xs,ys) 
+                                \<turnstile>[]\<leadsto> (xs,(map (\<lambda>a. a\<sharp>? Susp [] X) (ds_list pi pi'))@ys)"
+        using susp_sred by simp
+      hence "\<exists> P2. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},[])\<Rightarrow>P2"
+        using sred_single t1_def t2_def by blast
+      thus"fail ((t1, t2) # xs, ys)"
+        using assms by simp
+    next
+      case (Paar t21 t22)
+      have t2_def: "t2 = Paar t21 t22" by fact
+      with True
+      have "occurs X t21 \<or> occurs X t22" unfolding occurs.simps(5) t2_def by argo
+      thus "fail ((t1, t2) # xs, ys)"
+        using t1_def t2_def fail_occur_paar by simp
+    next
+      case (Func f t2')
+      have t2_def: "t2 = Func f t2'" by fact
+      with True
+      have "occurs X t2'" unfolding occurs.simps(6) t2_def by argo
+      thus "fail ((t1, t2) # xs, ys)"
+        using t1_def t2_def fail_occur_func by simp
+    qed (auto simp add: True)
+  next
+    case False
+    hence "((Susp pi X, t2) # xs, ys) \<turnstile> 
+    [(X, swap (rev pi) t2)] \<leadsto> apply_subst [(X, swap (rev pi) t2)] (xs, ys)"
+      using var_1_sred[OF False] by simp
+    hence "\<exists> P2 s. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},s)\<Rightarrow>P2"
+      using t1_def sred_single by blast
+    thus "fail ((t1, t2) # xs, ys)" 
+      using assms by simp
+  qed
+next
+  case Unit
+  have t1_def: "t1 = Unit" by fact
+  then show "fail ((t1, t2) # xs, ys)"
+  proof(cases t2)
+    case (Susp pi X)
+    have t2_def: "t2 =  Susp pi X" by fact
+    with t1_def have not_occurs: "\<not> occurs X t1" by simp
+    hence "((t1\<approx>? Susp pi X)#xs,ys) 
+                    \<turnstile>[(X,swap (rev pi) t1)]\<leadsto> apply_subst [(X,swap (rev pi) t1)] (xs,ys)"
+      using t1_def var_2_sred[OF not_occurs] by simp
+    hence "\<exists> P2 s. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},s)\<Rightarrow>P2"
+      using t1_def t2_def sred_single by blast
+    thus "fail ((t1, t2) # xs, ys)" 
+      using assms by simp
+  next
+    case Unit
+    with t1_def
+    have "((t1 \<approx>? t2)#xs,ys) \<turnstile>[]\<leadsto> (xs,ys)"
+      using unit_sred by auto
+    hence "\<exists> P2. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},[])\<Rightarrow>P2"
+      using sred_single by blast
+    thus "fail ((t1, t2) # xs, ys)"
+      using assms by simp
+  qed (auto)
+next
+  case (Atom a)
+  have t1_def: "t1 = Atom a" by fact
+  then show "fail ((t1, t2) # xs, ys)" 
+  proof(cases t2)
+    case (Susp pi X)
+    have t2_def: "t2 =  Susp pi X" by fact
+    with t1_def have not_occurs: "\<not> occurs X t1" by simp
+    hence "((t1\<approx>? Susp pi X)#xs,ys) 
+                    \<turnstile>[(X,swap (rev pi) t1)]\<leadsto> apply_subst [(X,swap (rev pi) t1)] (xs,ys)"
+      using t1_def var_2_sred[OF not_occurs] by simp
+    hence "\<exists> P2 s. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},s)\<Rightarrow>P2"
+      using t1_def t2_def sred_single by blast
+    thus "fail ((t1, t2) # xs, ys)" 
+      using assms by simp
+  next
+    case (Atom b)
+    have t2_def: "t2 = Atom b" by fact
+    then show "fail ((t1, t2) # xs, ys)"
+    proof(cases "a=b")
+      case True
+      hence "((t1 \<approx>? t2)#xs,ys) \<turnstile>[]\<leadsto> (xs,ys)"
+        using t2_def t1_def atom_sred by simp
+      hence "\<exists> P2. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},[])\<Rightarrow>P2"
+        using sred_single by blast
+      thus "fail ((t1, t2) # xs, ys)"
+        using assms by simp
+    qed (simp add: t1_def t2_def fail_diff_atoms)
+  qed(auto)
+next
+  case (Paar t11 t12)
+  have t1_def: "t1 = Paar t11 t12" by fact
+  then show "fail ((t1, t2) # xs, ys)"
+  proof(cases t2)
+  next
+    case (Susp pi X)
+    have t2_def: "t2 = Susp pi X" by fact
+    then show "fail ((t1, t2) # xs, ys)" 
+    proof(cases "occurs X t11 \<or> occurs X t12")
+      case True
+      then show "fail ((t1, t2) # xs, ys)" 
+        using t1_def t2_def fail_sym[OF fail_occur_paar[OF True]] by simp
+    next
+      case False
+      hence "\<not> occurs X t1"
+        using t1_def by simp
+      hence "((t1\<approx>?Susp pi X)#xs,ys) 
+                               \<turnstile>[(X,swap (rev pi) t1)]\<leadsto> apply_subst [(X,swap (rev pi) t1)] (xs,ys)"
+        by auto
+      hence "\<exists> P2 s. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},s)\<Rightarrow>P2"
+        using t1_def t2_def sred_single by blast
+      thus "fail ((t1, t2) # xs, ys)" 
+        using assms by simp
+    qed
+  next
+    case (Paar t21 t22)
+    have t2_def: "t2 = Paar t21 t22" by fact
+    with t1_def have
+    "((t1 \<approx>? t2)#xs,ys) \<turnstile>[]\<leadsto> ((t11\<approx>?t21)#(t12\<approx>?t22)#xs,ys)"
+      using paar_sred by simp
+    hence "\<exists> P2. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},[])\<Rightarrow>P2"
+      using sred_single by blast
+    thus "fail ((t1, t2) # xs, ys)"
+      using assms by simp
+  qed(auto)
+next
+  case (Func f t1')
+  have t1_def: "t1 = Func f t1'" by fact
+  then show "fail ((t1, t2) # xs, ys)"
+  proof(cases t2)
+    case (Susp pi X)
+     have t2_def: "t2 = Susp pi X" by fact
+     with t1_def
+    show "fail ((t1, t2) # xs, ys)" 
+    proof(cases "occurs X t1'")
+      case True
+      with t1_def t2_def
+      show "fail ((t1, t2) # xs, ys)" 
+      using fail_sym[OF fail_occur_func[OF True]] by simp
+    next
+      case False
+      with t1_def 
+      have not_occurs: "\<not> occurs X t1" by simp
+      hence "((t1\<approx>? Susp pi X)#xs,ys) 
+                    \<turnstile>[(X,swap (rev pi) t1)]\<leadsto> apply_subst [(X,swap (rev pi) t1)] (xs,ys)"
+        using t1_def var_2_sred[OF not_occurs] by simp
+       hence "\<exists> P2 s. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},s)\<Rightarrow>P2"
+         using t1_def t2_def sred_single by blast
+       thus "fail ((t1, t2) # xs, ys)" 
+         using assms by simp
+    qed
+  next
+    case (Func g t2')
+     have t2_def: "t2 = Func g t2'" by fact
+     then show "fail ((t1, t2) # xs, ys)"
+     proof(cases "f=g")
+       case True
+       hence "((t1 \<approx>? t2)#xs,ys) \<turnstile>[]\<leadsto> ((t1'\<approx>?t2')#xs,ys)"
+         using t1_def t2_def func_sred by simp
+       hence "\<exists> P2. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},[])\<Rightarrow>P2"
+         using sred_single by blast
+       thus "fail ((t1, t2) # xs, ys)"
+         using assms by simp
+     next
+       case False
+       then show "fail ((t1, t2) # xs, ys)"
+         using t1_def t2_def fail_diff_func[OF False] by simp
+     qed
+  qed(auto)
+qed
 
 
 lemma fresh_reduces_if_not_atom:
@@ -347,14 +477,6 @@ proof(cases t)
       using cred_single by blast
   qed
 next
-  case (Susp pi X)
-  then show "\<exists>P2 nabla s. ([], (a \<sharp>? t) # xs) \<Turnstile> (nabla, s) \<Rightarrow> P2"
-    using cred_single by blast
-next
-  case Unit
-  then show "\<exists>P2 nabla s. ([], (a \<sharp>? t) # xs) \<Turnstile> (nabla, s) \<Rightarrow> P2"
-    using cred_single by blast
-next
   case (Atom b)
   with assms
   have "a \<noteq> b" by simp
@@ -362,15 +484,7 @@ next
     unfolding Atom using atom_cred by simp
   then show "\<exists>P2 nabla s. ([], (a \<sharp>? t) # xs) \<Turnstile> (nabla, s) \<Rightarrow> P2"
     using cred_single by blast
-next
-  case (Paar t1 t2)
-  then show "\<exists>P2 nabla s. ([], (a \<sharp>? t) # xs) \<Turnstile> (nabla, s) \<Rightarrow> P2"
-    using cred_single by blast
-next
-  case (Func f t')
-  then show "\<exists>P2 nabla s. ([], (a \<sharp>? t) # xs) \<Turnstile> (nabla, s) \<Rightarrow> P2"
-    using cred_single by blast
-qed
+qed (simp add: cred_single, blast+)
 
 
 lemma stuck_equiv: 
@@ -408,7 +522,8 @@ proof (rule set_eqI, rule iffI)
   qed }
 
   {assume "P \<in> {([], [])} \<union> {P1. fail P1}"
-    show "P \<in> stuck" sorry}
+    then show "P \<in> stuck" sorry
+      }
 qed
 
 
@@ -433,19 +548,52 @@ lemma u_empty_red_plus:
 
 lemma empty_then_fail: 
 assumes "U P1={}"
-shows" (\<forall>P \<in> results P1. fail P)"
-  using assms
-  sorry
+shows" (\<forall>P \<in> normal_form P1. fail P)"
+proof
+  fix P
+  assume P_is_nf: "P \<in> normal_form P1"
+  hence P_is_stuck: "P \<in> stuck"
+    using normal_form_def by (cases "P1 \<in> stuck") auto
+  hence P_is_empty_or_fails: "P = ([],[]) \<or> fail P"
+    using stuck_equiv by auto
+  have "P \<noteq> ([],[])"
+  proof
+    assume P_empty: "P = ([],[])"
+    hence solution: "({},[]) \<in> U P"
+      using all_solutions_def by simp
+    hence P_neq: "P \<noteq> P1" 
+    using assms by auto
+    show False
+    proof(cases "P1\<in> stuck")
+      case True
+      then have "normal_form P1 = {P1}"
+        unfolding normal_form_def by simp
+      with P_is_nf have "P = P1" by simp
+      with P_neq show False by simp
+    next
+      case False
+      with P_is_nf
+      obtain nabla s where P1_goes_to_P: "P1 \<Turnstile> (nabla, s) \<Rightarrow> P" 
+        unfolding normal_form_def by auto
+      hence "({} \<union> nabla, [] \<bullet> s) \<in> U P1"
+        using P1_from_P2_red_plus[OF P1_goes_to_P solution ext_subst_id] by simp
+      with assms show False by simp
+    qed
+  qed
+  thus "fail P"
+    using P_is_empty_or_fails by simp
+qed
+
 
 (* if a problem can be solved then no "failed" problem is produced *)
 
 lemma not_empty_then_not_fail: 
   assumes "U P1\<noteq>{}"
-  shows "\<not>(\<exists>P\<in>results P1. fail P)"
+  shows "\<not>(\<exists>P\<in> normal_form P1. fail P)"
 apply(simp)
 apply(rule ballI)
 apply(clarify)
-apply(simp add: results_def)
+apply(simp add: normal_form_def)
 apply(case_tac "P1\<in>stuck")
 apply(simp_all)
 apply(drule fail_then_empty)
