@@ -506,13 +506,126 @@ lemma fail_is_stuck:
   using assms
 proof(induct rule: fail.induct)
   case (fail_occur_abst X t pi a xs ys)
-  then show ?case sorry
+  have t_occurs: "occurs X t" by fact
+  moreover have "\<not> (\<exists>P2 nabla s. ((Susp pi X \<approx>? Abst a t) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+  proof
+    assume "\<exists>P2 nabla s. ((Susp pi X \<approx>? Abst a t) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2"
+    then obtain P2 nabla s where
+    red: "((Susp pi X \<approx>? Abst a t) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2"
+      by auto
+    thus False 
+    proof (cases rule: red_plus.cases)
+      case sred_single
+      have "((Susp pi X, Abst a t) # xs, ys) \<turnstile> s \<leadsto> P2" by fact
+      hence "\<not> occurs X t" 
+         by (auto elim: s_red.cases)
+      with t_occurs show False by simp
+    next
+      case cred_single
+      have "((Susp pi X, Abst a t) # xs, ys) \<turnstile> nabla \<rightarrow> P2" by fact
+      moreover have "fst ((Susp pi X, Abst a t) # xs, ys) \<noteq> []"
+        by simp
+      ultimately show False 
+        using c_red_eqs_empty by blast
+    next
+      case (sred_step s1 P3 s2)
+      have "((Susp pi X, Abst a t) # xs, ys) \<turnstile> s1 \<leadsto> P3" by fact
+      hence "\<not> occurs X t" 
+        by (auto elim: s_red.cases)
+      with t_occurs show False by simp
+    next
+      case (cred_step nabla1 P3 nabla2)
+      have "((Susp pi X, Abst a t) # xs, ys) \<turnstile> nabla1 \<rightarrow> P3" by fact
+       moreover have "fst ((Susp pi X, Abst a t) # xs, ys) \<noteq> []"
+        by simp
+      ultimately show False 
+        using c_red_eqs_empty by blast
+    qed
+  qed
+  then show "((Susp pi X, Abst a t) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
 next
   case (fail_occur_func X t pi F xs ys)
-  then show ?case sorry
+  have t_occurs: "occurs X t" by fact
+  moreover have "\<not> (\<exists>P2 nabla s. ((Susp pi X \<approx>? Func F t) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+  proof
+    assume "\<exists>P2 nabla s. ((Susp pi X \<approx>? Func F t) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2"
+    then obtain P2 nabla s where
+    red: "((Susp pi X \<approx>? Func F t) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2"
+      by auto
+    thus False 
+    proof (cases rule: red_plus.cases)
+      case sred_single
+      have "((Susp pi X, Func F t) # xs, ys) \<turnstile> s \<leadsto> P2" by fact
+      hence "\<not> occurs X t" 
+         by (auto elim: s_red.cases)
+      with t_occurs show False by simp
+    next
+      case cred_single
+      have "((Susp pi X, Func F t) # xs, ys) \<turnstile> nabla \<rightarrow> P2" by fact
+      moreover have "fst ((Susp pi X, Func F t) # xs, ys) \<noteq> []"
+        by simp
+      ultimately show False 
+        using c_red_eqs_empty by blast
+    next
+      case (sred_step s1 P3 s2)
+      have "((Susp pi X, Func F t) # xs, ys) \<turnstile> s1 \<leadsto> P3" by fact
+      hence "\<not> occurs X t" 
+         by (auto elim: s_red.cases)
+      with t_occurs show False by simp
+    next
+      case (cred_step nabla1 P3 nabla2)
+      have "((Susp pi X, Func F t) # xs, ys) \<turnstile> nabla1 \<rightarrow> P3" by fact
+       moreover have "fst ((Susp pi X, Func F t) # xs, ys) \<noteq> []"
+        by simp
+      ultimately show False 
+        using c_red_eqs_empty by blast
+    qed
+  qed
+  then show "((Susp pi X, Func F t) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
 next
   case (fail_occur_paar X t1 t2 pi xs ys)
-  then show ?case sorry
+  have "occurs X t1 \<or> occurs X t2" by fact
+  hence t_occurs: "occurs X (Paar t1 t2)"
+    using occurs.simps(5) by auto
+  moreover have "\<not> (\<exists>P2 nabla s. ((Susp pi X \<approx>? Paar t1 t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+  proof
+    assume "\<exists>P2 nabla s. ((Susp pi X \<approx>? Paar t1 t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2"
+    then obtain P2 nabla s where
+    red: "((Susp pi X \<approx>? Paar t1 t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2"
+      by auto
+    thus False 
+    proof (cases rule: red_plus.cases)
+      case sred_single
+      have "((Susp pi X, Paar t1 t2) # xs, ys) \<turnstile> s \<leadsto> P2" by fact
+      hence "\<not> occurs X (Paar t1 t2)" 
+        by (auto elim: s_red.cases)
+      with t_occurs show False by simp
+    next
+      case cred_single
+      have "((Susp pi X, Paar t1 t2) # xs, ys) \<turnstile> nabla \<rightarrow> P2" by fact
+      moreover have "fst ((Susp pi X, Paar t1 t2) # xs, ys) \<noteq> []"
+        by simp
+      ultimately show False 
+        using c_red_eqs_empty by blast
+    next
+      case (sred_step s1 P3 s2)
+      have "((Susp pi X, Paar t1 t2) # xs, ys) \<turnstile> s1 \<leadsto> P3" by fact
+      hence "\<not> occurs X (Paar t1 t2)" 
+        by (auto elim: s_red.cases)
+      with t_occurs show False by simp
+    next
+      case (cred_step nabla1 P3 nabla2)
+      have "((Susp pi X, Paar t1 t2) # xs, ys) \<turnstile> nabla1 \<rightarrow> P3" by fact
+       moreover have "fst ((Susp pi X, Paar t1 t2) # xs, ys) \<noteq> []"
+        by simp
+      ultimately show False 
+        using c_red_eqs_empty by blast
+    qed
+  qed
+  then show "((Susp pi X, Paar t1 t2) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
 next
   case (fail_fresh_atom a ys)
   have "\<not> (\<exists>P2 nabla s. ([], (a, Atom a) # ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
