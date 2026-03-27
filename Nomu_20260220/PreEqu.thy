@@ -237,7 +237,8 @@ next
 qed
 
 
-(**)
+(*If two permutations have the same action, we can replace under equality. This idea was taken from
+Ana Cristina's and Washington's formalization*)
 
 lemma ds_empty_equiv_1:
   assumes "ds pi1 pi2 = {}"
@@ -368,6 +369,7 @@ next
     using ds_swapas_eq by (auto elim: equ.cases)
 qed (auto elim: equ.cases)
 
+(*equivariance of alpha by a permutation pi*)
 
 lemma equ_equivariance:
   assumes "nabla \<turnstile> t1 \<approx> t2"
@@ -405,6 +407,8 @@ next
     by auto
 qed (auto)
 
+(*inversion of permutation on equality*)
+
 lemma swap_inv_side: 
   shows "nabla \<turnstile> swap pi t1 \<approx> t2 = nabla \<turnstile> t1 \<approx> swap (rev pi) t2"
 proof
@@ -425,6 +429,8 @@ proof
     using ds_empty_equiv_2[OF ds_pi_rev_id[of pi], of nabla \<open>swap pi t1\<close> t2] 
       swap_id[of t2] by simp}
 qed
+
+(*inversion of a simple swapping on alpha*)
 
 lemma equ_swap_abba:
   assumes "n = depth t1"
