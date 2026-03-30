@@ -432,7 +432,7 @@ qed
 
 (*inversion of a simple swapping on alpha*)
 
-lemma equ_swap_abba:
+corollary equ_swap_abba:
   assumes "n = depth t1"
   shows "nabla \<turnstile> swap [(a,b)] t1 \<approx> t2 \<Longrightarrow> nabla \<turnstile> t1 \<approx> swap [(b,a)] t2"
 proof-
