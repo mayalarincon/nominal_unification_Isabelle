@@ -45,6 +45,14 @@ fun rank :: "probs \<Rightarrow> (nat\<times>nat\<times>nat)"
   where
   "rank (eprobs,fprobs) = (card (vars_eprobs eprobs),size_eprobs eprobs, size_fprobs fprobs)"
 
+(*new definition for measure*)
+
+definition rank_r
+  where
+  "rank_r = measures [\<lambda>(eprobs, fprobs). card (vars_eprobs eprobs),
+                      \<lambda>(eprobs, fprobs). size_eprobs eprobs, 
+                      \<lambda>(eprobs, fprobs). size_fprobs fprobs]"
+
 
 lemma vars_term_finite [simp]: "finite (vars_trm t)"
   by (induct t) auto
@@ -274,6 +282,8 @@ next
     by simp
 qed
 
+(*these are the proofs with the old definition for measure*)
+
 lemma rank_cred: 
   assumes "P1\<turnstile>(nabla)\<rightarrow>P2" 
   shows "(rank P2) \<lless> (rank P1)"
@@ -342,7 +352,6 @@ next
   ultimately show "rank P2 \<lless> rank P1" 
     using measure_relation_def by auto
 qed
-  
 
 
 lemma rank_sred: 
@@ -511,6 +520,30 @@ next
      using vars_decrease[OF 9(4)] measure_relation_def by auto
 qed
 
+
+(*these are with the new definition for measure*)
+
+lemma rank_r_cred: 
+  assumes "P1\<turnstile>(nabla)\<rightarrow>P2" 
+  shows "(P2, P1) \<in> rank_r"
+  unfolding rank_r_def by (cases rule: c_red.cases[OF \<open>P1 \<turnstile> nabla \<rightarrow> P2\<close>], simp_all)
+
+lemma rank_r_sred:
+  assumes "P1 \<turnstile>  s \<leadsto>P2"
+  shows "(P2,P1) \<in> rank_r"
+proof(cases rule: s_red.cases[OF \<open>P1\<turnstile> s \<leadsto>P2\<close>])
+  case (2 t1 t2 s1 s2 xs ys)
+  then show ?thesis sorry
+next
+  case (7 pi1 X pi2 xs ys)
+  then show ?thesis sorry
+next
+  case (8 X t pi xs ys)
+  then show ?thesis sorry
+next
+  case (9 X t pi xs ys)
+  then show ?thesis sorry
+qed (unfold rank_r_def, auto)
 
 lemma rank_trans: "\<lbrakk>rank P1 \<lless> rank P2; rank P2 \<lless> rank P3\<rbrakk>\<Longrightarrow> rank P1 \<lless> rank P3"
   using measure_relation_def trans_less_than trans_lex_prod transE by metis
