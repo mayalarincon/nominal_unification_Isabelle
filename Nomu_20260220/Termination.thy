@@ -520,6 +520,11 @@ next
      using vars_decrease[OF 9(4)] measure_relation_def by auto
 qed
 
+lemma rank_trans: "\<lbrakk>rank P1 \<lless> rank P2; rank P2 \<lless> rank P3\<rbrakk>\<Longrightarrow> rank P1 \<lless> rank P3"
+  using measure_relation_def trans_less_than trans_lex_prod transE by metis
+
+lemma rank_red_plus: "\<lbrakk>P1\<Turnstile> (s,nabla)\<Rightarrow>P2\<rbrakk> \<Longrightarrow>(rank P2) \<lless> (rank P1)"
+ by (erule red_plus.induct)(auto dest: rank_sred rank_cred rank_trans)
 
 (*these are with the new definition for measure*)
 
@@ -533,25 +538,91 @@ lemma rank_r_sred:
   shows "(P2,P1) \<in> rank_r"
 proof(cases rule: s_red.cases[OF \<open>P1\<turnstile> s \<leadsto>P2\<close>])
   case (2 t1 t2 s1 s2 xs ys)
-  then show ?thesis sorry
+   case (2 t1 t2 s1 s2 xs ys)
+  let ?union = "vars_trm s1 \<union> vars_trm s2 \<union> vars_trm t1 \<union> vars_trm t2 \<union> vars_eprobs xs"
+    and ?size = "size_trm t1 + size_trm t2 + size_trm s1 + size_trm s2 + size_eprobs xs"
+  from 2 have "vars_eprobs ((Paar t1 t2, Paar s1 s2) # xs) = ?union"
+    unfolding vars_eprobs.simps vars_trm.simps by auto
+  moreover from 2 have
+    "size_eprobs ((Paar t1 t2, Paar s1 s2) # xs) = 2 + ?size"
+    unfolding size_eprobs.simps using size_trm.simps(6) by auto
+  from 2 have
+  "vars_eprobs ((t1, s1) # (t2, s2) # xs) = ?union"
+    unfolding vars_eprobs.simps by auto
+  moreover from 2 have 
+    "size_eprobs ((t1, s1) # (t2, s2) # xs) = ?size"
+    unfolding size_eprobs.simps by simp
+  ultimately have 
+    "size_eprobs ((t1, s1) # (t2, s2) # xs) < size_eprobs ((Paar t1 t2, Paar s1 s2) # xs)"
+    "card (vars_eprobs ((t1, s1) # (t2, s2) # xs)) = card (vars_eprobs ((Paar t1 t2, Paar s1 s2) # xs))"
+    by simp+
+  with 2 show "(P2, P1) \<in> rank_r" 
+    unfolding rank_r_def by simp
 next
   case (7 pi1 X pi2 xs ys)
-  then show ?thesis sorry
+  let ?mapds = "map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys"
+  let ?union = "{X} \<union> vars_eprobs xs"
+  from 7 have 
+  vars: "vars_eprobs ((Susp pi1 X, Susp pi2 X) # xs) = ?union" and
+  size: "size_eprobs ((Susp pi1 X, Susp pi2 X) # xs) = 2 + size_eprobs xs"
+    unfolding vars_eprobs.simps size_eprobs.simps by simp+
+  then show "(P2, P1) \<in> rank_r"
+     proof(cases "X \<in> vars_eprobs xs")
+    case True
+   hence "card ?union = card (vars_eprobs xs)"
+     by (simp add: insert_absorb)
+   with 7 show "(P2, P1) \<in> rank_r" 
+      unfolding rank_r_def by simp
+  next
+    case False
+    hence "card ?union = 1 + card (vars_eprobs xs)"
+      by auto
+    with 7 show "(P2, P1) \<in> rank_r" 
+      unfolding rank_r_def by simp
+  qed
 next
   case (8 X t pi xs ys)
-  then show ?thesis sorry
+   let ?union = "insert X (vars_trm t \<union> vars_eprobs xs)"
+    and ?size = "size_trm t + size_eprobs xs"
+   from 8 have 
+     vars: "vars_eprobs ((Susp pi X, t) # xs) = ?union" and
+     size: "size_eprobs ((Susp pi X, t) # xs) = 1 + ?size"
+    unfolding vars_eprobs.simps size_eprobs.simps by simp+
+   moreover from 8 have
+    "P2 = (apply_subst_eprobs [(X, swap (rev pi) t)] xs, 
+    apply_subst_fprobs [(X, swap (rev pi) t)] ys)"
+     using apply_subst_equivalence by auto
+   ultimately show ?thesis  
+    using 8 vars_decrease[OF 8(4)] unfolding rank_r_def by simp
 next
   case (9 X t pi xs ys)
-  then show ?thesis sorry
+   let ?union = "insert X (vars_trm t \<union> vars_eprobs xs)"
+    and ?size = "size_trm t + size_eprobs xs"
+  from 9 have 
+     vars: "vars_eprobs ((t, Susp pi X) # xs) = ?union" and
+     size: "size_eprobs ((t, Susp pi X) # xs) = 1 + ?size"
+    unfolding vars_eprobs.simps size_eprobs.simps by simp+
+  moreover from 9 have
+    "P2 = (apply_subst_eprobs [(X, swap (rev pi) t)] xs, 
+    apply_subst_fprobs [(X, swap (rev pi) t)] ys)"
+     using apply_subst_equivalence by auto
+   ultimately show ?thesis  
+    using 9 vars_decrease[OF 9(4)] unfolding rank_r_def by simp
 qed (unfold rank_r_def, auto)
 
-lemma rank_trans: "\<lbrakk>rank P1 \<lless> rank P2; rank P2 \<lless> rank P3\<rbrakk>\<Longrightarrow> rank P1 \<lless> rank P3"
-  using measure_relation_def trans_less_than trans_lex_prod transE by metis
+lemma rank_r_trans: "\<lbrakk>(P1,P2)\<in> rank_r; (P2,P3)\<in> rank_r\<rbrakk>\<Longrightarrow> (P1,P3)\<in> rank_r"
+  unfolding rank_r_def by auto
 
-(* all reduction are well-founded under \<lless> *)
+lemma rank_r_red_plus: 
+  assumes "P1\<Turnstile> (s,nabla)\<Rightarrow>P2" 
+  shows "(P2, P1) \<in> rank_r"
+  using assms 
+by(induct rule: red_plus.induct)(auto dest: rank_r_sred rank_r_cred rank_r_trans)
 
-lemma rank_red_plus: "\<lbrakk>P1\<Turnstile> (s,nabla)\<Rightarrow>P2\<rbrakk> \<Longrightarrow>(rank P2) \<lless> (rank P1)"
- by (erule red_plus.induct)(auto dest: rank_sred rank_cred rank_trans)
+lemma rank_is_well_founded: 
+  shows "wf (rank_r)"
+  unfolding rank_r_def by simp
+
 
 end
 
