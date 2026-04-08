@@ -1,552 +1,900 @@
 theory Unification 
 
-imports Mgu
+imports Termination
 
 begin
+
 (* problems to which no reduction applies *)
 
 definition stuck :: "problem_type set" where
   stuck_def: "stuck \<equiv> { P1. \<not>(\<exists>P2 nabla s. P1 \<Turnstile>(nabla,s)\<Rightarrow>P2)}"
 
+                                                        
 (* all problems which are stuck and have no unifier *)
 
-inductive teste :: "int \<Rightarrow> bool" where
-[intro!]: "teste 0" |
-[intro!]: "teste n \<Longrightarrow> teste (n+1)"
 
 inductive fail :: "problem_type \<Rightarrow> bool" where
-[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow> fail ((Susp pi X \<approx>? Abst a t) # xs, ys)" |
-[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow> fail (Susp pi X \<approx>?Func F t#xs,ys)" |
-[intro!]: "\<lbrakk>occurs X t1\<or>occurs X t2\<rbrakk>\<Longrightarrow> fail (Susp pi X\<approx>?Paar t1 t2#xs,ys)" |
-[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow>fail (Abst a t\<approx>?Susp pi X#xs,ys)"|
-[intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow> fail (Func F t\<approx>?Susp pi X#xs,ys)" |
-[intro!]: "\<lbrakk>occurs X t1\<or>occurs X t2\<rbrakk>\<Longrightarrow> fail (Paar t1 t2\<approx>?Susp pi X#xs,ys)" |
-[intro!]: "fail ([],a\<sharp>? Atom a#ys)"|
-[intro!]: "a\<noteq>b\<Longrightarrow> fail (Atom a\<approx>? Atom b#xs,ys)" |
-[intro!]: " fail (Abst a t\<approx>?Unit#xs,ys)" |
-[intro!]: "fail (Unit\<approx>?Abst a t#xs,ys)" |
-[intro!]: "fail (Abst a t\<approx>?Atom b#xs,ys)" |
-[intro!]: "fail (Atom b\<approx>?Abst a t#xs,ys)" |
-[intro!]: "fail (Abst a t\<approx>?Paar t1 t2#xs,ys)" | 
-[intro!]: "fail (Paar t1 t2\<approx>?Abst a t#xs,ys)"| 
-[intro!]: "fail (Abst a t\<approx>?Func F t1#xs,ys)" |
-[intro!]: "fail (Func F t1\<approx>?Abst a t#xs,ys)" |
-[intro!]: "fail (Unit\<approx>?Atom b#xs,ys)" |
-[intro!]: "fail (Atom b\<approx>?Unit#xs,ys)" |
-[intro!]: "fail (Unit\<approx>?Paar t1 t2#xs,ys)" |
-[intro!]: "fail (Paar t1 t2\<approx>?Unit#xs,ys)" |
-[intro!]: "fail (Unit\<approx>?Func F t1#xs,ys)" |
-[intro!]: "fail (Func F t1\<approx>?Unit#xs,ys)" | 
-[intro!]: "fail (Atom a\<approx>?Paar t1 t2#xs,ys)" |
-[intro!]: "fail (Paar t1 t2\<approx>?Atom a#xs,ys)" | 
-[intro!]: "fail (Atom a\<approx>?Func F t1#xs,ys)" |
-[intro!]: "fail (Func F t1\<approx>?Atom a#xs,ys)" | 
-[intro!]: "fail (Func F t\<approx>?Paar t1 t2#xs,ys)" | 
-[intro!]: "fail (Paar t1 t2\<approx>?Func F t#xs,ys)" |
-[intro!]: "\<lbrakk>F1\<noteq>F2\<rbrakk>\<Longrightarrow> fail (Func F1 t1\<approx>?Func F2 t2#xs,ys)"
+fail_occur_abst [intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow> fail ((Susp pi X \<approx>? Abst a t) # xs, ys)" |
+fail_occur_func [intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow> fail (Susp pi X \<approx>?Func F t#xs,ys)" |
+fail_occur_paar [intro!]: "\<lbrakk>occurs X t1\<or>occurs X t2\<rbrakk>\<Longrightarrow> fail (Susp pi X\<approx>?Paar t1 t2#xs,ys)" |
+fail_fresh_atom [intro!]: "fail ([],a\<sharp>? Atom a#ys)"|
+fail_diff_atoms [intro!]: "a\<noteq>b\<Longrightarrow> fail (Atom a\<approx>? Atom b#xs,ys)" |
+fail_abst_unit [intro!]: " fail (Abst a t\<approx>?Unit#xs,ys)" |
+fail_abst_atom [intro!]: "fail (Abst a t\<approx>?Atom b#xs,ys)" |
+fail_abst_paar [intro!]: "fail (Abst a t\<approx>?Paar t1 t2#xs,ys)" | 
+fail_func_abst [intro!]: "fail (Func F t1\<approx>?Abst a t#xs,ys)" |
+fail_atom_unit [intro!]: "fail (Atom b\<approx>?Unit#xs,ys)" |
+fail_paar_unit [intro!]: "fail (Paar t1 t2\<approx>?Unit#xs,ys)" |
+fail_func_unit [intro!]: "fail (Func F t1\<approx>?Unit#xs,ys)" | 
+fail_atom_paar [intro!]: "fail (Atom a\<approx>?Paar t1 t2#xs,ys)" |
+fail_func_atom [intro!]: "fail (Func F t1\<approx>?Atom a#xs,ys)" | 
+fail_func_paar [intro!]: "fail (Func F t\<approx>?Paar t1 t2#xs,ys)" |
+fail_diff_func [intro!]: "\<lbrakk>F1\<noteq>F2\<rbrakk>\<Longrightarrow> fail (Func F1 t1\<approx>?Func F2 t2#xs,ys)" |
+fail_sym [intro!]: "fail (s \<approx>? t # xs, ys) \<Longrightarrow> fail (t \<approx>? s # xs, ys)"
 
-(* the results that are interesting are the stuck ones *)
+
+(*definition of normal form of a problem*)
 
 definition 
-  results :: "problem_type \<Rightarrow> problem_type set" where 
-  "results P1 \<equiv> if P1\<in>stuck then {P1} else {P2. \<exists>nabla s. P1\<Turnstile>(nabla,s)\<Rightarrow>P2 \<and> P2\<in>stuck}"
+  normal_form :: "problem_type \<Rightarrow> problem_type set" where 
+  "normal_form P1 \<equiv> if P1 \<in> stuck then {P1} else {P2. \<exists>nabla s. P1\<Turnstile>(nabla,s)\<Rightarrow>P2 \<and> P2\<in>stuck}"
+
+lemma normal_form_exists:
+  shows "P \<in> stuck \<or> (\<exists> P2 nabla s. P \<Turnstile>(nabla,s)\<Rightarrow>P2 \<and> P2\<in>stuck )"
+proof(induction P rule: wf_induct_rule[OF wf_rank_r])
+  case (1 P)
+  then show "P \<in> stuck \<or> (\<exists>P2 nabla s. P \<Turnstile> (nabla, s) \<Rightarrow> P2  \<and> P2 \<in> stuck)"
+  proof (cases "P \<in> stuck")
+    case True
+    then show "P \<in> stuck \<or> (\<exists>P2 nabla s. P \<Turnstile> (nabla, s) \<Rightarrow> P2  \<and> P2 \<in> stuck)" by simp
+  next
+    case False
+    then obtain P' nabla s where P_to_P_prime:
+      "P \<Turnstile>(nabla,s)\<Rightarrow>P'"
+      unfolding stuck_def by auto
+    hence "(P', P) \<in> rank_r"
+      using rank_r_red_plus by simp
+    hence aux: "P' \<in> stuck \<or> (\<exists>P2 nabla s. P' \<Turnstile> (nabla, s) \<Rightarrow> P2 \<and> P2 \<in> stuck)"
+      using 1 by simp
+    then show "P \<in> stuck \<or> (\<exists>P2 nabla s. P \<Turnstile> (nabla, s) \<Rightarrow> P2  \<and> P2 \<in> stuck)"
+    proof(cases "P' \<in> stuck")
+      case True
+      then show ?thesis 
+        using P_to_P_prime by blast
+    next
+      case False
+      then obtain P2 nabla' s' where
+      P_prime_to_P2: "P' \<Turnstile> (nabla', s') \<Rightarrow> P2" "P2 \<in> stuck"
+        using aux by auto
+      then obtain nabla1 s1 where "P \<Turnstile> (nabla1, s1) \<Rightarrow> P2" "P2\<in> stuck"
+        using red_plus_trans[OF P_to_P_prime P_prime_to_P2(1)] by auto
+      then show ?thesis by blast
+    qed
+  qed
+qed
+
+(*the solutions of a problem are the same for symmetric equations -- MOVE to Mgu.thy*)
+
+lemma U_equ_symm:
+  shows "U (s\<approx>?t#xs, ys) = U (t\<approx>?s#xs, ys)"
+  by(auto simp add: all_solutions_def equ_symm) 
+
 
 (* a "failed" problem has no unifier *)
 
 lemma fail_then_empty: 
-  "(P1\<in>fail) \<Longrightarrow> (U P1={})"
-apply(erule fail.cases)
-apply(simp add: all_solutions_def)
-apply(rule allI)+
-apply(rule impI)
-apply(drule_tac nabla1="aa" and s1="b" and "pi1.1"="pi" in occurs_sub_trm_equ[THEN mp])
-apply(subgoal_tac "\<forall>t1\<in>psub_trms (Abst a (subst b t)).\<not>(\<exists>pi2. aa\<turnstile>Abst a (subst b t)\<approx>swap pi2 t1)")
-apply(simp)
-apply(drule equ_sym)
-apply(clarify)
-apply(drule_tac "t1.0"="Abst a (subst b t)" and 
-                "t2.0"="subst b (Susp pi X)" and 
-                "t3.0"="swap pia t2" in equ_trans)
-apply(simp)
-apply(best)
-apply(rule psub_trm_not_equ)
-apply(simp add: all_solutions_def)
-apply(rule allI)+
-apply(rule impI)
-apply(drule_tac nabla1="a" and s1="b" and "pi1.1"="pi" in occurs_sub_trm_equ[THEN mp])
-apply(subgoal_tac "\<forall>t1\<in>psub_trms (Func F (subst b t)).\<not>(\<exists>pi2. a\<turnstile>Func F (subst b t)\<approx>swap pi2 t1)")
-apply(simp)
-apply(drule equ_sym)
-apply(clarify)
-apply(drule_tac "t1.0"="Func F (subst b t)" and 
-                "t2.0"="subst b (Susp pi X)" and 
-                "t3.0"="swap pia t2" in equ_trans)
-apply(simp)
-apply(best)
-apply(rule psub_trm_not_equ)
-apply(simp add: all_solutions_def)
-apply(rule allI)+
-apply(rule impI)
-apply(erule disjE)
-apply(drule_tac nabla1="a" and s1="b" and "pi1.1"="pi" in occurs_sub_trm_equ[THEN mp])
-apply(subgoal_tac "\<forall>t3\<in>psub_trms (Paar (subst b t1) (subst b t2)).
-                                \<not>(\<exists>pi2. a\<turnstile>Paar (subst b t1) (subst b t2)\<approx>swap pi2 t3)")
-apply(simp)
-apply(drule equ_sym)
-apply(clarify)
-apply(drule_tac "t1.0"="Paar (subst b t1) (subst b t2)" and 
-                "t2.0"="subst b (Susp pi X)" and 
-                "t3.0"="swap pia t2a" in equ_trans)
-apply(simp)
-apply(best)
-apply(rule psub_trm_not_equ)
-apply(drule_tac nabla1="a" and s1="b" and "pi1.1"="pi" in occurs_sub_trm_equ[THEN mp])
-apply(subgoal_tac "\<forall>t3\<in>psub_trms (Paar (subst b t1) (subst b t2)).
-                                \<not>(\<exists>pi2. a\<turnstile>Paar (subst b t1) (subst b t2)\<approx>swap pi2 t3)")
-apply(simp)
-apply(drule equ_sym)
-apply(clarify)
-apply(drule_tac "t1.0"="Paar (subst b t1) (subst b t2)" and 
-                "t2.0"="subst b (Susp pi X)" and 
-                "t3.0"="swap pia t2a" in equ_trans)
-apply(simp)
-apply(best)
-apply(rule psub_trm_not_equ)
-apply(simp add: all_solutions_def)
-apply(rule allI)+
-apply(rule impI)
-apply(drule_tac nabla1="aa" and s1="b" and "pi1.1"="pi" in occurs_sub_trm_equ[THEN mp])
-apply(subgoal_tac "\<forall>t3\<in>psub_trms (Abst a (subst b t)).
-                                \<not>(\<exists>pi2. aa\<turnstile>Abst a (subst b t)\<approx>swap pi2 t3)")
-apply(simp)
-apply(clarify)
-apply(drule_tac "t1.0"="Abst a (subst b t)" and 
-                "t2.0"="subst b (Susp pi X)" and 
-                "t3.0"="swap pia t2" in equ_trans)
-apply(simp)
-apply(best)
-apply(rule psub_trm_not_equ)
-apply(simp add: all_solutions_def)
-apply(rule allI)+
-apply(rule impI)
-apply(drule_tac nabla1="a" and s1="b" and "pi1.1"="pi" in occurs_sub_trm_equ[THEN mp])
-apply(subgoal_tac "\<forall>t1\<in>psub_trms (Func F (subst b t)).\<not>(\<exists>pi2. a\<turnstile>Func F (subst b t)\<approx>swap pi2 t1)")
-apply(simp)
-apply(clarify)
-apply(drule_tac "t1.0"="Func F (subst b t)" and 
-                "t2.0"="subst b (Susp pi X)" and 
-                "t3.0"="swap pia t2" in equ_trans)
-apply(simp)
-apply(best)
-apply(rule psub_trm_not_equ)
-apply(simp add: all_solutions_def)
-apply(rule allI)+
-apply(rule impI)
-apply(erule disjE)
-apply(drule_tac nabla1="a" and s1="b" and "pi1.1"="pi" in occurs_sub_trm_equ[THEN mp])
-apply(subgoal_tac "\<forall>t3\<in>psub_trms (Paar (subst b t1) (subst b t2)).
-                                \<not>(\<exists>pi2. a\<turnstile>Paar (subst b t1) (subst b t2)\<approx>swap pi2 t3)")
-apply(simp)
-apply(clarify)
-apply(drule_tac "t1.0"="Paar (subst b t1) (subst b t2)" and 
-                "t2.0"="subst b (Susp pi X)" and 
-                "t3.0"="swap pia t2a" in equ_trans)
-apply(simp)
-apply(best)
-apply(rule psub_trm_not_equ)
-apply(drule_tac nabla1="a" and s1="b" and "pi1.1"="pi" in occurs_sub_trm_equ[THEN mp])
-apply(subgoal_tac "\<forall>t3\<in>psub_trms (Paar (subst b t1) (subst b t2)).
-                                \<not>(\<exists>pi2. a\<turnstile>Paar (subst b t1) (subst b t2)\<approx>swap pi2 t3)")
-apply(simp)
-apply(clarify)
-apply(drule_tac "t1.0"="Paar (subst b t1) (subst b t2)" and 
-                "t2.0"="subst b (Susp pi X)" and 
-                "t3.0"="swap pia t2a" in equ_trans)
-apply(simp)
-apply(best)
-apply(rule psub_trm_not_equ)
-apply(simp add: all_solutions_def, fast dest!: fresh.cases)
-apply(simp add: all_solutions_def, fast dest!: equ.cases)+
-done
+  assumes "fail P1"
+  shows "U P1 = {}"
+  using assms
+proof(induct rule: fail.induct)
+  case (fail_occur_abst X t pi a xs ys)
+  let ?P = "(Susp pi X \<approx>? Abst a t # xs, ys)"
+  { assume "U ((Susp pi X, Abst a t) # xs, ys) \<noteq> {}"
+    then obtain s nabla where eq1: "nabla \<turnstile> subst s (Susp pi X) \<approx> Abst a (subst s t)"
+      by (auto simp add: all_solutions_def)
+    moreover
+    have "occurs X t" by fact
+    then obtain t' pi' where  
+      eq2: "nabla \<turnstile> subst s (Susp pi X) \<approx> swap pi' t'" "t'\<in>sub_trms (subst s t)"
+      using occurs_sub_trm_equ by blast
+    moreover  
+    have eq3: "\<not> nabla \<turnstile> (Abst a (subst s t)) \<approx> swap pi' t'"
+      using eq2 psub_trm_not_equ by auto
+    then have "False" using eq1 eq2 eq3
+      by (metis equ_symm equ_trans)
+  }
+  then show "U ?P = {}" by auto
+next
+  case (fail_occur_func X t pi F xs ys)
+  let ?P = "(Susp pi X \<approx>? Func F t # xs, ys)"
+  { assume "U ((Susp pi X, Func F t) # xs, ys) \<noteq> {}"
+    then obtain s nabla where eq1: "nabla \<turnstile> subst s (Susp pi X) \<approx> Func F (subst s t)"
+      by (auto simp add: all_solutions_def)
+    moreover
+    have "occurs X t" by fact
+    then obtain t' pi' where  
+      eq2: "nabla \<turnstile> subst s (Susp pi X) \<approx> swap pi' t'" "t'\<in>sub_trms (subst s t)"
+      using occurs_sub_trm_equ by blast
+    moreover  
+    have eq3: "\<not> nabla \<turnstile> (Func F (subst s t)) \<approx> swap pi' t'"
+      using eq2 psub_trm_not_equ by auto
+    then have "False" using eq1 eq2 eq3
+      by (metis equ_symm equ_trans)
+  }
+  then show "U ?P = {}" by auto
+next
+  case (fail_occur_paar X t1 t2 pi xs ys)
+  let ?P = "(Susp pi X \<approx>? Paar t1 t2 # xs, ys)"
+  have "occurs X t1 \<or> occurs X t2" by fact
+  then show "U ?P = {}"
+  proof
+    {assume "occurs X t1"
+      {assume "U ((Susp pi X, Paar t1 t2) # xs, ys) \<noteq> {}"
+    then obtain s nabla where eq1: "nabla \<turnstile> subst s (Susp pi X) \<approx> Paar (subst s t1) (subst s t2)"
+      by (auto simp add: all_solutions_def)
+    moreover
+    have "occurs X t1" by fact
+     then obtain t' pi' where  
+      eq2: "nabla \<turnstile> subst s (Susp pi X) \<approx> swap pi' t'" "t'\<in>sub_trms (subst s t1)"
+      using occurs_sub_trm_equ by blast
+    moreover  
+    have eq3: "\<not> nabla \<turnstile> (Paar (subst s t1) (subst s t2)) \<approx> swap pi' t'"
+      using eq2 psub_trm_not_equ by auto
+    then have "False" using eq1 eq2 eq3
+      by (metis equ_symm equ_trans)}
+  then show "U ?P = {}" by auto}
+
+    {assume "occurs X t2"
+    {assume "U ((Susp pi X, Paar t1 t2) # xs, ys) \<noteq> {}"
+      then obtain s nabla where eq1: "nabla \<turnstile> subst s (Susp pi X) \<approx> Paar (subst s t1) (subst s t2)"
+        by (auto simp add: all_solutions_def)
+      moreover
+      have "occurs X t2" by fact
+      then obtain t' pi' where  
+        eq2: "nabla \<turnstile> subst s (Susp pi X) \<approx> swap pi' t'" "t'\<in>sub_trms (subst s t2)"
+        using occurs_sub_trm_equ by blast
+      moreover  
+      have eq3: "\<not> nabla \<turnstile> (Paar (subst s t1) (subst s t2)) \<approx> swap pi' t'"
+        using eq2 psub_trm_not_equ by auto
+      then have "False" using eq1 eq2 eq3
+        by (metis equ_symm equ_trans)
+    }
+    then show "U ?P = {}" by auto}
+  qed
+next
+  case (fail_fresh_atom a ys)
+  let ?P = "([], a \<sharp>? Atom a # ys)"
+  have "\<nexists> nabla s. nabla \<turnstile> a \<sharp> subst s (Atom a)"
+    using subst_atom Fresh_elims(3) by auto
+  thus "U ?P = {}"
+    using all_solutions_def by simp
+next
+  case (fail_diff_atoms a b xs ys)
+  let ?P = "(Atom a \<approx>? Atom b # xs, ys)"
+  from \<open>a \<noteq> b\<close> have "\<nexists> nabla s. nabla \<turnstile> subst s (Atom a) \<approx> subst s (Atom b)"
+    using Equ_elims(1) by auto
+  thus "U ?P = {}"
+    using all_solutions_def by simp
+next
+  case (fail_abst_unit a t xs ys)
+  let ?P = "(Abst a t \<approx>? Unit # xs, ys)"
+  have "\<nexists> nabla s. nabla \<turnstile> subst s (Abst a t) \<approx> subst s Unit"
+    by (auto elim: equ.cases)
+  thus "U ?P = {}" 
+    using all_solutions_def by simp
+next
+  case (fail_abst_atom a t b xs ys)
+  let ?P = "(Abst a t \<approx>? Atom b # xs, ys)"
+  have "\<nexists> nabla s. nabla \<turnstile> subst s (Abst a t) \<approx> subst s (Atom b)"
+     by (auto elim: equ.cases)
+  thus "U ?P = {}" 
+    using all_solutions_def by simp
+next
+  case (fail_abst_paar a t t1 t2 xs ys)
+  let ?P = "(Abst a t \<approx>? Paar t1 t2 # xs, ys)"
+  have "\<nexists> nabla s. nabla \<turnstile> subst s (Abst a t) \<approx> subst s (Paar t1 t2)"
+     by (auto elim: equ.cases)
+  thus "U ?P = {}"
+    using all_solutions_def by simp
+next
+  case (fail_func_abst F t1 a t xs ys)
+  let ?P = "(Func F t1 \<approx>? Abst a t # xs, ys)"
+  have "\<nexists> nabla s. nabla \<turnstile> subst s (Func F t1) \<approx> subst s (Abst a t)"
+     by (auto elim: equ.cases)
+  thus "U ?P = {}"
+    using all_solutions_def by simp
+next
+  case (fail_atom_unit b xs ys)
+  let ?P = "(Atom b \<approx>? Unit # xs, ys)"
+  have "\<nexists> nabla s. nabla \<turnstile> subst s (Atom b) \<approx> subst s (Unit)"
+     by (auto elim: equ.cases)
+  thus "U ?P = {}" 
+    using all_solutions_def by simp
+next
+  case (fail_paar_unit t1 t2 xs ys)
+  let ?P = "(Paar t1 t2 \<approx>? Unit # xs, ys)"
+  have "\<nexists> nabla s. nabla \<turnstile> subst s (Paar t1 t2) \<approx> subst s (Unit)"
+     by (auto elim: equ.cases)
+  thus "U ?P = {}" 
+    using all_solutions_def by simp
+next
+  case (fail_func_unit F t1 xs ys)
+  let ?P = "(Func F t1\<approx>? Unit # xs, ys)"
+  have "\<nexists> nabla s. nabla \<turnstile> subst s (Func F t1) \<approx> subst s (Unit)"
+     by (auto elim: equ.cases)
+  thus "U ?P = {}" 
+    using all_solutions_def by simp
+next
+  case (fail_atom_paar b t1 t2 xs ys)
+  let ?P = "(Atom b \<approx>? Paar t1 t2 # xs, ys)"
+  have "\<nexists> nabla s. nabla \<turnstile> subst s (Atom b) \<approx> subst s (Paar t1 t2)"
+     by (auto elim: equ.cases)
+  thus "U ?P = {}" 
+    using all_solutions_def by simp
+next
+  case (fail_func_atom F t1 b xs ys)
+  let ?P = "(Func F t1 \<approx>? Atom b # xs, ys)"
+  have "\<nexists> nabla s. nabla \<turnstile> subst s (Func F t1) \<approx> subst s (Atom b)"
+     by (auto elim: equ.cases)
+  thus "U ?P = {}" 
+    using all_solutions_def by simp
+next
+  case (fail_func_paar F t t1 t2 xs ys)
+  let ?P = "(Func F t \<approx>? Paar t1 t2 # xs, ys)"
+  have "\<nexists> nabla s. nabla \<turnstile> subst s (Func F t) \<approx> subst s (Paar t1 t2)"
+     by (auto elim: equ.cases)
+  thus "U ?P = {}" 
+    using all_solutions_def by simp
+next
+  case (fail_diff_func F1 F2 t1 t2 xs ys)
+  let ?P = "(Func F1 t1 \<approx>? Func F2 t2 # xs, ys)"
+  from \<open>F1 \<noteq> F2\<close> have "\<nexists> nabla s. nabla \<turnstile> subst s (Func F1 t1) \<approx> subst s (Func F2 t2)"
+     by (auto elim: equ.cases)
+  thus "U ?P = {}" 
+    using all_solutions_def by simp
+next
+  case (fail_sym s t xs ys)
+  let ?P = "(t \<approx>? s # xs, ys)"
+  have "fail ((s, t) # xs, ys)"
+    "U ((s, t) # xs, ys) = {}" by fact+
+  thus "U ?P = {}"
+   using all_solutions_def U_equ_symm by simp
+qed
+
 
 (* the only stuck problems are the "failed" problems and the empty problem *)
 
-lemma stuck_equiv: "stuck = {([],[])}\<union>fail"
-apply(subgoal_tac "([],[])\<in>stuck")
-apply(subgoal_tac "\<forall>P\<in>fail. P\<in>stuck")
-apply(subgoal_tac "\<forall>P\<in>stuck. P=([],[]) \<or> P\<in>fail")
-apply(force)
-apply(rule ballI)
-apply(thin_tac "([], []) \<in> stuck")
-apply(thin_tac "\<forall>P\<in>fail. P \<in> stuck")
-apply(simp add: stuck_def)
-apply(clarify)
-apply(case_tac a)
-apply(simp)
-apply(case_tac b)
-apply(simp)
-apply(simp)
-apply(case_tac aa)
-apply(simp)
-apply(case_tac ba)
-apply(simp_all)
-apply(case_tac "ab=lista")
-apply(force)
-apply(force)
-apply(force)
-apply(force)
-apply(force)
-apply(force)
-apply(force)
-apply(case_tac aa)
-apply(simp)
-apply(case_tac ab)
-apply(simp_all)
-apply(case_tac ba)
-apply(simp_all)
-apply(case_tac "lista=listb")
-apply(force)
-apply(force)
-apply(case_tac "occurs list2 (Abst lista trm)")
-apply(force)
-apply(drule_tac x="fst (apply_subst [(list2,swap (rev list1) (Abst lista trm))] (list,b))" in spec)
-apply(drule_tac x="snd (apply_subst [(list2,swap (rev list1) (Abst lista trm))] (list,b))" in spec)
-apply(drule_tac x="{}" in spec)
-apply(drule_tac x="[(list2, swap (rev list1) (Abst lista trm))]" in spec)
-apply(simp only: surjective_pairing[THEN sym])
-apply(force)
-apply(force)
-apply(force)
-apply(force)
-apply(force)
-apply(case_tac ba)
-apply(simp_all)
-apply(case_tac "occurs list2 (Abst lista trm)")
-apply(force)
-apply(drule_tac x="fst (apply_subst [(list2,swap (rev list1) (Abst lista trm))] (list,b))" in spec)
-apply(drule_tac x="snd (apply_subst [(list2,swap (rev list1) (Abst lista trm))] (list,b))" in spec)
-apply(drule_tac x="{}" in spec)
-apply(drule_tac x="[(list2, swap (rev list1) (Abst lista trm))]" in spec)
-apply(simp only: surjective_pairing[THEN sym])
-apply(force)
-apply(case_tac "list2=list2a")
-apply(force)
-apply(case_tac "occurs list2 (Susp list1a list2a)")
-apply(simp)
-apply(drule_tac 
-    x="fst (apply_subst [(list2,swap (rev list1) (Susp list1a list2a))] (list,b))" in spec)
-apply(drule_tac 
-    x="snd (apply_subst [(list2,swap (rev list1) (Susp list1a list2a))] (list,b))" in spec)
-apply(drule_tac x="{}" in spec)
-apply(drule_tac x="[(list2, swap (rev list1) (Susp list1a list2a))]" in spec)
-apply(simp only: surjective_pairing[THEN sym])
-apply(force)
-apply(case_tac "occurs list2 Unit")
-apply(simp)
-apply(drule_tac x="fst (apply_subst [(list2,swap (rev list1) Unit)] (list,b))" in spec)
-apply(drule_tac x="snd (apply_subst [(list2,swap (rev list1) Unit)] (list,b))" in spec)
-apply(drule_tac x="{}" in spec)
-apply(drule_tac x="[(list2, swap (rev list1) Unit)]" in spec)
-apply(simp only: surjective_pairing[THEN sym])
-apply(force)
-apply(case_tac "occurs list2 (Atom lista)")
-apply(simp)
-apply(drule_tac x="fst (apply_subst [(list2,swap (rev list1) (Atom lista))] (list,b))" in spec)
-apply(drule_tac x="snd (apply_subst [(list2,swap (rev list1) (Atom lista))] (list,b))" in spec)
-apply(drule_tac x="{}" in spec)
-apply(drule_tac x="[(list2, swap (rev list1) (Atom lista))]" in spec)
-apply(simp only: surjective_pairing[THEN sym])
-apply(force)
-apply(case_tac "occurs list2 (Paar trm1 trm2)")
-apply(force)
-apply(drule_tac x="fst (apply_subst [(list2,swap (rev list1) (Paar trm1 trm2))] (list,b))" in spec)
-apply(drule_tac x="snd (apply_subst [(list2,swap (rev list1) (Paar trm1 trm2))] (list,b))" in spec)
-apply(drule_tac x="{}" in spec)
-apply(drule_tac x="[(list2, swap (rev list1) (Paar trm1 trm2))]" in spec)
-apply(simp only: surjective_pairing[THEN sym])
-apply(force)
-apply(case_tac "occurs list2 (Func lista trm)")
-apply(force)
-apply(drule_tac x="fst (apply_subst [(list2,swap (rev list1) (Func lista trm))] (list,b))" in spec)
-apply(drule_tac x="snd (apply_subst [(list2,swap (rev list1) (Func lista trm))] (list,b))" in spec)
-apply(drule_tac x="{}" in spec)
-apply(drule_tac x="[(list2, swap (rev list1) (Func lista trm))]" in spec)
-apply(simp only: surjective_pairing[THEN sym])
-apply(force)
-apply(case_tac ba)
-apply(simp_all)
-apply(force)
-apply(case_tac "occurs list2 Unit")
-apply(simp)
-apply(drule_tac x="fst (apply_subst [(list2,swap (rev list1) Unit)] (list,b))" in spec)
-apply(drule_tac x="snd (apply_subst [(list2,swap (rev list1) Unit)] (list,b))" in spec)
-apply(drule_tac x="{}" in spec)
-apply(drule_tac x="[(list2, swap (rev list1) Unit)]" in spec)
-apply(simp only: surjective_pairing[THEN sym])
-apply(force)
-apply(force)
-apply(force)
-apply(force)
-apply(force)
-apply(case_tac ba)
-apply(simp_all)
-apply(force)
-apply(case_tac "occurs list2 (Atom lista)")
-apply(simp)
-apply(drule_tac x="fst (apply_subst [(list2,swap (rev list1) (Atom lista))] (list,b))" in spec)
-apply(drule_tac x="snd (apply_subst [(list2,swap (rev list1) (Atom lista))] (list,b))" in spec)
-apply(drule_tac x="{}" in spec)
-apply(drule_tac x="[(list2, swap (rev list1) (Atom lista))]" in spec)
-apply(simp only: surjective_pairing[THEN sym])
-apply(force)
-apply(force)
-apply(force)
-apply(force)
-apply(force)
-apply(case_tac ba)
-apply(simp_all)
-apply(force)
-apply(case_tac "occurs list2 (Paar trm1 trm2)")
-apply(force)
-apply(drule_tac x="fst (apply_subst [(list2,swap (rev list1) (Paar trm1 trm2))] (list,b))" in spec)
-apply(drule_tac x="snd (apply_subst [(list2,swap (rev list1) (Paar trm1 trm2))] (list,b))" in spec)
-apply(drule_tac x="{}" in spec)
-apply(drule_tac x="[(list2, swap (rev list1) (Paar trm1 trm2))]" in spec)
-apply(simp only: surjective_pairing[THEN sym])
-apply(force)
-apply(force)
-apply(force)
-apply(force)
-apply(force)
-apply(case_tac ba)
-apply(simp_all)
-apply(force)
-apply(case_tac "occurs list2 (Func lista trm)")
-apply(force)
-apply(drule_tac x="fst (apply_subst [(list2,swap (rev list1) (Func lista trm))] (list,b))" in spec)
-apply(drule_tac x="snd (apply_subst [(list2,swap (rev list1) (Func lista trm))] (list,b))" in spec)
-apply(drule_tac x="{}" in spec)
-apply(drule_tac x="[(list2, swap (rev list1) (Func lista trm))]" in spec)
-apply(simp only: surjective_pairing[THEN sym])
-apply(force)
-apply(force)
-apply(force)
-apply(force)
-apply(force)
-apply(rule ballI)
-apply(thin_tac "([], []) \<in> stuck")
-apply(simp add: stuck_def)
-apply(clarify)
-apply(ind_cases "((a, b), (nabla, s), aa, ba) \<in> red_plus")
-apply(ind_cases "((a, b), s, aa, ba) \<in> s_red")
-apply(simp_all)
-apply(ind_cases "((Unit, Unit) # aa, b) \<in> fail")
-apply(ind_cases "((Paar t1 t2, Paar s1 s2) # xs, b) \<in> fail")
-apply(ind_cases "((Func F t1, Func F t2) # xs, b) \<in> fail")
-apply(simp)
-apply(ind_cases "((Abst ab t1, Abst ab t2) # xs, b) \<in> fail")
-apply(ind_cases "((Abst ab t1, Abst bb t2) # xs, b) \<in> fail")
-apply(ind_cases "((Atom ab, Atom ab) # aa, b) \<in> fail")
-apply(simp)
-apply(ind_cases "((Susp pi1 X, Susp pi2 X) # aa, b) \<in> fail")
-apply(ind_cases "((Susp pi X, t) # xs, b) \<in> fail")
-apply(simp add: apply_subst_def)+
-apply(case_tac "occurs X t1")
-apply(simp)
-apply(simp)
-apply(ind_cases "((t, Susp pi X) # xs, b) \<in> fail")
-apply(simp add: apply_subst_def)
-apply(case_tac "occurs X t1")
-apply(simp)
-apply(simp)
-apply(case_tac "occurs X t1")
-apply(simp)
-apply(simp)
-apply(ind_cases "((a, b), nabla, aa, ba) \<in> c_red")
-apply(simp_all)
-apply(ind_cases "([], (ab, Unit) # ba) \<in> fail")
-apply(ind_cases "([], (ab, Paar t1 t2) # xs) \<in> fail")
-apply(ind_cases "([], (ab, Func F t) # xs) \<in> fail")
-apply(ind_cases "([], (ab, Abst ab t) # ba) \<in> fail")
-apply(ind_cases "([], (ab, Abst bb t) # xs) \<in> fail")
-apply(ind_cases "([], (ab, Atom bb) # ba) \<in> fail")
-apply(simp)
-apply(ind_cases "([], (ab, Susp pi X) # ba) \<in> fail")
-apply(ind_cases "(a, b) \<turnstile> s1 \<leadsto> P2")
-apply(simp_all)
-apply(ind_cases "((Unit, Unit) # xs, b) \<in> fail")
-apply(ind_cases "((Paar t1 t2, Paar s1 s2) # xs, b) \<in> fail")
-apply(ind_cases "((Func F t1, Func F t2) # xs, b) \<in> fail")
-apply(simp)
-apply(ind_cases "((Abst ab t1, Abst ab t2) # xs, b) \<in> fail")
-apply(ind_cases "((Abst ab t1, Abst bb t2) # xs, b) \<in> fail")
-apply(ind_cases "((Atom ab, Atom ab) # aa, b) \<in> fail")
-apply(simp)
-apply(ind_cases "((Susp pi1 X, Susp pi2 X) # aa, b) \<in> fail")
-apply(ind_cases "((Susp pi X, t) # xs, b) \<in> fail")
-apply(simp add: apply_subst_def)+
-apply(case_tac "occurs X t1")
-apply(simp)
-apply(simp)
-apply(ind_cases "((t, Susp pi X) # xs, b) \<in> fail")
-apply(simp add: apply_subst_def)
-apply(case_tac "occurs X t1")
-apply(simp)
-apply(simp)
-apply(case_tac "occurs X t1")
-apply(simp)
-apply(simp)
-apply(ind_cases "(a, b) \<turnstile> nabla1 \<rightarrow> P2")
-apply(simp_all)
-apply(ind_cases "([], (ab, Unit) # ba) \<in> fail")
-apply(ind_cases "([], (ab, Paar t1 t2) # xs) \<in> fail")
-apply(ind_cases "([], (ab, Func F t) # xs) \<in> fail")
-apply(ind_cases "([], (ab, Abst ab t) # ba) \<in> fail")
-apply(ind_cases "([], (ab, Abst bb t) # xs) \<in> fail")
-apply(ind_cases "([], (ab, Atom bb) # ba) \<in> fail")
-apply(simp)
-apply(ind_cases "([], (ab, Susp pi X) # ba) \<in> fail")
-apply(simp add: stuck_def)
-apply(rule allI)+
-apply(clarify)
-apply(ind_cases "(([], []), (nabla, s), a, b) \<in> red_plus")
-apply(ind_cases "(([], []), s, a, b) \<in> s_red")
-apply(ind_cases "(([], []), nabla, a, b) \<in> c_red")
-apply(ind_cases "([], []) \<turnstile> s1 \<leadsto> P2")
-apply(ind_cases "([], []) \<turnstile> nabla1 \<rightarrow> P2")
-done
+lemma not_reduce_then_fail:
+  assumes "\<not> (\<exists>nabla s P'. ((t1 \<approx>? t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P')"
+  shows "fail ((t1 \<approx>? t2) # xs, ys)"
+  using assms
+proof(cases t1)
+  case (Abst a t1')
+  have t1_def: "t1 = Abst a t1'" by fact
+  then show "fail ((t1, t2) # xs, ys)"
+  proof(cases t2)
+    case (Abst b t2')
+    with t1_def
+    have "((t1 \<approx>? t2)#xs,ys) \<turnstile>[]\<leadsto> ((t1'\<approx>?t2')#xs,ys) \<or> 
+    ((t1\<approx>? t2)#xs,ys) \<turnstile>[]\<leadsto> ((t1'\<approx>?swap [(a,b)] t2')#xs,(a\<sharp>?t2')#ys)"
+      using abst_aa_sred abst_ab_sred by (cases "a=b") auto
+    hence "\<exists> P2. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},[])\<Rightarrow>P2"
+      using sred_single by blast
+    thus "fail ((t1, t2) # xs, ys)"
+      using assms by simp
+  next
+    case (Susp pi X)
+    have t2_def: "t2 = Susp pi X" by fact
+    with t1_def
+    show "fail ((t1, t2) # xs, ys)" 
+    proof(cases "occurs X t1'")
+      case True
+      with t1_def t2_def
+      show "fail ((t1, t2) # xs, ys)" 
+      using fail_sym[OF fail_occur_abst[OF True]] by simp
+    next
+      case False
+      with t1_def 
+      have not_occurs: "\<not> occurs X t1" by simp
+      hence "((t1\<approx>? Susp pi X)#xs,ys) 
+                    \<turnstile>[(X,swap (rev pi) t1)]\<leadsto> apply_subst [(X,swap (rev pi) t1)] (xs,ys)"
+        using t1_def var_2_sred[OF not_occurs] by simp
+       hence "\<exists> P2 s. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},s)\<Rightarrow>P2"
+         using t1_def t2_def sred_single by blast
+       thus "fail ((t1, t2) # xs, ys)" 
+         using assms by simp
+    qed
+  qed (auto)
+next
+  case (Susp pi X)
+  have t1_def: "t1 = Susp pi X" by fact
+  then show "fail ((t1, t2) # xs, ys)"
+  proof(cases "occurs X t2")
+    case True
+    then show "fail ((t1, t2) # xs, ys)"
+    proof(cases t2)
+      case (Abst a t2')
+      have t2_def: "t2 = Abst a t2'" by fact
+      with True
+      have "occurs X t2'" unfolding occurs.simps(4) t2_def by argo
+      thus "fail ((t1, t2) # xs, ys)"
+        using t1_def t2_def fail_occur_abst by simp
+    next
+      case (Susp pi' Y)
+      have t2_def: "t2 = Susp pi' Y" by fact
+      have "X = Y" 
+        using True unfolding t2_def occurs.simps(3)
+        by argo
+      hence "((Susp pi X\<approx>?Susp pi' Y)#xs,ys) 
+                                \<turnstile>[]\<leadsto> (xs,(map (\<lambda>a. a\<sharp>? Susp [] X) (ds_list pi pi'))@ys)"
+        using susp_sred by simp
+      hence "\<exists> P2. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},[])\<Rightarrow>P2"
+        using sred_single t1_def t2_def by blast
+      thus"fail ((t1, t2) # xs, ys)"
+        using assms by simp
+    next
+      case (Paar t21 t22)
+      have t2_def: "t2 = Paar t21 t22" by fact
+      with True
+      have "occurs X t21 \<or> occurs X t22" unfolding occurs.simps(5) t2_def by argo
+      thus "fail ((t1, t2) # xs, ys)"
+        using t1_def t2_def fail_occur_paar by simp
+    next
+      case (Func f t2')
+      have t2_def: "t2 = Func f t2'" by fact
+      with True
+      have "occurs X t2'" unfolding occurs.simps(6) t2_def by argo
+      thus "fail ((t1, t2) # xs, ys)"
+        using t1_def t2_def fail_occur_func by simp
+    qed (auto simp add: True)
+  next
+    case False
+    hence "((Susp pi X, t2) # xs, ys) \<turnstile> 
+    [(X, swap (rev pi) t2)] \<leadsto> apply_subst [(X, swap (rev pi) t2)] (xs, ys)"
+      using var_1_sred[OF False] by simp
+    hence "\<exists> P2 s. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},s)\<Rightarrow>P2"
+      using t1_def sred_single by blast
+    thus "fail ((t1, t2) # xs, ys)" 
+      using assms by simp
+  qed
+next
+  case Unit
+  have t1_def: "t1 = Unit" by fact
+  then show "fail ((t1, t2) # xs, ys)"
+  proof(cases t2)
+    case (Susp pi X)
+    have t2_def: "t2 =  Susp pi X" by fact
+    with t1_def have not_occurs: "\<not> occurs X t1" by simp
+    hence "((t1\<approx>? Susp pi X)#xs,ys) 
+                    \<turnstile>[(X,swap (rev pi) t1)]\<leadsto> apply_subst [(X,swap (rev pi) t1)] (xs,ys)"
+      using t1_def var_2_sred[OF not_occurs] by simp
+    hence "\<exists> P2 s. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},s)\<Rightarrow>P2"
+      using t1_def t2_def sred_single by blast
+    thus "fail ((t1, t2) # xs, ys)" 
+      using assms by simp
+  next
+    case Unit
+    with t1_def
+    have "((t1 \<approx>? t2)#xs,ys) \<turnstile>[]\<leadsto> (xs,ys)"
+      using unit_sred by auto
+    hence "\<exists> P2. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},[])\<Rightarrow>P2"
+      using sred_single by blast
+    thus "fail ((t1, t2) # xs, ys)"
+      using assms by simp
+  qed (auto)
+next
+  case (Atom a)
+  have t1_def: "t1 = Atom a" by fact
+  then show "fail ((t1, t2) # xs, ys)" 
+  proof(cases t2)
+    case (Susp pi X)
+    have t2_def: "t2 =  Susp pi X" by fact
+    with t1_def have not_occurs: "\<not> occurs X t1" by simp
+    hence "((t1\<approx>? Susp pi X)#xs,ys) 
+                    \<turnstile>[(X,swap (rev pi) t1)]\<leadsto> apply_subst [(X,swap (rev pi) t1)] (xs,ys)"
+      using t1_def var_2_sred[OF not_occurs] by simp
+    hence "\<exists> P2 s. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},s)\<Rightarrow>P2"
+      using t1_def t2_def sred_single by blast
+    thus "fail ((t1, t2) # xs, ys)" 
+      using assms by simp
+  next
+    case (Atom b)
+    have t2_def: "t2 = Atom b" by fact
+    then show "fail ((t1, t2) # xs, ys)"
+    proof(cases "a=b")
+      case True
+      hence "((t1 \<approx>? t2)#xs,ys) \<turnstile>[]\<leadsto> (xs,ys)"
+        using t2_def t1_def atom_sred by simp
+      hence "\<exists> P2. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},[])\<Rightarrow>P2"
+        using sred_single by blast
+      thus "fail ((t1, t2) # xs, ys)"
+        using assms by simp
+    qed (simp add: t1_def t2_def fail_diff_atoms)
+  qed(auto)
+next
+  case (Paar t11 t12)
+  have t1_def: "t1 = Paar t11 t12" by fact
+  then show "fail ((t1, t2) # xs, ys)"
+  proof(cases t2)
+  next
+    case (Susp pi X)
+    have t2_def: "t2 = Susp pi X" by fact
+    then show "fail ((t1, t2) # xs, ys)" 
+    proof(cases "occurs X t11 \<or> occurs X t12")
+      case True
+      then show "fail ((t1, t2) # xs, ys)" 
+        using t1_def t2_def fail_sym[OF fail_occur_paar[OF True]] by simp
+    next
+      case False
+      hence "\<not> occurs X t1"
+        using t1_def by simp
+      hence "((t1\<approx>?Susp pi X)#xs,ys) 
+                               \<turnstile>[(X,swap (rev pi) t1)]\<leadsto> apply_subst [(X,swap (rev pi) t1)] (xs,ys)"
+        by auto
+      hence "\<exists> P2 s. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},s)\<Rightarrow>P2"
+        using t1_def t2_def sred_single by blast
+      thus "fail ((t1, t2) # xs, ys)" 
+        using assms by simp
+    qed
+  next
+    case (Paar t21 t22)
+    have t2_def: "t2 = Paar t21 t22" by fact
+    with t1_def have
+    "((t1 \<approx>? t2)#xs,ys) \<turnstile>[]\<leadsto> ((t11\<approx>?t21)#(t12\<approx>?t22)#xs,ys)"
+      using paar_sred by simp
+    hence "\<exists> P2. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},[])\<Rightarrow>P2"
+      using sred_single by blast
+    thus "fail ((t1, t2) # xs, ys)"
+      using assms by simp
+  qed(auto)
+next
+  case (Func f t1')
+  have t1_def: "t1 = Func f t1'" by fact
+  then show "fail ((t1, t2) # xs, ys)"
+  proof(cases t2)
+    case (Susp pi X)
+     have t2_def: "t2 = Susp pi X" by fact
+     with t1_def
+    show "fail ((t1, t2) # xs, ys)" 
+    proof(cases "occurs X t1'")
+      case True
+      with t1_def t2_def
+      show "fail ((t1, t2) # xs, ys)" 
+      using fail_sym[OF fail_occur_func[OF True]] by simp
+    next
+      case False
+      with t1_def 
+      have not_occurs: "\<not> occurs X t1" by simp
+      hence "((t1\<approx>? Susp pi X)#xs,ys) 
+                    \<turnstile>[(X,swap (rev pi) t1)]\<leadsto> apply_subst [(X,swap (rev pi) t1)] (xs,ys)"
+        using t1_def var_2_sred[OF not_occurs] by simp
+       hence "\<exists> P2 s. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},s)\<Rightarrow>P2"
+         using t1_def t2_def sred_single by blast
+       thus "fail ((t1, t2) # xs, ys)" 
+         using assms by simp
+    qed
+  next
+    case (Func g t2')
+     have t2_def: "t2 = Func g t2'" by fact
+     then show "fail ((t1, t2) # xs, ys)"
+     proof(cases "f=g")
+       case True
+       hence "((t1 \<approx>? t2)#xs,ys) \<turnstile>[]\<leadsto> ((t1'\<approx>?t2')#xs,ys)"
+         using t1_def t2_def func_sred by simp
+       hence "\<exists> P2. ((t1 \<approx>? t2)#xs,ys) \<Turnstile>({},[])\<Rightarrow>P2"
+         using sred_single by blast
+       thus "fail ((t1, t2) # xs, ys)"
+         using assms by simp
+     next
+       case False
+       then show "fail ((t1, t2) # xs, ys)"
+         using t1_def t2_def fail_diff_func[OF False] by simp
+     qed
+  qed(auto)
+qed
+
+
+lemma fresh_reduces_if_not_atom:
+  assumes "t \<noteq> Atom a"
+  shows "\<exists>P2 nabla s. ([], (a \<sharp>? t) # xs) \<Turnstile> (nabla,s) \<Rightarrow> P2"
+  using assms cred_single
+proof(cases t)
+  case (Abst b t')
+  then show "\<exists>P2 nabla s. ([], (a \<sharp>? t) # xs) \<Turnstile> (nabla, s) \<Rightarrow> P2"
+  proof(cases "a=b")
+    case True
+    hence "([], (a \<sharp>? t) # xs) \<turnstile>{}\<rightarrow> ([],xs)"
+      unfolding Abst using abst_aa_cred by simp
+    then show "\<exists>P2 nabla s. ([], (a \<sharp>? t) # xs) \<Turnstile> (nabla, s) \<Rightarrow> P2"
+      using cred_single by blast
+  next
+    case False
+    hence "([], (a \<sharp>? t) # xs) \<turnstile>{}\<rightarrow> ([], (a\<sharp>? t') # xs)"
+      unfolding  Abst using abst_ab_cred by simp
+    then show "\<exists>P2 nabla s. ([], (a \<sharp>? t) # xs) \<Turnstile> (nabla, s) \<Rightarrow> P2"
+      using cred_single by blast
+  qed
+next
+  case (Atom b)
+  with assms
+  have "a \<noteq> b" by simp
+  hence "([], (a \<sharp>? t) # xs) \<turnstile> {}\<rightarrow> ([],xs)"
+    unfolding Atom using atom_cred by simp
+  then show "\<exists>P2 nabla s. ([], (a \<sharp>? t) # xs) \<Turnstile> (nabla, s) \<Rightarrow> P2"
+    using cred_single by blast
+qed (simp add: cred_single, blast+)
+
+
+lemma empty_stuck:
+  shows "([],[]) \<in> stuck"
+proof-
+  have "\<not> (\<exists>P2 nabla s. ([],[]) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  thus "([],[]) \<in> stuck"
+    unfolding stuck_def by auto
+qed
+
+lemma fail_is_stuck:
+  assumes "fail P"
+  shows "P \<in> stuck"
+  using assms
+proof(induct rule: fail.induct)
+  case (fail_occur_abst X t pi a xs ys)
+  have t_occurs: "occurs X t" by fact
+  moreover have "\<not> (\<exists>P2 nabla s. ((Susp pi X \<approx>? Abst a t) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+  proof
+    assume "\<exists>P2 nabla s. ((Susp pi X \<approx>? Abst a t) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2"
+    then obtain P2 nabla s where
+    red: "((Susp pi X \<approx>? Abst a t) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2"
+      by auto
+    thus False 
+    proof (cases rule: red_plus.cases)
+      case sred_single
+      have "((Susp pi X, Abst a t) # xs, ys) \<turnstile> s \<leadsto> P2" by fact
+      hence "\<not> occurs X t" 
+         by (auto elim: s_red.cases)
+      with t_occurs show False by simp
+    next
+      case cred_single
+      have "((Susp pi X, Abst a t) # xs, ys) \<turnstile> nabla \<rightarrow> P2" by fact
+      moreover have "fst ((Susp pi X, Abst a t) # xs, ys) \<noteq> []"
+        by simp
+      ultimately show False 
+        using c_red_eqs_empty by blast
+    next
+      case (sred_step s1 P3 s2)
+      have "((Susp pi X, Abst a t) # xs, ys) \<turnstile> s1 \<leadsto> P3" by fact
+      hence "\<not> occurs X t" 
+        by (auto elim: s_red.cases)
+      with t_occurs show False by simp
+    next
+      case (cred_step nabla1 P3 nabla2)
+      have "((Susp pi X, Abst a t) # xs, ys) \<turnstile> nabla1 \<rightarrow> P3" by fact
+       moreover have "fst ((Susp pi X, Abst a t) # xs, ys) \<noteq> []"
+        by simp
+      ultimately show False 
+        using c_red_eqs_empty by blast
+    qed
+  qed
+  then show "((Susp pi X, Abst a t) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_occur_func X t pi F xs ys)
+  have t_occurs: "occurs X t" by fact
+  moreover have "\<not> (\<exists>P2 nabla s. ((Susp pi X \<approx>? Func F t) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+  proof
+    assume "\<exists>P2 nabla s. ((Susp pi X \<approx>? Func F t) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2"
+    then obtain P2 nabla s where
+    red: "((Susp pi X \<approx>? Func F t) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2"
+      by auto
+    thus False 
+    proof (cases rule: red_plus.cases)
+      case sred_single
+      have "((Susp pi X, Func F t) # xs, ys) \<turnstile> s \<leadsto> P2" by fact
+      hence "\<not> occurs X t" 
+         by (auto elim: s_red.cases)
+      with t_occurs show False by simp
+    next
+      case cred_single
+      have "((Susp pi X, Func F t) # xs, ys) \<turnstile> nabla \<rightarrow> P2" by fact
+      moreover have "fst ((Susp pi X, Func F t) # xs, ys) \<noteq> []"
+        by simp
+      ultimately show False 
+        using c_red_eqs_empty by blast
+    next
+      case (sred_step s1 P3 s2)
+      have "((Susp pi X, Func F t) # xs, ys) \<turnstile> s1 \<leadsto> P3" by fact
+      hence "\<not> occurs X t" 
+         by (auto elim: s_red.cases)
+      with t_occurs show False by simp
+    next
+      case (cred_step nabla1 P3 nabla2)
+      have "((Susp pi X, Func F t) # xs, ys) \<turnstile> nabla1 \<rightarrow> P3" by fact
+       moreover have "fst ((Susp pi X, Func F t) # xs, ys) \<noteq> []"
+        by simp
+      ultimately show False 
+        using c_red_eqs_empty by blast
+    qed
+  qed
+  then show "((Susp pi X, Func F t) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_occur_paar X t1 t2 pi xs ys)
+  have "occurs X t1 \<or> occurs X t2" by fact
+  hence t_occurs: "occurs X (Paar t1 t2)"
+    using occurs.simps(5) by auto
+  moreover have "\<not> (\<exists>P2 nabla s. ((Susp pi X \<approx>? Paar t1 t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+  proof
+    assume "\<exists>P2 nabla s. ((Susp pi X \<approx>? Paar t1 t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2"
+    then obtain P2 nabla s where
+    red: "((Susp pi X \<approx>? Paar t1 t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2"
+      by auto
+    thus False 
+    proof (cases rule: red_plus.cases)
+      case sred_single
+      have "((Susp pi X, Paar t1 t2) # xs, ys) \<turnstile> s \<leadsto> P2" by fact
+      hence "\<not> occurs X (Paar t1 t2)" 
+        by (auto elim: s_red.cases)
+      with t_occurs show False by simp
+    next
+      case cred_single
+      have "((Susp pi X, Paar t1 t2) # xs, ys) \<turnstile> nabla \<rightarrow> P2" by fact
+      moreover have "fst ((Susp pi X, Paar t1 t2) # xs, ys) \<noteq> []"
+        by simp
+      ultimately show False 
+        using c_red_eqs_empty by blast
+    next
+      case (sred_step s1 P3 s2)
+      have "((Susp pi X, Paar t1 t2) # xs, ys) \<turnstile> s1 \<leadsto> P3" by fact
+      hence "\<not> occurs X (Paar t1 t2)" 
+        by (auto elim: s_red.cases)
+      with t_occurs show False by simp
+    next
+      case (cred_step nabla1 P3 nabla2)
+      have "((Susp pi X, Paar t1 t2) # xs, ys) \<turnstile> nabla1 \<rightarrow> P3" by fact
+       moreover have "fst ((Susp pi X, Paar t1 t2) # xs, ys) \<noteq> []"
+        by simp
+      ultimately show False 
+        using c_red_eqs_empty by blast
+    qed
+  qed
+  then show "((Susp pi X, Paar t1 t2) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_fresh_atom a ys)
+  have "\<not> (\<exists>P2 nabla s. ([], (a, Atom a) # ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "([], (a, Atom a) # ys) \<in> stuck" 
+    unfolding stuck_def by simp
+next
+  case (fail_diff_atoms a b xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Atom a, Atom b) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Atom a, Atom b) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_abst_unit a t xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Abst a t, Unit) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Abst a t, Unit) # xs, ys) \<in> stuck"
+     unfolding stuck_def by simp
+next
+  case (fail_abst_atom a t b xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Abst a t, Atom b) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Abst a t, Atom b) # xs, ys) \<in> stuck"
+     unfolding stuck_def by simp
+next
+  case (fail_abst_paar a t t1 t2 xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Abst a t, Paar t1 t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Abst a t, Paar t1 t2) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_func_abst F t1 a t xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Func F t1, Abst a t) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Func F t1, Abst a t) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_atom_unit b xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Atom b, Unit) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Atom b, Unit) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_paar_unit t1 t2 xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Paar t1 t2, Unit) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Paar t1 t2, Unit) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_func_unit F t1 xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Func F t1, Unit) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Func F t1, Unit) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_atom_paar a t1 t2 xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Atom a, Paar t1 t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Atom a, Paar t1 t2) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_func_atom F t1 a xs ys)
+  hence "\<not> (\<exists>P2 nabla s. ((Func F t1, Atom a) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Func F t1, Atom a) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_func_paar F t t1 t2 xs ys)
+   hence "\<not> (\<exists>P2 nabla s. ((Func F t, Paar t1 t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Func F t, Paar t1 t2) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_diff_func F1 F2 t1 t2 xs ys)
+   hence "\<not> (\<exists>P2 nabla s. ((Func F1 t1, Func F2 t2) # xs, ys) \<Turnstile> (nabla,s) \<Rightarrow> P2)"
+    by (auto elim: red_plus.cases s_red.cases c_red.cases)
+  then show "((Func F1 t1, Func F2 t2) # xs, ys) \<in> stuck"
+    unfolding stuck_def by simp
+next
+  case (fail_sym s t xs ys)
+  hence not_reduce: "\<nexists> P2 nabla s1. ((s, t) # xs, ys) \<Turnstile> (nabla, s1) \<Rightarrow> P2"
+    unfolding stuck_def by simp
+  have"\<nexists> P2 nabla s1. ((t, s) # xs, ys) \<Turnstile> (nabla, s1) \<Rightarrow> P2"
+  proof
+    assume "\<exists>P2 nabla s1. ((t, s) # xs, ys) \<Turnstile> (nabla, s1) \<Rightarrow> P2"
+    then obtain P2 nabla s1 where 
+      reduces: "((t, s) # xs, ys) \<Turnstile> (nabla, s1) \<Rightarrow> P2"
+      by auto
+    hence "\<exists> P3 nabla1 s2. ((s, t) # xs, ys) \<Turnstile> (nabla1, s2) \<Rightarrow> P3"
+      using red_plus_symm[of \<open>((t, s) # xs, ys)\<close> t s xs ys nabla s1 P2] by auto
+    with not_reduce show False by simp
+  qed
+  then show "((t, s) # xs, ys) \<in> stuck" unfolding stuck_def by simp
+qed
+
+
+lemma stuck_equiv: 
+  shows "stuck = {([],[])} \<union> {P1. fail P1}"      
+proof (rule set_eqI, rule iffI)
+  fix P
+  {assume P_is_stuck: "P \<in> stuck"
+  then obtain eqs freshs where 
+    P_def: "P = (eqs, freshs)" by (cases P)
+  show "P \<in> {([], [])} \<union> {P1. fail P1}"
+  proof(cases eqs)
+    case Nil
+    then show "P \<in> {([], [])} \<union> {P1. fail P1}"
+    proof(cases freshs)
+      case Nil
+      with \<open>eqs = []\<close>
+      show "P \<in> {([], [])} \<union> {P1. fail P1}" using P_def by simp
+    next
+      case (Cons c freshs')
+      then obtain a t where c_def: "c = a \<sharp>? t" by force
+      have "t = Atom a" 
+        using fresh_reduces_if_not_atom P_is_stuck 
+        unfolding stuck_def P_def Nil Cons c_def by blast
+      hence "fail P" 
+        unfolding P_def Nil Cons c_def using fail_fresh_atom by simp
+      thus "P \<in> {([], [])} \<union> {P1. fail P1}" by auto
+    qed
+  next
+    case(Cons e eqs')
+    then obtain s t where e_def: "e = s \<approx>? t" by force
+    have "fail P" 
+      using P_is_stuck unfolding P_def Cons e_def 
+        stuck_def using not_reduce_then_fail by simp
+    thus "P \<in> {([], [])} \<union> {P1. fail P1}" by auto
+  qed }
+
+  {assume "P \<in> {([], [])} \<union> {P1. fail P1}"
+    then show "P \<in> stuck" 
+      using empty_stuck fail_is_stuck by blast
+      }
+qed
+
+
+(*if reduces to a non-solvable problem, then it is non-solvable *)
 
 lemma u_empty_sred: 
-  "P1\<turnstile>s\<leadsto>P2 \<longrightarrow> U P2 ={} \<longrightarrow> U P1={}"
-apply(rule impI)
-apply(ind_cases "P1 \<turnstile> s \<leadsto> P2")
-apply(rule impI, simp add: all_solutions_def)
-apply(rule impI, simp add: all_solutions_def)
-apply(fast dest!: equ_paar_elim)
-apply(rule impI, simp add: all_solutions_def)
-apply(fast dest!: equ_func_elim)
-apply(rule impI, simp add: all_solutions_def)
-apply(fast dest!: equ_abst_aa_elim)
-apply(rule impI, simp add: all_solutions_def)
-apply(force dest!: equ_abst_ab_elim simp add: subst_swap_comm[THEN sym])
-apply(rule impI, simp add: all_solutions_def)
-apply(rule impI, simp add: all_solutions_def)
-apply(simp add: ds_list_equ_ds)
-apply(rule allI)+
-apply(rule impI)
-apply(drule_tac x="a" in spec)
-apply(drule_tac x="b" in spec)
-apply(erule disjE)
-apply(force)
-apply(simp add: subst_susp)
-apply(drule equ_pi1_pi2_dec[THEN mp])
-apply(force simp add: subst_susp)
-apply(auto)
-apply(simp add: all_solutions_def)
-apply(simp_all add: apply_subst_def)
-apply(auto)
-apply(drule_tac x="a" in spec)
-apply(drule_tac x="b" in spec)
-apply(drule unif_1)
-apply(auto)
-apply(drule_tac x="(aa,ba)" in bspec)
-apply(assumption)
-apply(simp)
-apply(drule_tac "t1.0"="aa" and "t2.0"="ba" in unif_2a)
-apply(simp add: subst_comp_expand)
-apply(drule_tac x="(aa,ba)" in bspec)
-apply(assumption)
-apply(simp)
-apply(drule_tac a="aa" and "t"="ba" in unif_2b)
-apply(simp add: subst_comp_expand)
-apply(simp add: all_solutions_def)
-apply(auto)
-apply(drule_tac x="a" in spec)
-apply(drule_tac x="b" in spec)
-apply(drule equ_sym)
-apply(drule unif_1)
-apply(auto)
-apply(drule_tac x="(aa,ba)" in bspec)
-apply(assumption)
-apply(simp)
-apply(drule_tac "t1.0"="aa" and "t2.0"="ba" in unif_2a)
-apply(simp add: subst_comp_expand)
-apply(drule_tac x="(aa,ba)" in bspec)
-apply(assumption)
-apply(simp)
-apply(drule_tac a="aa" and "t"="ba" in unif_2b)
-apply(simp add: subst_comp_expand)
-done
+  assumes "P1\<turnstile>s\<leadsto>P2" and "U P2 ={}"
+  shows "U P1 = {}"
+  using assms P1_from_P2_sred all_solutions_def P1_to_P2_sred by blast
 
-lemma u_empty_cred: 
-  "P1\<turnstile>nabla\<rightarrow>P2 \<longrightarrow> U P2 ={} \<longrightarrow> U P1={}"
-apply(rule impI)
-apply(ind_cases "P1 \<turnstile>nabla\<rightarrow>P2")
-apply(rule impI, simp add: all_solutions_def)
-apply(rule impI, simp add: all_solutions_def)
-apply(fast dest!: fresh_paar_elim)
-apply(rule impI, simp add: all_solutions_def)
-apply(fast dest!: fresh_func_elim)
-apply(rule impI, simp add: all_solutions_def)
-apply(rule impI, simp add: all_solutions_def)
-apply(force dest!: fresh_abst_ab_elim)
-apply(rule impI, simp add: all_solutions_def)
-apply(rule impI, simp add: all_solutions_def)
-done
+
+lemma u_empty_cred:
+  assumes "P1\<turnstile>nabla\<rightarrow>P2" and "U P2 ={}"
+  shows "U P1={}"
+  using assms P1_from_P2_cred all_solutions_def P1_to_P2_cred by blast
+
 
 lemma u_empty_red_plus: 
-  "P1\<Turnstile>(nabla,s)\<Rightarrow>P2 \<longrightarrow> U P2 ={} \<longrightarrow> U P1={}"
-apply(rule impI)
-apply(erule red_plus.induct)
-apply(drule u_empty_sred[THEN mp], assumption)
-apply(drule u_empty_cred[THEN mp], assumption)
-apply(drule u_empty_sred[THEN mp], force)
-apply(drule u_empty_cred[THEN mp], force)
-done
+  assumes "P1\<Turnstile>(nabla,s)\<Rightarrow>P2" and "U P2 ={}"
+  shows "U P1={}"
+  using assms P1_from_P2_red_plus all_solutions_def P1_to_P2_red_plus1 by fast
+
 
 (* all problems that cannot be solved produce "failed" problems only *)
 
-lemma empty_then_fail: "U P1={} \<longrightarrow> (\<forall>P\<in>results P1. P\<in>fail)"
-apply(simp add: results_def)
-apply(rule conjI)
-apply(rule impI)
-apply(rule impI)
-apply(simp add: stuck_equiv)
-apply(erule disjE)
-apply(subgoal_tac "({},[])\<in>U ([],[])")
-apply(simp)
-apply(simp add: all_solutions_def)
-apply(assumption)
-apply(rule impI)+
-apply(rule allI)+
-apply(rule impI)
-apply(erule conjE)
-apply(simp add: stuck_equiv)
-apply(auto)
-apply(subgoal_tac "({},[])\<in>U ([],[])")
-apply(drule_tac "nabla3.0"="nabla" and "nabla1.0"="{}" and "s1.0"="[]" in P1_from_P2_red_plus)
-apply(simp add: ext_subst_def)
-apply(auto)
-apply(simp add: all_solutions_def)
-done
+lemma empty_then_fail: 
+assumes "U P1={}"
+shows" (\<forall>P \<in> normal_form P1. fail P)"
+proof
+  fix P
+  assume P_is_nf: "P \<in> normal_form P1"
+  hence P_is_stuck: "P \<in> stuck"
+    using normal_form_def by (cases "P1 \<in> stuck") auto
+  hence P_is_empty_or_fails: "P = ([],[]) \<or> fail P"
+    using stuck_equiv by auto
+  have "P \<noteq> ([],[])"
+  proof
+    assume P_empty: "P = ([],[])"
+    hence solution: "({},[]) \<in> U P"
+      using all_solutions_def by simp
+    hence P_neq: "P \<noteq> P1" 
+    using assms by auto
+    show False
+    proof(cases "P1\<in> stuck")
+      case True
+      then have "normal_form P1 = {P1}"
+        unfolding normal_form_def by simp
+      with P_is_nf have "P = P1" by simp
+      with P_neq show False by simp
+    next
+      case False
+      with P_is_nf
+      obtain nabla s where P1_goes_to_P: "P1 \<Turnstile> (nabla, s) \<Rightarrow> P" 
+        unfolding normal_form_def by auto
+      hence "({} \<union> nabla, [] \<bullet> s) \<in> U P1"
+        using P1_from_P2_red_plus[OF P1_goes_to_P solution ext_subst_id] by simp
+      with assms show False by simp
+    qed
+  qed
+  thus "fail P"
+    using P_is_empty_or_fails by simp
+qed
+
 
 (* if a problem can be solved then no "failed" problem is produced *)
 
-lemma not_empty_then_not_fail: "U P1\<noteq>{} \<longrightarrow> \<not>(\<exists>P\<in>results P1. P\<in>fail)"
-apply(rule impI)
-apply(simp)
-apply(rule ballI)
-apply(clarify)
-apply(simp add: results_def)
-apply(case_tac "P1\<in>stuck")
-apply(simp_all)
-apply(drule fail_then_empty)
-apply(simp)
-apply(drule fail_then_empty)
-apply(erule conjE)
-apply(clarify)
-apply(drule u_empty_red_plus[THEN mp])
-apply(simp)
-done
+lemma not_empty_then_not_fail: 
+  assumes "U P1\<noteq>{}"
+  shows "\<not>(\<exists>P\<in> normal_form P1. fail P)"
+proof(simp, rule ballI)
+  fix P
+  assume P_is_nf: "P \<in> normal_form P1"
+  show "\<not> fail P"
+  proof
+    assume P_fails: "fail P"
+    show False
+    proof(cases "P1\<in> stuck")
+      case True
+      have "normal_form P1 = {P1}"
+        unfolding normal_form_def using True by simp
+      hence "P = P1" using P_is_nf by simp
+      with P_fails have "U P1 = {}"
+        using fail_then_empty by simp
+      thus False using assms by simp
+      next
+        case False
+        with P_is_nf
+        obtain nabla s where P1_goes_to_P: "P1 \<Turnstile> (nabla, s) \<Rightarrow> P"
+          unfolding normal_form_def by auto
+        moreover have "U P = {}" 
+          using P_fails fail_then_empty by simp
+        ultimately have "U P1 = {}" 
+          using u_empty_red_plus by simp
+        then show False 
+          using assms by simp
+      qed
+    qed
+  qed
+
+
+
+
 
 end

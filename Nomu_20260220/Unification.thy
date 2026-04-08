@@ -1,6 +1,6 @@
 theory Unification 
 
-imports Mgu
+imports Termination
 
 begin
 
@@ -38,6 +38,40 @@ fail_sym [intro!]: "fail (s \<approx>? t # xs, ys) \<Longrightarrow> fail (t \<a
 definition 
   normal_form :: "problem_type \<Rightarrow> problem_type set" where 
   "normal_form P1 \<equiv> if P1 \<in> stuck then {P1} else {P2. \<exists>nabla s. P1\<Turnstile>(nabla,s)\<Rightarrow>P2 \<and> P2\<in>stuck}"
+
+lemma normal_form_exists:
+  shows "P \<in> stuck \<or> (\<exists> P2 nabla s. P \<Turnstile>(nabla,s)\<Rightarrow>P2 \<and> P2\<in>stuck )"
+proof(induction P rule: wf_induct_rule[OF wf_rank_r])
+  case (1 P)
+  then show "P \<in> stuck \<or> (\<exists>P2 nabla s. P \<Turnstile> (nabla, s) \<Rightarrow> P2  \<and> P2 \<in> stuck)"
+  proof (cases "P \<in> stuck")
+    case True
+    then show "P \<in> stuck \<or> (\<exists>P2 nabla s. P \<Turnstile> (nabla, s) \<Rightarrow> P2  \<and> P2 \<in> stuck)" by simp
+  next
+    case False
+    then obtain P' nabla s where P_to_P_prime:
+      "P \<Turnstile>(nabla,s)\<Rightarrow>P'"
+      unfolding stuck_def by auto
+    hence "(P', P) \<in> rank_r"
+      using rank_r_red_plus by simp
+    hence aux: "P' \<in> stuck \<or> (\<exists>P2 nabla s. P' \<Turnstile> (nabla, s) \<Rightarrow> P2 \<and> P2 \<in> stuck)"
+      using 1 by simp
+    then show "P \<in> stuck \<or> (\<exists>P2 nabla s. P \<Turnstile> (nabla, s) \<Rightarrow> P2  \<and> P2 \<in> stuck)"
+    proof(cases "P' \<in> stuck")
+      case True
+      then show ?thesis 
+        using P_to_P_prime by blast
+    next
+      case False
+      then obtain P2 nabla' s' where
+      P_prime_to_P2: "P' \<Turnstile> (nabla', s') \<Rightarrow> P2" "P2 \<in> stuck"
+        using aux by auto
+      then obtain nabla1 s1 where "P \<Turnstile> (nabla1, s1) \<Rightarrow> P2" "P2\<in> stuck"
+        sorry (*needs transitivity of red_plus*)
+      then show ?thesis by blast
+    qed
+  qed
+qed
 
 (*the solutions of a problem are the same for symmetric equations -- MOVE to Mgu.thy*)
 
@@ -858,6 +892,9 @@ proof(simp, rule ballI)
       qed
     qed
   qed
+
+
+
 
 
 end

@@ -4,11 +4,10 @@ theory Termination
 
 begin
 
-(* set of variables *)
 
-
-definition apply_subst_eprobs :: "substs \<Rightarrow> eprobs \<Rightarrow> eprobs"
-  where "apply_subst_eprobs s P \<equiv> map (\<lambda>(t1, t2). (subst s t1 \<approx>? subst s t2)) P"
+lemma apply_subst_equivalence: 
+  shows "apply_subst s P = (apply_subst_eprobs s (fst P), apply_subst_fprobs s (snd P))"
+  unfolding apply_subst_def apply_subst_eprobs_def apply_subst_fprobs_def by simp
 
 
 lemma[simp]: "vars_trm (swap pi t) = vars_trm t"
@@ -33,7 +32,6 @@ fun size_eprobs :: "eprobs \<Rightarrow> nat"
  "size_eprobs [] = 0" | 
   "size_eprobs (x#xs) = (size_trm (fst x))+(size_trm (snd x))+(size_eprobs xs)"
 
-  (*size_probs  :: "probs \<Rightarrow> nat"*)
 
 lemma size_swap [simp]: "size_trm (swap pi t) = size_trm t"
   by (induct t) auto
@@ -46,6 +44,14 @@ where
 fun rank :: "probs \<Rightarrow> (nat\<times>nat\<times>nat)"
   where
   "rank (eprobs,fprobs) = (card (vars_eprobs eprobs),size_eprobs eprobs, size_fprobs fprobs)"
+
+(*new definition for measure*)
+
+definition rank_r
+  where
+  "rank_r = measures [\<lambda>(eprobs, fprobs). card (vars_eprobs eprobs),
+                      \<lambda>(eprobs, fprobs). size_eprobs eprobs, 
+                      \<lambda>(eprobs, fprobs). size_fprobs fprobs]"
 
 
 lemma vars_term_finite [simp]: "finite (vars_trm t)"
@@ -276,6 +282,8 @@ next
     by simp
 qed
 
+(*these are the proofs with the old definition for measure*)
+
 lemma rank_cred: 
   assumes "P1\<turnstile>(nabla)\<rightarrow>P2" 
   shows "(rank P2) \<lless> (rank P1)"
@@ -344,7 +352,6 @@ next
   ultimately show "rank P2 \<lless> rank P1" 
     using measure_relation_def by auto
 qed
-  
 
 
 lemma rank_sred: 
@@ -453,7 +460,7 @@ next
     with 7 have
     "rank P1 = (card (vars_eprobs xs), 2 + size_eprobs xs, size_fprobs ys)"
       using vars size by auto
-    moreover with 7 have 
+    moreover from 7 have 
      "rank P2 = (card (vars_eprobs xs), size_eprobs xs, size_fprobs ?mapds)"
       by simp
     ultimately show "rank P2 \<lless> rank P1" 
@@ -465,7 +472,7 @@ next
     with 7 have
     "rank P1 = (1 + card (vars_eprobs xs), 2 + size_eprobs xs, size_fprobs ys)"
       using vars size by auto
-    moreover with 7 have 
+    moreover from 7 have 
      "rank P2 = (card (vars_eprobs xs), size_eprobs xs, size_fprobs ?mapds)"
       by simp
     ultimately show "rank P2 \<lless> rank P1" 
@@ -473,12 +480,70 @@ next
   qed
 next
   case (8 X t pi xs ys)
+  let ?union = "insert X (vars_trm t \<union> vars_eprobs xs)"
+    and ?size = "size_trm t + size_eprobs xs"
+  from 8 have 
+     vars: "vars_eprobs ((Susp pi X, t) # xs) = ?union" and
+     size: "size_eprobs ((Susp pi X, t) # xs) = 1 + ?size"
+    unfolding vars_eprobs.simps size_eprobs.simps by simp+
+   hence "rank P1 = (card ?union, 1 + ?size, size_fprobs ys)"
+     using 8 by auto
+   moreover from 8 have 
+    "P2 = (apply_subst_eprobs [(X, swap (rev pi) t)] xs, 
+    apply_subst_fprobs [(X, swap (rev pi) t)] ys)"
+     using apply_subst_equivalence by auto
+   hence "rank P2 = (card (vars_eprobs (apply_subst_eprobs [(X, swap (rev pi) t)] xs)), 
+      size_eprobs (apply_subst_eprobs [(X, swap (rev pi) t)] xs),
+       size_fprobs (apply_subst_fprobs [(X, swap (rev pi) t)] ys))"
+     by simp
+   ultimately show ?thesis 
+     using vars_decrease[OF 8(4)] measure_relation_def by auto
+next
+  case (9 X t pi xs ys)
+  let ?union = "insert X (vars_trm t \<union> vars_eprobs xs)"
+    and ?size = "size_trm t + size_eprobs xs"
+  from 9 have 
+     vars: "vars_eprobs ((t, Susp pi X) # xs) = ?union" and
+     size: "size_eprobs ((t, Susp pi X) # xs) = 1 + ?size"
+    unfolding vars_eprobs.simps size_eprobs.simps by simp+
+   hence "rank P1 = (card ?union, 1 + ?size, size_fprobs ys)"
+     using 9 by auto
+   moreover from 9 have 
+    "P2 = (apply_subst_eprobs [(X, swap (rev pi) t)] xs, 
+    apply_subst_fprobs [(X, swap (rev pi) t)] ys)"
+     using apply_subst_equivalence by auto
+   hence "rank P2 = (card (vars_eprobs (apply_subst_eprobs [(X, swap (rev pi) t)] xs)), 
+      size_eprobs (apply_subst_eprobs [(X, swap (rev pi) t)] xs),
+       size_fprobs (apply_subst_fprobs [(X, swap (rev pi) t)] ys))"
+     by simp
+   ultimately show ?thesis 
+     using vars_decrease[OF 9(4)] measure_relation_def by auto
+qed
+
+
+(*these are with the new definition for measure*)
+
+lemma rank_r_cred: 
+  assumes "P1\<turnstile>(nabla)\<rightarrow>P2" 
+  shows "(P2, P1) \<in> rank_r"
+  unfolding rank_r_def by (cases rule: c_red.cases[OF \<open>P1 \<turnstile> nabla \<rightarrow> P2\<close>], simp_all)
+
+lemma rank_r_sred:
+  assumes "P1 \<turnstile>  s \<leadsto>P2"
+  shows "(P2,P1) \<in> rank_r"
+proof(cases rule: s_red.cases[OF \<open>P1\<turnstile> s \<leadsto>P2\<close>])
+  case (2 t1 t2 s1 s2 xs ys)
+  then show ?thesis sorry
+next
+  case (7 pi1 X pi2 xs ys)
+  then show ?thesis sorry
+next
+  case (8 X t pi xs ys)
   then show ?thesis sorry
 next
   case (9 X t pi xs ys)
   then show ?thesis sorry
-qed
-
+qed (unfold rank_r_def, auto)
 
 lemma rank_trans: "\<lbrakk>rank P1 \<lless> rank P2; rank P2 \<lless> rank P3\<rbrakk>\<Longrightarrow> rank P1 \<lless> rank P3"
   using measure_relation_def trans_less_than trans_lex_prod transE by metis

@@ -610,7 +610,7 @@ next
     using 9 vars_decrease[OF 9(4)] unfolding rank_r_def by simp
 qed (unfold rank_r_def, auto)
 
-lemma rank_r_trans: "\<lbrakk>(P1,P2)\<in> rank_r; (P2,P3)\<in> rank_r\<rbrakk>\<Longrightarrow> (P1,P3)\<in> rank_r"
+lemma rank_r_trans: "\<lbrakk>(P1,P2) \<in> rank_r; (P2,P3) \<in> rank_r\<rbrakk>\<Longrightarrow> (P1,P3)\<in> rank_r"
   unfolding rank_r_def by auto
 
 lemma rank_r_red_plus: 
@@ -619,7 +619,7 @@ lemma rank_r_red_plus:
   using assms 
 by(induct rule: red_plus.induct)(auto dest: rank_r_sred rank_r_cred rank_r_trans)
 
-lemma rank_is_well_founded: 
+lemma wf_rank_r: 
   shows "wf (rank_r)"
   unfolding rank_r_def by simp
 
