@@ -1,22 +1,16 @@
-(*<*)
-theory Termination
-imports Mgu
+theory Termination 
+
+  imports Mgu
+
 begin
-(*>*)
 
-section \<open>Termination\<close>
-
-text \<open>
-  Shows that every reduction reduces a (well-founded) measure, thus proves that 
-  every reduction sequence must terminate.
-\<close>
 
 lemma apply_subst_equivalence: 
   shows "apply_subst s P = (apply_subst_eprobs s (fst P), apply_subst_fprobs s (snd P))"
   unfolding apply_subst_def apply_subst_eprobs_def apply_subst_fprobs_def by simp
 
-lemma[simp]: 
-  shows "vars_trm (swap pi t) = vars_trm t"
+
+lemma[simp]: "vars_trm (swap pi t) = vars_trm t"
   by (induct t) auto
 
 fun size_trm :: "trm \<Rightarrow> nat"
@@ -36,10 +30,10 @@ fun size_fprobs :: "fprobs \<Rightarrow> nat"
 fun size_eprobs :: "eprobs \<Rightarrow> nat"
   where
  "size_eprobs [] = 0" | 
- "size_eprobs (x#xs) = (size_trm (fst x))+(size_trm (snd x))+(size_eprobs xs)"
+  "size_eprobs (x#xs) = (size_trm (fst x))+(size_trm (snd x))+(size_eprobs xs)"
 
-lemma size_swap [simp]: 
-  shows "size_trm (swap pi t) = size_trm t"
+
+lemma size_swap [simp]: "size_trm (swap pi t) = size_trm t"
   by (induct t) auto
 
 definition measure_relation :: 
@@ -51,19 +45,25 @@ fun rank :: "probs \<Rightarrow> (nat\<times>nat\<times>nat)"
   where
   "rank (eprobs,fprobs) = (card (vars_eprobs eprobs),size_eprobs eprobs, size_fprobs fprobs)"
 
-lemma vars_term_finite [simp]: 
-  shows "finite (vars_trm t)"
+(*new definition for measure*)
+
+definition rank_r
+  where
+  "rank_r = measures [\<lambda>(eprobs, fprobs). card (vars_eprobs eprobs),
+                      \<lambda>(eprobs, fprobs). size_eprobs eprobs, 
+                      \<lambda>(eprobs, fprobs). size_fprobs fprobs]"
+
+
+lemma vars_term_finite [simp]: "finite (vars_trm t)"
   by (induct t) auto
 
-lemma vars_eprobs_finite [simp]: 
-  shows "finite (vars_eprobs P)"
+
+lemma vars_eprobs_finite [simp]: "finite (vars_eprobs P)"
   by (induct P) auto
 
-(*
-lemma union_assoc: 
-  shows "A\<union>(B\<union>C)=(A\<union>B)\<union>C"
+
+lemma union_assoc: "A\<union>(B\<union>C)=(A\<union>B)\<union>C"
   by auto
-*)
 
 lemma card_union:
 assumes "finite A" "finite B"
@@ -88,33 +88,22 @@ proof-
   qed 
 qed
 
-lemma card_insert: 
-  assumes "finite B"
-  shows "(card B < card (insert X B)) \<or> (card B = card (insert X B))"
+lemma card_insert: "\<lbrakk>finite B\<rbrakk>\<Longrightarrow>(card B < card (insert X B)) \<or> (card B = card (insert X B))"
  using psubset_card_mono card_insert_le order_le_imp_less_or_eq by fast
 
-lemma subseteq_card: 
-  assumes "A\<subseteq>B" "finite B"
-  shows "card A \<le> card B"
-  using assms card_mono le_eq_less_or_eq by auto
+lemma subseteq_card: "\<lbrakk>A\<subseteq>B ; finite B\<rbrakk> \<Longrightarrow> (card A \<le> card B)"
+  using card_mono le_eq_less_or_eq by auto
 
-lemma not_occurs_trm: 
-  assumes "\<not>occurs X t"
-  shows "X\<notin> vars_trm t"
-  using assms 
-  apply (induct t rule: occurs.induct) apply auto
-  apply presburger
-  by presburger
-  
-lemma not_occurs_subst: 
-  assumes "\<not>occurs X t1"
-  shows "X\<notin> vars_trm (subst [(X,swap pi2 t1)] t2)" 
-  using assms subst_susp not_occurs_trm by (induct t2) auto
+lemma not_occurs_trm: "\<not>occurs X t \<longrightarrow> X\<notin> vars_trm t"
+  by (induct t) auto
 
-lemma not_occurs_list: 
-  assumes "\<not> occurs X t"
-  shows "X \<notin> vars_eprobs (apply_subst_eprobs [(X, swap pi t)] xs)"
-  using assms not_occurs_subst apply_subst_eprobs_def by (induct xs) auto
+lemma not_occurs_subst: "\<not>occurs X t1\<longrightarrow> X\<notin> vars_trm (subst [(X,swap pi2 t1)] t2)" 
+  using subst_susp not_occurs_trm by (induct t2) auto
+
+lemma not_occurs_list: "\<not> occurs X t \<longrightarrow>
+  X \<notin> vars_eprobs (apply_subst_eprobs [(X, swap pi t)] xs)"
+  using not_occurs_subst apply_subst_eprobs_def by (induct xs) auto
+
 
 lemma vars_equ: 
   assumes "\<not>occurs X t1" and "occurs X t2"
@@ -160,6 +149,7 @@ next
     vars_trm t1 \<union> vars_trm (Paar t21 t22) - {X}" by auto
   qed
 qed (simp_all)
+
 
 lemma vars_subseteq:
   assumes "\<not>occurs X t "
@@ -253,6 +243,7 @@ next
   qed
 qed
 
+
 lemma vars_decrease: 
   assumes "\<not>occurs X t"
   shows "card (vars_eprobs (apply_subst_eprobs [(X, swap pi t)] xs))
@@ -290,6 +281,8 @@ next
     < card (insert X (vars_trm t \<union> vars_eprobs xs))"
     by simp
 qed
+
+(*these are the proofs with the old definition for measure*)
 
 lemma rank_cred: 
   assumes "P1\<turnstile>(nabla)\<rightarrow>P2" 
@@ -359,7 +352,8 @@ next
   ultimately show "rank P2 \<lless> rank P1" 
     using measure_relation_def by auto
 qed
-  
+
+
 lemma rank_sred: 
   assumes "P1\<turnstile> s \<leadsto>P2"
   shows "(rank P2) \<lless> (rank P1)"
@@ -526,19 +520,109 @@ next
      using vars_decrease[OF 9(4)] measure_relation_def by auto
 qed
 
-lemma rank_trans: 
-  assumes "rank P1 \<lless> rank P2" "rank P2 \<lless> rank P3"
-  shows "rank P1 \<lless> rank P3"
-  using assms measure_relation_def trans_less_than trans_lex_prod transE by metis
+lemma rank_trans: "\<lbrakk>rank P1 \<lless> rank P2; rank P2 \<lless> rank P3\<rbrakk>\<Longrightarrow> rank P1 \<lless> rank P3"
+  using measure_relation_def trans_less_than trans_lex_prod transE by metis
 
-text \<open>All reduction are well-founded with respect to the rank.\<close>
+lemma rank_red_plus: "\<lbrakk>P1\<Turnstile> (s,nabla)\<Rightarrow>P2\<rbrakk> \<Longrightarrow>(rank P2) \<lless> (rank P1)"
+ by (erule red_plus.induct)(auto dest: rank_sred rank_cred rank_trans)
 
-lemma rank_red_plus: 
-  assumes "P1\<Turnstile> (s,nabla)\<Rightarrow>P2"
-  shows "(rank P2) \<lless> (rank P1)"
+(*these are with the new definition for measure*)
+
+lemma rank_r_cred: 
+  assumes "P1\<turnstile>(nabla)\<rightarrow>P2" 
+  shows "(P2, P1) \<in> rank_r"
+  unfolding rank_r_def by (cases rule: c_red.cases[OF \<open>P1 \<turnstile> nabla \<rightarrow> P2\<close>], simp_all)
+
+lemma rank_r_sred:
+  assumes "P1 \<turnstile>  s \<leadsto>P2"
+  shows "(P2,P1) \<in> rank_r"
+proof(cases rule: s_red.cases[OF \<open>P1\<turnstile> s \<leadsto>P2\<close>])
+  case (2 t1 t2 s1 s2 xs ys)
+   case (2 t1 t2 s1 s2 xs ys)
+  let ?union = "vars_trm s1 \<union> vars_trm s2 \<union> vars_trm t1 \<union> vars_trm t2 \<union> vars_eprobs xs"
+    and ?size = "size_trm t1 + size_trm t2 + size_trm s1 + size_trm s2 + size_eprobs xs"
+  from 2 have "vars_eprobs ((Paar t1 t2, Paar s1 s2) # xs) = ?union"
+    unfolding vars_eprobs.simps vars_trm.simps by auto
+  moreover from 2 have
+    "size_eprobs ((Paar t1 t2, Paar s1 s2) # xs) = 2 + ?size"
+    unfolding size_eprobs.simps using size_trm.simps(6) by auto
+  from 2 have
+  "vars_eprobs ((t1, s1) # (t2, s2) # xs) = ?union"
+    unfolding vars_eprobs.simps by auto
+  moreover from 2 have 
+    "size_eprobs ((t1, s1) # (t2, s2) # xs) = ?size"
+    unfolding size_eprobs.simps by simp
+  ultimately have 
+    "size_eprobs ((t1, s1) # (t2, s2) # xs) < size_eprobs ((Paar t1 t2, Paar s1 s2) # xs)"
+    "card (vars_eprobs ((t1, s1) # (t2, s2) # xs)) = card (vars_eprobs ((Paar t1 t2, Paar s1 s2) # xs))"
+    by simp+
+  with 2 show "(P2, P1) \<in> rank_r" 
+    unfolding rank_r_def by simp
+next
+  case (7 pi1 X pi2 xs ys)
+  let ?mapds = "map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys"
+  let ?union = "{X} \<union> vars_eprobs xs"
+  from 7 have 
+  vars: "vars_eprobs ((Susp pi1 X, Susp pi2 X) # xs) = ?union" and
+  size: "size_eprobs ((Susp pi1 X, Susp pi2 X) # xs) = 2 + size_eprobs xs"
+    unfolding vars_eprobs.simps size_eprobs.simps by simp+
+  then show "(P2, P1) \<in> rank_r"
+     proof(cases "X \<in> vars_eprobs xs")
+    case True
+   hence "card ?union = card (vars_eprobs xs)"
+     by (simp add: insert_absorb)
+   with 7 show "(P2, P1) \<in> rank_r" 
+      unfolding rank_r_def by simp
+  next
+    case False
+    hence "card ?union = 1 + card (vars_eprobs xs)"
+      by auto
+    with 7 show "(P2, P1) \<in> rank_r" 
+      unfolding rank_r_def by simp
+  qed
+next
+  case (8 X t pi xs ys)
+   let ?union = "insert X (vars_trm t \<union> vars_eprobs xs)"
+    and ?size = "size_trm t + size_eprobs xs"
+   from 8 have 
+     vars: "vars_eprobs ((Susp pi X, t) # xs) = ?union" and
+     size: "size_eprobs ((Susp pi X, t) # xs) = 1 + ?size"
+    unfolding vars_eprobs.simps size_eprobs.simps by simp+
+   moreover from 8 have
+    "P2 = (apply_subst_eprobs [(X, swap (rev pi) t)] xs, 
+    apply_subst_fprobs [(X, swap (rev pi) t)] ys)"
+     using apply_subst_equivalence by auto
+   ultimately show ?thesis  
+    using 8 vars_decrease[OF 8(4)] unfolding rank_r_def by simp
+next
+  case (9 X t pi xs ys)
+   let ?union = "insert X (vars_trm t \<union> vars_eprobs xs)"
+    and ?size = "size_trm t + size_eprobs xs"
+  from 9 have 
+     vars: "vars_eprobs ((t, Susp pi X) # xs) = ?union" and
+     size: "size_eprobs ((t, Susp pi X) # xs) = 1 + ?size"
+    unfolding vars_eprobs.simps size_eprobs.simps by simp+
+  moreover from 9 have
+    "P2 = (apply_subst_eprobs [(X, swap (rev pi) t)] xs, 
+    apply_subst_fprobs [(X, swap (rev pi) t)] ys)"
+     using apply_subst_equivalence by auto
+   ultimately show ?thesis  
+    using 9 vars_decrease[OF 9(4)] unfolding rank_r_def by simp
+qed (unfold rank_r_def, auto)
+
+lemma rank_r_trans: "\<lbrakk>(P1,P2) \<in> rank_r; (P2,P3) \<in> rank_r\<rbrakk>\<Longrightarrow> (P1,P3)\<in> rank_r"
+  unfolding rank_r_def by auto
+
+lemma rank_r_red_plus: 
+  assumes "P1\<Turnstile> (s,nabla)\<Rightarrow>P2" 
+  shows "(P2, P1) \<in> rank_r"
   using assms 
-  by (erule_tac red_plus.induct)(auto dest: rank_sred rank_cred rank_trans)
+by(induct rule: red_plus.induct)(auto dest: rank_r_sred rank_r_cred rank_r_trans)
 
-(*<*)
+lemma wf_rank_r: 
+  shows "wf (rank_r)"
+  unfolding rank_r_def by simp
+
+
 end
-(*>*)
+
