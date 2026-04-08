@@ -104,6 +104,25 @@ inductive_cases s_red_elims:
 "((Susp pi X\<approx>?t)#xs,ys) \<turnstile>[(X,swap (rev pi) t)]\<leadsto> apply_subst [(X,swap (rev pi) t)] (xs,ys)"
 "((t\<approx>?Susp pi X)#xs,ys) \<turnstile>[(X,swap (rev pi) t)]\<leadsto> apply_subst [(X,swap (rev pi) t)] (xs,ys)"
 
+
+lemma sred_symm:
+  assumes "((t1 \<approx>? t2) # xs, ys) \<turnstile> s \<leadsto> P2"
+  shows "\<exists> P3. ((t2 \<approx>? t1) # xs, ys) \<turnstile> s \<leadsto> P3"
+  using assms
+proof(cases rule: s_red.cases)
+  case (var_1_sred X pi)
+  have "((t2, Susp pi X) # xs,
+     ys) \<turnstile> [(X, swap (rev pi) t2)] \<leadsto> apply_subst [(X, swap (rev pi) t2)] (xs, ys)"
+    using var_2_sred[OF \<open>\<not> occurs X t2\<close>] by simp
+  then show ?thesis using var_1_sred by blast
+next
+  case (var_2_sred X pi)
+  have "((Susp pi X, t1) # xs,
+     ys) \<turnstile> [(X, swap (rev pi) t1)] \<leadsto> apply_subst [(X, swap (rev pi) t1)] (xs, ys)"
+    using var_1_sred[OF \<open>\<not> occurs X t1\<close>] by simp
+  then show ?thesis using var_2_sred by blast
+qed (auto)
+
 text \<open>Weakening of freshness\<close>
 
 lemma solution_weak:
@@ -133,6 +152,13 @@ inductive c_red :: "problem_type \<Rightarrow> fresh_envs \<Rightarrow> problem_
   atom_cred[intro!]:    "a\<noteq>b \<Longrightarrow>([],(a \<sharp>? Atom b)#xs) \<turnstile>{}\<rightarrow> ([],xs)" |
   susp_cred[intro!]:    "([],(a \<sharp>? Susp pi X)#xs) \<turnstile> {((swapas (rev pi) a),X)}\<rightarrow> ([],xs)"
 
+text\<open>It only reduces the freshness part after the equations list is empty \<close>
+
+lemma c_red_eqs_empty:
+  assumes "P1 \<turnstile> s \<rightarrow> P2"
+  shows "fst P1 = []"
+  using assms by (auto elim: c_red.cases)
+
 text \<open>Unification reduction sequences\<close>
 
 inductive red_plus :: "problem_type \<Rightarrow> unifier_type \<Rightarrow> problem_type \<Rightarrow> bool" ("_ \<Turnstile> _ \<Rightarrow> _ " [80,80,80] 80)
@@ -141,6 +167,46 @@ inductive red_plus :: "problem_type \<Rightarrow> unifier_type \<Rightarrow> pro
   cred_single[intro!]: "\<lbrakk>P1\<turnstile>nabla1\<rightarrow>P2\<rbrakk> \<Longrightarrow> P1 \<Turnstile> (nabla1,[]) \<Rightarrow> P2" |
   sred_step[intro!]:   "\<lbrakk>P1\<turnstile>s1\<leadsto>P2; P2\<Turnstile>(nabla2,s2)\<Rightarrow>P3\<rbrakk> \<Longrightarrow> P1\<Turnstile>(nabla2,(s2\<bullet>s1))\<Rightarrow>P3" |
   cred_step[intro!]:   "\<lbrakk>P1\<turnstile>nabla1\<rightarrow>P2; P2\<Turnstile>(nabla2,[])\<Rightarrow>P3\<rbrakk> \<Longrightarrow> P1\<Turnstile>(nabla2\<union>nabla1,[])\<Rightarrow>P3"
+
+text\<open>Symmetry of the reduction\<close>
+
+lemma red_plus_symm:
+assumes"P1 = ((t1 \<approx>? t2) # xs, ys)"
+  and "P1 \<Turnstile> (nabla, s) \<Rightarrow> P2"
+shows "\<exists> nabla1 s1 P3. ((t2 \<approx>? t1) # xs, ys) \<Turnstile> (nabla1, s1) \<Rightarrow> P3"
+  using assms
+proof (induction arbitrary: nabla s rule: red_plus.induct[OF assms(2)])
+  case (1 P1 s1 P)
+  hence "(((t1, t2) # xs, ys)) \<turnstile> s1 \<leadsto> P" by simp
+  hence "\<exists> P3. ((t2 \<approx>? t1) # xs, ys) \<turnstile> s1 \<leadsto> P3"
+    using sred_symm by simp
+  hence "\<exists> P3. ((t2 \<approx>? t1) # xs, ys) \<Turnstile> ({}, s1) \<Rightarrow> P3" 
+    using sred_single by auto
+  then show "\<exists>nabla1 s1 P3. ((t2, t1) # xs, ys) \<Turnstile> (nabla1, s1) \<Rightarrow> P3" by auto
+next
+  case (2 P1 nabla1 P2)
+  hence "fst P1 \<noteq> []" by simp
+  moreover from 2(1) have "fst P1 = []"
+    using c_red_eqs_empty by simp
+  ultimately have False by simp
+  then show ?case by simp
+next
+  case (3 P1 s1 P' nabla2 s2 P3)
+  hence "(((t1, t2) # xs, ys)) \<turnstile> s1 \<leadsto> P'" by simp
+  hence "\<exists> P3. ((t2 \<approx>? t1) # xs, ys) \<turnstile> s1 \<leadsto> P3"
+    using sred_symm by simp
+  hence "\<exists> P3. ((t2 \<approx>? t1) # xs, ys) \<Turnstile> ({}, s1) \<Rightarrow> P3" 
+    using sred_single by auto
+  then show "\<exists>nabla1 s1 P3. ((t2, t1) # xs, ys) \<Turnstile> (nabla1, s1) \<Rightarrow> P3" by auto
+next
+  case (4 P1 nabla1 P' nabla2 P3)
+  hence "fst P1 \<noteq> []" by simp
+  moreover from 4(1) have "fst P1 = []"
+    using c_red_eqs_empty by simp
+  ultimately have False by simp
+  then show ?case by simp
+qed
+
 
 lemma mgu_idem: 
   assumes "(nabla1,s1) \<in> U P"
