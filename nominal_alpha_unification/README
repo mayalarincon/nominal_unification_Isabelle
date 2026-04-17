@@ -1,0 +1,7 @@
+Building the files and document:
+
+  isabelle build -c -v -d . nominal_alpha_unification
+
+The generated PDF is under
+
+  output/document.pdf

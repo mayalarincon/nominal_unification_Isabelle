@@ -45,32 +45,27 @@
 \maketitle
 
 \begin{abstract}
+  \noindent
   This is an improved and updated formalisation of the nominal
-  unification algorithm following the formalisation given in
-  \cite{DBLP:journals/tcs/UrbanPG04,DBLP:journals/corr/abs-1012-4890}.
-  The algorithm is given as a set of inductive rules defining a
-  non-deterministic procedure for unifying terms modulo
-  alpha-equivalence. The algorithm is a generalisation of first-order
-  unification to the practically important case of equations between
-  terms involving binding operations.
-
-  The formalisation is improved according to the Rocha Oliveira et
-  al.~approach formalised in PVS
-  \cite{DBLP:journals/entcs/Ayala-RinconFO16,ACRochaOliveira2016},
-  where the properties of symmetry, transitivity, and equivariance of
-  the $\alpha$-equivalence relation are proved separately. This makes
-  the proof and formalisation simpler. The same approach was taken by
-  de Carvalho et al. in the Coq formalisation of nominal
-  $\alpha$-unification and nominal C-unification
-  \cite{DBLP:journals/tcs/Ayala-RinconSFN19,WLRdeCarvalho2019}. In the
-  PVS formalisation, nominal $\alpha$-unification is presented as a
-  functional recursive algorithm, proved sound and complete, from
-  which executable code in Lisp can be extracted. In the Coq
-  formalisation, non-deterministic rule-based nominal unification
-  procedures were presented, following the paper by Urban et al, which
-  were proved sound and complete; further, recursive definitions were
-  presented, which were proved equivalent to the inductive procedures,
-  and from which executable code was extracted.
+  unification algorithm.  Nominal unification is a generalisation of
+  the classic first-order unification to the practically important
+  case of equations between terms involving binding operations. A
+  simple, possibly capturing substitution of terms for variables
+  solves such equations if it makes the equated terms
+  alpha-equivalent, i.e.~equal up to renaming bound names. While
+  nominal unification can be seen as equivalent to Miller's
+  higher-order pattern unification (unification problems can be inter-coded),
+  nominal unification has the advantage of involving only first-order
+  syntax. This means in the presented formalisation we only need to
+  reason about standard inductive datatypes and first-order
+  operations. The main improvement of this development is a much
+  simpler proof for establishing the equivalence relation properties
+  for an inductive definition characterising when two terms are
+  alpha-equivalent. In the original literature, this involved a clunky
+  induction over the size of terms involving three properties. Here 
+  we can separate the proofs and use just structural inductions. This
+  results in a much smoother formalisation of the nominal
+  unification algorithm.
 
 \end{abstract}
 \tableofcontents
@@ -81,6 +76,28 @@
 % generated text of all theories
 
 \section{Introduction}
+
+This is an improved and updated formalisation of the nominal
+unification algorithm given in
+\cite{DBLP:journals/corr/abs-1012-4890,DBLP:journals/tcs/UrbanPG04}.
+The formalisation presented here is improved according to the Rocha
+Oliveira et al.~approach formalised in PVS
+\cite{DBLP:journals/entcs/Ayala-RinconFO16,ACRochaOliveira2016}, where
+the properties of symmetry, transitivity, and equivariance of the
+$\alpha$-equivalence relation are proved separately. This makes the
+proof and formalisation more convenient. The same approach was taken
+by de Carvalho et al. in the Coq formalisation of nominal
+$\alpha$-unification and nominal C-unification
+\cite{DBLP:journals/tcs/Ayala-RinconSFN19,WLRdeCarvalho2019}. In the
+PVS formalisation, nominal unification is presented as a functional
+recursive algorithm, proved sound and complete, from which executable
+code in Lisp can be extracted. In the Coq formalisation,
+non-deterministic rule-based nominal unification procedures were
+presented, following the paper by Urban et al, which were proved sound
+and complete; further, recursive definitions were presented, which
+were proved equivalent to the inductive procedures, and from which
+executable code was extracted.
+
 
 \input{session}
 
