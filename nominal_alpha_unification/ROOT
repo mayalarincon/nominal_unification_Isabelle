@@ -5,7 +5,7 @@ session nominal_alpha_unification = HOL +
     "HOL-Library"
 
   theories
-     "Mgu"
+     "Unification"
 
   document_files
     "root.tex"

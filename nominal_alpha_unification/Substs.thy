@@ -409,6 +409,7 @@ lemma ext_subst_id:
   shows "nabla \<Turnstile> (subst []) nabla"
   unfolding ext_subst_def id_subst by auto
 
+
 (*<*)
 end
 (*>*)

@@ -1,18 +1,20 @@
-theory Unification 
-
+(*<*)
+theory Unification
 imports Termination
-
 begin
+(*>*)
 
-(* problems to which no reduction applies *)
+section \<open>Unification\<close>
+
+text \<open>
+  Proves that all problems that are stuck and fail, have no unifier.
+\<close>
+
 
 definition stuck :: "problem_type set" where
   stuck_def: "stuck \<equiv> { P1. \<not>(\<exists>P2 nabla s. P1 \<Turnstile>(nabla,s)\<Rightarrow>P2)}"
 
                                                         
-(* all problems which are stuck and have no unifier *)
-
-
 inductive fail :: "problem_type \<Rightarrow> bool" where
 fail_occur_abst [intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow> fail ((Susp pi X \<approx>? Abst a t) # xs, ys)" |
 fail_occur_func [intro!]: "\<lbrakk>occurs X t\<rbrakk>\<Longrightarrow> fail (Susp pi X \<approx>?Func F t#xs,ys)" |
@@ -863,5 +865,6 @@ proof(simp, rule ballI)
 
 
 
-
+(*<*)
 end
+(*>*)

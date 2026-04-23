@@ -1,17 +1,21 @@
-theory Termination 
-
-  imports Mgu
-
+(*<*)
+theory Termination
+imports Mgu
 begin
+(*>*)
+
+section \<open>Termination\<close>
+
+text \<open>
+  Defines a lexicographic termination measure and proves that all the unification
+  reductions decrease this measure.  
+\<close>
 
 
 lemma apply_subst_equivalence: 
   shows "apply_subst s P = (apply_subst_eprobs s (fst P), apply_subst_fprobs s (snd P))"
   unfolding apply_subst_def apply_subst_eprobs_def apply_subst_fprobs_def by simp
 
-
-lemma[simp]: "vars_trm (swap pi t) = vars_trm t"
-  by (induct t) auto
 
 fun size_trm :: "trm \<Rightarrow> nat"
   where
@@ -62,43 +66,11 @@ lemma vars_eprobs_finite [simp]: "finite (vars_eprobs P)"
   by (induct P) auto
 
 
-lemma union_assoc: "A\<union>(B\<union>C)=(A\<union>B)\<union>C"
-  by auto
-
-lemma card_union:
-assumes "finite A" "finite B"
-shows "(card B < card (A\<union>B)) \<or> (card B = card (A\<union>B))"
-  using assms
-proof-
-  have i: "B \<subseteq> A \<union> B" by simp
-  then show ?thesis 
-  proof(cases "B = A \<union> B")
-    case True
-    hence "card B = card (A \<union> B)" by auto
-    thus "card B < card (A \<union> B) \<or> card B = card (A \<union> B)" by simp
-  next
-    case False
-    with assms 
-    have "finite (A \<union> B)" by simp
-    moreover have "B \<subset> A \<union> B" 
-      using False i by auto
-    ultimately have "card B < card (A \<union> B)"
-      using psubset_card_mono[of \<open>A \<union> B\<close> B] by simp
-    thus "card B < card (A \<union> B) \<or> card B = card (A \<union> B)" by simp
-  qed 
-qed
-
-lemma card_insert: "\<lbrakk>finite B\<rbrakk>\<Longrightarrow>(card B < card (insert X B)) \<or> (card B = card (insert X B))"
- using psubset_card_mono card_insert_le order_le_imp_less_or_eq by fast
-
-lemma subseteq_card: "\<lbrakk>A\<subseteq>B ; finite B\<rbrakk> \<Longrightarrow> (card A \<le> card B)"
-  using card_mono le_eq_less_or_eq by auto
-
 lemma not_occurs_trm: "\<not>occurs X t \<longrightarrow> X\<notin> vars_trm t"
   by (induct t) auto
 
 lemma not_occurs_subst: "\<not>occurs X t1\<longrightarrow> X\<notin> vars_trm (subst [(X,swap pi2 t1)] t2)" 
-  using subst_susp not_occurs_trm by (induct t2) auto
+  using subst_susp not_occurs_trm by (induct t2) (auto simp add: vars_swap)
 
 lemma not_occurs_list: "\<not> occurs X t \<longrightarrow>
   X \<notin> vars_eprobs (apply_subst_eprobs [(X, swap pi t)] xs)"
@@ -261,8 +233,9 @@ proof(cases "X \<in> (vars_trm t \<union> vars_eprobs xs)")
     using not_occurs_list assms subset_Diff_insert by auto
   ultimately have 
   "card (vars_eprobs (apply_subst_eprobs [(X, swap pi t)] xs))
-                 \<le> card (vars_trm t \<union> vars_eprobs xs - {X})"
-    using subseteq_card by fastforce
+                 \<le> card (vars_trm t \<union> vars_eprobs xs - {X})"    
+    using Finite_Set.card_mono
+    by (metis finite_Diff finite_Un vars_eprobs_finite vars_term_finite)
   thus "card (vars_eprobs (apply_subst_eprobs [(X, swap pi t)] xs))
                  < card (insert X (vars_trm t \<union> vars_eprobs xs))"
     by (simp add: card.insert_remove)
@@ -275,7 +248,8 @@ next
     using assms vars_subseteq by simp
   hence "card (vars_eprobs (apply_subst_eprobs [(X, swap pi t)] xs))
                  \<le> card (vars_trm t \<union> vars_eprobs xs)"
-    using subseteq_card[OF subset] by simp
+    using Finite_Set.card_mono
+    by (metis finite_Un vars_eprobs_finite vars_term_finite)
   ultimately show 
     "card (vars_eprobs (apply_subst_eprobs [(X, swap pi t)] xs))
     < card (insert X (vars_trm t \<union> vars_eprobs xs))"
@@ -434,7 +408,7 @@ next
   "size_eprobs ((t1, t2)#xs) = ?size"
     unfolding vars_eprobs.simps size_eprobs.simps by auto
   hence "rank P2 = (card ?union, ?size, size_fprobs ((a,t2)#ys))"
-    using 5 by auto
+    using 5 by (auto simp add: vars_swap)
   ultimately show ?thesis 
     using measure_relation_def by auto
 next
@@ -608,7 +582,7 @@ next
      using apply_subst_equivalence by auto
    ultimately show ?thesis  
     using 9 vars_decrease[OF 9(4)] unfolding rank_r_def by simp
-qed (unfold rank_r_def, auto)
+qed (unfold rank_r_def, auto simp add: vars_swap)
 
 lemma rank_r_trans: "\<lbrakk>(P1,P2) \<in> rank_r; (P2,P3) \<in> rank_r\<rbrakk>\<Longrightarrow> (P1,P3)\<in> rank_r"
   unfolding rank_r_def by auto
@@ -624,5 +598,6 @@ lemma wf_rank_r:
   unfolding rank_r_def by simp
 
 
+(*<*)
 end
-
+(*>*)

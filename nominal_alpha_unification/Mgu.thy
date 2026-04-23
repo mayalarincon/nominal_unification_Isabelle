@@ -931,6 +931,8 @@ proof(rule mgu_idem)
   qed
 qed
 
+
+
 (*<*)
 end
 (*>*)

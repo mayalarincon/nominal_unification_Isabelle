@@ -127,6 +127,7 @@ lemma ds_list_equ_ds:
   "set (ds_list pi1 pi2) = ds pi1 pi2"
   using ds_list_def ds_def set_flatten_eq_atms by auto
 
+
 (*<*)
 end
 (*>*)
