@@ -15,8 +15,8 @@ fun swapas:: "(string \<times> string) list \<Rightarrow> string \<Rightarrow> s
   "swapas []     a = a"
 | "swapas (x#pi) a = swapa x (swapas pi a)"
 
-lemma [simp]: 
-  shows "swapas [(a,a)] b=b"
+lemma swapas_aa[simp]: 
+  shows "swapas [(a,a)] b = b"
   by simp
 
 lemma swapas_ab_ba:

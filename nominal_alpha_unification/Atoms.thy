@@ -10,11 +10,11 @@ fun atms :: "(string \<times> string) list \<Rightarrow> string set" where
 "atms [] = {}" | 
 "atms (x#xs) = ((atms xs) \<union>  {fst(x),snd(x)})"
 
-lemma [simp]: 
+lemma atms_append[simp]: 
   shows "atms (xs@ys) = atms xs \<union> atms ys"
   by (induct xs) auto
 
-lemma [simp]: 
+lemma atms_rev[simp]: 
   shows "atms (rev pi) = atms pi"
   by (induct pi) auto
 
