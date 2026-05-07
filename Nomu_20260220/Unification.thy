@@ -67,14 +67,6 @@ cred_refl[intro!] : "P1 \<turnstile> {} \<rightarrow>\<^sup>* P1" |
 cred_rtc_step[intro!] : "\<lbrakk>P1 \<turnstile> nabla1 \<rightarrow> P2; P2 \<turnstile> nabla2 \<rightarrow>\<^sup>* P3\<rbrakk> \<Longrightarrow> P1 \<turnstile> (nabla2 \<union> nabla1) \<rightarrow>\<^sup>* P3"
 
 
-definition stuck_rel :: "(problem_type \<Rightarrow> 'a \<Rightarrow> problem_type \<Rightarrow> bool) \<Rightarrow> problem_type set" where
-"stuck_rel R \<equiv> {P1. \<nexists> P2 l. R P1 l P2}"
-
-lemma stuck_redplus_is_stuck:
-  shows "stuck = stuck_rel red_plus"
-  unfolding stuck_def stuck_rel_def by auto
-
-
 lemma rank_r_sred_rtc:
   assumes "P1 \<turnstile> s \<leadsto>\<^sup>* P2"
   shows "(P2, P1) \<in> rank_r \<or> P1 = P2"
@@ -98,13 +90,29 @@ lemma sred_rtc_no_cycle:
 proof(rule ccontr)
   assume "s \<noteq> []"
   hence "(P,P) \<in> rank_r"
-    by (metis assms rank_r_sred rank_r_sred_rtc rank_r_trans sred_rtc.cases)
+  proof(cases rule: sred_rtc.cases[OF assms])
+    case (1 P1)
+    then show ?thesis
+      using \<open>s \<noteq> []\<close> by auto
+  next
+    case (2 P1 s1 P2 s2 P3)
+    hence "(P2,P1) \<in> rank_r" 
+      using rank_r_sred by simp
+    moreover have "P1 = P3" 
+      using 2(1,3) by simp
+    moreover have "(P3, P2) \<in> rank_r \<or> P2=P3"
+      using 2(5) rank_r_sred_rtc by simp
+    ultimately have "(P3,P3) \<in> rank_r" 
+      using rank_r_trans by blast
+    then show "(P, P) \<in> rank_r" 
+      using 2(3) by simp
+  qed
   thus "False" using wf_rank_r by simp
 qed
 
 
 lemma sred_rtc_to_redplus:
-  assumes "P1\<noteq> P2"  "P1 \<turnstile> s \<leadsto>\<^sup>* P2"
+  assumes "P1 \<noteq> P2"  "P1 \<turnstile> s \<leadsto>\<^sup>* P2"
   shows "P1 \<Turnstile> ({}, s) \<Rightarrow> P2"
   using assms
 proof(induct rule: sred_rtc.induct[OF assms(2)])
@@ -212,9 +220,6 @@ lemma red_plus_transitivity:
     shows "\<exists> nabla3 s3. P1 \<Turnstile> (nabla3, s3) \<Rightarrow> P3"
   using assms
 proof (induction rule: red_plus.induct[OF assms(1)])
-  case (1 P1 s1 P2)
-  then show ?case by auto
-next
   case (2 P1 nabla1 P2)
   then obtain P' where
   i: "P2 \<turnstile> s2 \<leadsto>\<^sup>* P'"
@@ -228,14 +233,20 @@ next
   with 2(1) show "\<exists>nabla3 s3. P1 \<Turnstile> (nabla3, s3) \<Rightarrow> P3"
     using cred_step by auto
 next
-  case (3 P1 s1 P2 nabla2 s2 P3)
-  then show ?case by auto
-next
-  case (4 P1 nabla1 P' nabla2 P2)
-  then show ?case 
-    using cred_step no_nontrivial_sred_after_cred_aux red_plus_decompose
-        sred_rtc_no_cycle by metis
-qed
+  case (4 P1 nabla P' nabla' P2)
+  then obtain nabla3 s3 where
+    P_prime_to_P3: "P' \<Turnstile> (nabla3, s3) \<Rightarrow> P3" by auto
+  then obtain P'' where "P' \<turnstile> s3 \<leadsto>\<^sup>* P''" "P'' \<turnstile> nabla3 \<rightarrow>\<^sup>* P3"
+    using red_plus_decompose by blast
+  with 4(1) have "P' = P''" 
+    using  no_nontrivial_sred_after_cred_aux by simp
+  moreover have "s3 =[]"
+    using \<open>P' \<turnstile> s3 \<leadsto>\<^sup>* P''\<close> sred_rtc_no_cycle calculation by simp
+  hence "P' \<Turnstile> (nabla3, []) \<Rightarrow> P3" 
+    using P_prime_to_P3 by simp
+  with 4(1) show "\<exists>nabla3 s3. P1 \<Turnstile> (nabla3, s3) \<Rightarrow> P3"
+    using cred_step by auto
+qed (auto)
 
 
 (**)
@@ -269,7 +280,6 @@ proof(induction P rule: wf_induct_rule[OF wf_rank_r])
         using aux by auto
       then obtain nabla1 s1 where "P \<Turnstile> (nabla1, s1) \<Rightarrow> P2" "P2\<in> stuck"
         using P_to_P_prime red_plus_transitivity by blast
-          (*needs transitivity of red_plus*)
       then show ?thesis by blast
     qed
   qed
