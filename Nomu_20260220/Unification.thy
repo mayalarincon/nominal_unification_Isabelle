@@ -54,15 +54,6 @@ P1 \<Turnstile> (nabla1, []) \<Rightarrow> P2, entao fst P1 = [] e snd P2 < snd 
 
 (*attempts for transitive closure*)
 
-inductive sred_tc :: "problem_type \<Rightarrow> substs \<Rightarrow> problem_type \<Rightarrow> bool" ("_ \<turnstile> _ \<leadsto>\<^sup>+ _" [80,80,80] 80)
-  where
-sred_tc_base[intro!]: "P1 \<turnstile> s1 \<leadsto> P2 \<Longrightarrow>  P1 \<turnstile> s1 \<leadsto>\<^sup>+ P2" |
-sred_tc_step[intro!]: "\<lbrakk>P1 \<turnstile> s1 \<leadsto> P2; P2 \<turnstile> s2 \<leadsto>\<^sup>+ P3\<rbrakk> \<Longrightarrow> P1 \<turnstile> (s2 \<bullet> s1) \<leadsto>\<^sup>+ P3"
-
-inductive cred_tc :: "problem_type \<Rightarrow> fresh_envs \<Rightarrow> problem_type \<Rightarrow> bool" ("_ \<turnstile> _ \<rightarrow>\<^sup>+ _ " [80,80,80] 80)
-  where
-cred_tc_base[intro!] : "P1 \<turnstile> nabla1 \<rightarrow> P2 \<Longrightarrow> P1 \<turnstile> nabla1 \<rightarrow>\<^sup>+ P2" |
-cred_tc_step[intro!] : "\<lbrakk>P1 \<turnstile> nabla1 \<rightarrow> P2; P2 \<turnstile> nabla2 \<rightarrow>\<^sup>+ P3\<rbrakk> \<Longrightarrow> P1 \<turnstile> (nabla2 \<union> nabla1) \<rightarrow>\<^sup>+ P3"
 
 inductive sred_rtc :: "problem_type \<Rightarrow> substs \<Rightarrow> problem_type \<Rightarrow> bool" ("_ \<turnstile> _ \<leadsto>\<^sup>* _" [80,80,80] 80)
   where
@@ -152,7 +143,7 @@ next
   case (2 P2 s' P' s2 P3)
   hence "fst P2 = []"
     using c_red_eqs_empty by auto
-  moreover  have "fst P2 \<noteq> []" 
+  moreover have "fst P2 \<noteq> []" 
     using 2(1) sred_eqs_not_empty by simp
   ultimately have False by auto
   then show ?case by simp
@@ -215,14 +206,14 @@ next
     by blast
 qed
 
-lemma 
+lemma red_plus_transitivity:
   assumes "P1 \<Turnstile> (nabla1, s1) \<Rightarrow> P2"
       and "P2 \<Turnstile> (nabla2, s2) \<Rightarrow> P3"
-    shows "P1 \<Turnstile> (nabla2 \<union> nabla1, s2 \<bullet> s1) \<Rightarrow> P3"
+    shows "\<exists> nabla3 s3. P1 \<Turnstile> (nabla3, s3) \<Rightarrow> P3"
   using assms
 proof (induction rule: red_plus.induct[OF assms(1)])
   case (1 P1 s1 P2)
-  then show ?case sorry
+  then show ?case by auto
 next
   case (2 P1 nabla1 P2)
   then obtain P' where
@@ -234,13 +225,16 @@ next
     using i(1) sred_rtc_no_cycle by simp
   hence "P2 \<Turnstile> (nabla2, []) \<Rightarrow> P3" 
     using 2(3) by simp
-  with 2(1) show ?case  sorry
+  with 2(1) show "\<exists>nabla3 s3. P1 \<Turnstile> (nabla3, s3) \<Rightarrow> P3"
+    using cred_step by auto
 next
   case (3 P1 s1 P2 nabla2 s2 P3)
-  then show ?case sorry
+  then show ?case by auto
 next
-  case (4 P1 nabla1 P2 nabla2 P3)
-  then show ?case sorry
+  case (4 P1 nabla1 P' nabla2 P2)
+  then show ?case 
+    using cred_step no_nontrivial_sred_after_cred_aux red_plus_decompose
+        sred_rtc_no_cycle by metis
 qed
 
 
@@ -274,7 +268,8 @@ proof(induction P rule: wf_induct_rule[OF wf_rank_r])
       P_prime_to_P2: "P' \<Turnstile> (nabla', s') \<Rightarrow> P2" "P2 \<in> stuck"
         using aux by auto
       then obtain nabla1 s1 where "P \<Turnstile> (nabla1, s1) \<Rightarrow> P2" "P2\<in> stuck"
-        sorry (*needs transitivity of red_plus*)
+        using P_to_P_prime red_plus_transitivity by blast
+          (*needs transitivity of red_plus*)
       then show ?thesis by blast
     qed
   qed
@@ -1100,8 +1095,33 @@ proof(simp, rule ballI)
     qed
   qed
 
-
-
+theorem completeness:
+  assumes "P1 \<noteq> ([],[])" "U P1 \<noteq> {}"
+  shows "\<exists> nabla' s'. P1 \<Turnstile> (nabla', s') \<Rightarrow> ([],[]) \<and> mgu P1 (nabla', s')"
+proof-
+  have P1_not_stuck: "P1 \<notin> stuck" 
+  proof
+    assume "P1\<in> stuck"
+    hence "P1 = ([],[])\<or> fail P1" 
+      unfolding stuck_equiv by simp
+    hence "P1 =([],[])"
+      using assms(2) fail_then_empty by blast
+    thus False using assms(1) by simp
+  qed
+  then obtain P2 nabla' s' where 
+    normal_form: "P1 \<Turnstile> (nabla', s') \<Rightarrow> P2" "P2 \<in> stuck"
+    using normal_form_exists by blast
+  hence "P2 \<in> normal_form P1" 
+    using P1_not_stuck unfolding normal_form_def by auto
+  hence "P2=([],[])"
+    using not_empty_then_not_fail[OF assms(2)] normal_form(2) stuck_equiv by auto
+  with normal_form(1) have "P1 \<Turnstile> (nabla', s') \<Rightarrow> ([],[])" by simp
+  moreover have "mgu P1 (nabla',s')" 
+    using mgu calculation by simp
+  ultimately show "\<exists>nabla' s'. P1 \<Turnstile> (nabla', s') \<Rightarrow> ([], [])  \<and> mgu P1 (nabla', s')"
+    by auto
+qed
+  
 
 
 end
