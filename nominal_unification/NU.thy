@@ -1,6 +1,6 @@
 (*<*)
-theory Unification
-imports Termination
+theory NU
+imports NU_Termination
 begin
 (*>*)
 

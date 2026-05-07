@@ -1,6 +1,6 @@
 (*<*)
-theory Substs
-imports Equ
+theory NU_Substs
+imports NU_Equ
 begin
 (*>*)
 
@@ -343,7 +343,7 @@ proof(induct t)
   next
     case False
     with Abst show ?thesis 
-      using Fresh_elims(1) Substs.subst_abst fresh_abst_ab
+      using Fresh_elims(1) subst_abst fresh_abst_ab
       by metis
   qed
 next
@@ -395,7 +395,7 @@ proof(induct t1)
 next
   case (Paar t11 t12)
   then show ?case 
-    using Substs.subst_paar Un_iff occurs.simps(5) psub_sub_trms
+    using subst_paar Un_iff occurs.simps(5) psub_sub_trms
         psub_trms.simps(4) by (metis)
 qed(auto)
 

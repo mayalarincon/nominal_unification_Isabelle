@@ -1,6 +1,6 @@
 (*<*)
-theory Disagreement 
-imports Atoms
+theory NU_Disagreement 
+imports NU_Atoms
 begin
 (*>*)
 

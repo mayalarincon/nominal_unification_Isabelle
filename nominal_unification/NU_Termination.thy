@@ -1,6 +1,6 @@
 (*<*)
-theory Termination
-imports Mgu
+theory NU_Termination
+imports NU_Mgu
 begin
 (*>*)
 

@@ -5,7 +5,17 @@ session nominal_alpha_unification = HOL +
     "HOL-Library"
 
   theories
+     "Swap"	
+     "Atoms"
+     "Terms"
+     "Disagreement"
+     "Fresh"
+     "PreEqu"
+     "Equ"
+     "Substs"
      "Mgu"
+     "Termination"
+     "Unification"
 
   document_files
     "root.tex"

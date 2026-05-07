@@ -1,6 +1,6 @@
 (*<*)
-theory Mgu
-imports Substs
+theory NU_Mgu
+imports NU_Substs
 begin
 (*>*)
 

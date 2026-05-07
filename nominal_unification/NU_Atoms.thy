@@ -1,6 +1,6 @@
 (*<*)
-theory Atoms 
-imports Terms
+theory NU_Atoms 
+imports NU_Terms
 begin
 (*>*)
 

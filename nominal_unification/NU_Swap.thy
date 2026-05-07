@@ -1,5 +1,5 @@
 (*<*)
-theory Swap
+theory NU_Swap
   imports Main
 begin
 (*>*)
