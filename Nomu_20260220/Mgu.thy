@@ -124,6 +124,10 @@ next
   then show ?thesis using var_2_sred by blast
 qed (auto)
 
+lemma sred_eqs_not_empty:
+  assumes "P1 \<turnstile> s1 \<leadsto> P2"
+  shows "fst P1 \<noteq> []"
+  using assms by (auto elim: s_red.cases)
 
 (*weakening of fresh*)
 
@@ -156,7 +160,7 @@ inductive c_red :: "problem_type \<Rightarrow> fresh_envs \<Rightarrow> problem_
 
 lemma c_red_eqs_empty:
   assumes "P1 \<turnstile> s \<rightarrow> P2"
-  shows "fst P1 = []"
+  shows "fst P1 = [] \<and> fst P2 = []"
   using assms by (auto elim: c_red.cases)
 
 
@@ -205,7 +209,6 @@ next
   ultimately have False by simp
   then show ?case by simp
 qed
-
 
 
 lemma mgu_idem: 
@@ -440,7 +443,7 @@ proof(induction arbitrary: nabla1 s1 rule: s_red.induct[OF \<open>P1 \<turnstile
   show ?case by simp
 qed
 
-(*auxiliary for completeness*)
+(*auxiliary for soundness*)
 
 lemma P1_from_P2_sred: 
   assumes "(nabla1,s1)\<in> U P2" and "P1\<turnstile>s2\<leadsto>P2"

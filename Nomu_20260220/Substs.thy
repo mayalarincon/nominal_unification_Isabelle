@@ -98,6 +98,15 @@ proof(rule ext)
   qed (simp_all)
 qed
 
+lemma subst_id_left[simp]:
+  "[] \<bullet> s = s"
+  unfolding comp_def by (induction s, auto)
+
+lemma subst_id_right[simp]:
+  "s \<bullet> [] = s"
+  unfolding comp_def by (induction s, auto)
+
+
 
 lemma subst_comp_expand: "subst (s1 \<bullet> s2) t = subst s1 (subst s2 t)"
 proof(induct t)
