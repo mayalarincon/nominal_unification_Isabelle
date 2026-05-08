@@ -39,21 +39,7 @@ definition
   normal_form :: "problem_type \<Rightarrow> problem_type set" where 
   "normal_form P1 \<equiv> if P1 \<in> stuck then {P1} else {P2. \<exists>nabla s. P1\<Turnstile>(nabla,s)\<Rightarrow>P2 \<and> P2\<in>stuck}"
 
-(*
-
-P1 \<Turnstile> (nabla1, s1) \<Rightarrow> P2 \<and> P2 \<notin> stuck
-
-entao (fst P2 = [] e P2 \<Turnstile> (nabla2, []) \<Rightarrow> P3) ou (fst P2 \<noteq> [] e P2 \<Turnstile> (nabla1, s2 \<bullet> s1) \<Rightarrow> P3)
-
-P1 \<Turnstile> (nabla1, s1) \<Rightarrow> P2 \<and> fst P2 \<noteq> [], entao snd P1 < snd P2.
-
-P1 \<Turnstile> (nabla1, []) \<Rightarrow> P2, entao fst P1 = [] e snd P2 < snd P1 (sublista) 
-
-*)
-
-
-(*attempts for transitive closure*)
-
+text\<open>The reflexive-transitive closures of sred and cred\<close>
 
 inductive sred_rtc :: "problem_type \<Rightarrow> substs \<Rightarrow> problem_type \<Rightarrow> bool" ("_ \<turnstile> _ \<leadsto>\<^sup>* _" [80,80,80] 80)
   where
@@ -66,6 +52,7 @@ inductive cred_rtc :: "problem_type \<Rightarrow> fresh_envs \<Rightarrow> probl
 cred_refl[intro!] : "P1 \<turnstile> {} \<rightarrow>\<^sup>* P1" |
 cred_rtc_step[intro!] : "\<lbrakk>P1 \<turnstile> nabla1 \<rightarrow> P2; P2 \<turnstile> nabla2 \<rightarrow>\<^sup>* P3\<rbrakk> \<Longrightarrow> P1 \<turnstile> (nabla2 \<union> nabla1) \<rightarrow>\<^sup>* P3"
 
+text\<open>Either the measure reduces or the problem stays the same under equation reductions.\<close>
 
 lemma rank_r_sred_rtc:
   assumes "P1 \<turnstile> s \<leadsto>\<^sup>* P2"
@@ -83,6 +70,9 @@ next
   ultimately show "(P2, P1) \<in> rank_r \<or> P1 = P2"
     using sred_rtc_step rank_r_trans by blast
 qed
+
+text\<open>If the problem does not change under the reflexive-transitive closure of sred,
+the substitution must be empty.\<close>
 
 lemma sred_rtc_no_cycle:
   assumes "P \<turnstile> s \<leadsto>\<^sup>* P"
@@ -110,6 +100,7 @@ proof(rule ccontr)
   thus "False" using wf_rank_r by simp
 qed
 
+text\<open>If P1 reduces to a diferent P2 under steps of sred, then it reduces via red_plus.\<close>
 
 lemma sred_rtc_to_redplus:
   assumes "P1 \<noteq> P2"  "P1 \<turnstile> s \<leadsto>\<^sup>* P2"
@@ -139,6 +130,8 @@ next
     qed
 qed
 
+text\<open>The following two lemmas guarantee that we don't apply any non-trivial step of equational
+reductions after applying a freshness reduction.\<close>
 
 lemma no_nontrivial_sred_after_cred_aux:
   assumes "P1 \<turnstile> nabla \<rightarrow> P2" and "P2 \<turnstile> s \<leadsto>\<^sup>* P3"
@@ -171,6 +164,8 @@ proof-
     using cred_rtc_step by simp
 qed
 
+text\<open>If there is a reduction from P1 to P2 via red_plus, we can split into equational reductions
+first and freshness reductions after.\<close>
 
 lemma red_plus_decompose:
   assumes "P1 \<Turnstile> (nabla, s) \<Rightarrow> P2"
@@ -214,6 +209,8 @@ next
     by blast
 qed
 
+text\<open>A form of transitivity of red_plus.\<close>
+
 lemma red_plus_transitivity:
   assumes "P1 \<Turnstile> (nabla1, s1) \<Rightarrow> P2"
       and "P2 \<Turnstile> (nabla2, s2) \<Rightarrow> P3"
@@ -249,7 +246,8 @@ next
 qed (auto)
 
 
-(**)
+
+text\<open>Every problem has a normal form.\<close>
 
 lemma normal_form_exists:
   shows "P \<in> stuck \<or> (\<exists> P2 nabla s. P \<Turnstile>(nabla,s)\<Rightarrow>P2 \<and> P2\<in>stuck )"
@@ -1102,8 +1100,11 @@ proof(simp, rule ballI)
         then show False 
           using assms by simp
       qed
-    qed
   qed
+qed
+
+text\<open>The procedure is complete, i.e. if a non-empty problem has a solution, then red_plus finds
+the most general solution.\<close>
 
 theorem completeness:
   assumes "P1 \<noteq> ([],[])" "U P1 \<noteq> {}"
