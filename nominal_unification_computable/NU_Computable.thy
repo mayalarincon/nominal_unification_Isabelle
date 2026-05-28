@@ -1,6 +1,6 @@
 (*<*)
 theory NU_Computable
-  imports "Nominal_Unification_20260508/NU_Completeness"
+  imports NU_Completeness
 begin
 (*>*)
 
