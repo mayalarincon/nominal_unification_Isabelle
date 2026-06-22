@@ -48,8 +48,11 @@ definition rank_fun :: "((((trm \<times> trm) list \<times> (char list \<times> 
   by pat_completeness auto
 *)
 
+fun prj :: "trm \<Rightarrow> (string \<times> string) list" where
+  "prj (Susp pi t) = pi" |
+  "prj _ = []"
 
-function (sequential) sred_fun :: "(problem_type \<times> fresh_envs \<times> substs \<times> bool) \<Rightarrow> (problem_type \<times> fresh_envs \<times> substs \<times> bool)" where
+function  sred_fun :: "(problem_type \<times> fresh_envs \<times> substs \<times> bool) \<Rightarrow> (problem_type \<times> fresh_envs \<times> substs \<times> bool)" where
  "sred_fun (((Unit \<approx>? Unit) # xs, ys), nabla, s, B) = sred_fun ((xs,ys), nabla, s, B)" |
  "sred_fun (((Paar t1 t2 \<approx>? Paar s1 s2)#xs,ys), nabla, s, B) = sred_fun (((t1\<approx>?s1)#(t2\<approx>?s2)#xs,ys), nabla, s, B)" |
  "sred_fun (((Func F t1 \<approx>? Func G t2)#xs,ys), nabla, s, B) = (if F = G then
@@ -64,25 +67,29 @@ function (sequential) sred_fun :: "(problem_type \<times> fresh_envs \<times> su
                                                 sred_fun ((xs,ys), nabla, s, B)
                                                else
                                                 (((Atom a \<approx>? Atom b)#xs,ys), nabla, s, False))" |
- "sred_fun (((Susp pi1 X\<approx>?Susp pi2 Y)#xs,ys), nabla, s, B) = (if X =Y then 
-                                                        sred_fun ((xs,(map (\<lambda>a. a\<sharp>? Susp [] X) (ds_list pi1 pi2))@ys), nabla, s, B)
-                                                       else
-                                                        sred_fun (apply_subst [(X,swap (rev pi1) (Susp pi2 Y))] (xs,ys), nabla, [(X,swap (rev pi1) (Susp pi2 Y))] \<bullet> s, B))"|
  "sred_fun (((Susp pi X\<approx>?t)#xs,ys), nabla, s, B) = (if \<not> (occurs X t) then
                                               sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B)
-                                             else
-                                              (((Susp pi X\<approx>?t)#xs,ys), nabla, s, False))" |
+                                             else (if \<exists> pi2. t = Susp pi2 X then
+                                                        sred_fun ((xs,(map (\<lambda>a. a\<sharp>? Susp [] X) (ds_list pi (prj t)))@ys), nabla, s, B)
+                                              else
+                                              (((Susp pi X\<approx>?t)#xs,ys), nabla, s, False)))" |
  "sred_fun (((t\<approx>?Susp pi X)#xs,ys), nabla, s, B) = (if \<not> (occurs X t) then
                                               sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B)
                                              else
                                               (((t\<approx>?Susp pi X)#xs,ys), nabla, s, False))" |
  "sred_fun (([],ys), nabla, s, B) = (([], ys), nabla, s, B)" |
- "sred_fun ((e#xs, ys), nabla, s, B) = ((e#xs, ys), nabla, s, False)" 
-  by pat_completeness auto
+ "fail (e#xs, ys) \<Longrightarrow> sred_fun ((e#xs, ys), nabla, s, B) = ((e#xs, ys), nabla, s, False)" 
+                      apply auto
+  defer
+  using fail_is_stuck sred_single stuck_def unit_sred apply fastforce 
 
+(*case t of Susp pi2 X' => (if X' = X then <actual case> else default) | _ => default*)
+
+thm sred_fun.psimps
 
 termination
-proof(relation rank_fun)
+  sorry
+(*proof(relation rank_fun)
 
   show "wf rank_fun" 
     unfolding rank_fun_def by simp
@@ -285,7 +292,7 @@ proof(relation rank_fun)
          [(X, swap (rev pi) (trm.Func v va))] \<bullet> s, B),
         ((trm.Func v va, Susp pi X) # xs, ys), nabla, s, B)
        \<in> rank_fun" using aux2 by blast
- qed
+ qed*)
 
 lemma if_sred_then_not_equal:
   assumes "P1 \<turnstile> s \<leadsto> P2"
@@ -308,6 +315,41 @@ lemma sred_fun_sound:
   using assms
 proof(induction "(P1, nabla, s, True)" arbitrary: P1 nabla s rule: sred_fun.induct)
   case (1 xs ys nabla s)
+  then show ?case sorry
+next
+  case (2 t1 t2 s1 s2 xs ys nabla s)
+  then show ?case sorry
+next
+  case (3 F t1 G t2 xs ys nabla s)
+  then show ?case sorry
+next
+  case (4 a t1 b t2 xs ys nabla s)
+  then show ?case sorry
+next
+  case (5 a b xs ys nabla s)
+  then show ?case sorry
+next
+  case (6 pi X t xs ys nabla s)
+  then show ?case sorry
+next
+  case ("7_1" v va pi X xs ys nabla s)
+  then show ?case sorry
+next
+  case ("7_2" pi X xs ys nabla s)
+  then show ?case sorry
+next
+  case ("7_3" v pi X xs ys nabla s)
+  then show ?case sorry
+next
+  case ("7_4" v va pi X xs ys nabla s)
+  then show ?case sorry
+next
+  case ("7_5" v va pi X xs ys nabla s)
+  then show ?case sorry
+qed(auto)
+
+
+  (*case (1 xs ys nabla s)
   hence fun_step:
     "sred_fun ((xs, ys), nabla, s, True) = (P2, nabla', s', B)"
     by simp
@@ -654,6 +696,7 @@ next
 qed (auto)
 
 
+
 lemma sred_to_sred_fun:
   assumes "P1 \<turnstile> s \<leadsto> P2"
   shows  "sred_fun (P1, nabla, s2, True) = sred_fun (P2, nabla, s \<bullet> s2, True)"
@@ -703,7 +746,7 @@ next
 
     then show ?thesis sorry
   qed
-qed
+qed*)
 
 
 
@@ -741,11 +784,30 @@ next
     by(cases "a = b", auto) 
 qed (auto)
 
+lemma cred_to_cred_fun: 
+  assumes "P1 \<turnstile> nabla \<rightarrow> P2"
+  shows "cred_fun (P1, nabla1, s, True) = cred_fun (P2, nabla \<union> nabla1, s, True)"
+  by (induct rule: c_red.induct[OF assms], auto)
+  
+
 lemma cred_fun_completeness:
-  assumes "([], freshs1) \<turnstile> nabla \<rightarrow>\<^sup>* ([], freshs2)" and "freshs1 \<noteq> freshs2"
-  shows "\<exists> nabla1 B. cred_fun (([], freshs1), nabla2, s, True) = (([], freshs2), nabla1, s, B)"
-  sorry
- 
+  assumes "P1 \<turnstile> nabla \<rightarrow>\<^sup>* P2" and "P1 \<noteq> P2"
+  shows "\<exists> nabla1 B. cred_fun (P1, nabla2, s, True) = (P2, nabla1, s, B)"
+  using assms
+proof(induct  rule: cred_rtc.induct[OF assms(1)])
+  case (1 P1)
+  then show ?case by simp
+next
+  case (2 P1 nabla1 P2 nabla2 P3)
+  then show ?case
+  proof(cases "P2 = P3")
+    case True
+    then show ?thesis sorry
+  next
+    case False
+    then show ?thesis sorry
+  qed
+qed
 
 (*show these lemmas
 
