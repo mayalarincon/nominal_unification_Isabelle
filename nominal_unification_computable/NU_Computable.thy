@@ -14,87 +14,132 @@ definition rank_fun :: "((((trm \<times> trm) list \<times> (char list \<times> 
   ]"
 
 
-(* function (sequential) sred_fun2 :: "(problem_type \<times> fresh_envs \<times> substs \<times> bool) \<Rightarrow> (problem_type \<times> fresh_envs \<times> substs \<times> bool)" where
- "sred_fun2 (((Unit \<approx>? Unit) # xs, ys), nabla, s, B) = sred_fun2 ((xs,ys), nabla, s, B)" |
- "sred_fun2 (((Paar t1 t2 \<approx>? Paar s1 s2)#xs,ys), nabla, s, B) = sred_fun2 (((t1\<approx>?s1)#(t2\<approx>?s2)#xs,ys), nabla, s, B)" |
- "sred_fun2 (((Func F t1 \<approx>? Func G t2)#xs,ys), nabla, s, B) = (if F = G then
-                                                        sred_fun2(((t1\<approx>?t2)#xs,ys), nabla, s, B)         
-                                                       else
-                                                        (((Func F t1 \<approx>? Func G t2)#xs,ys), nabla, s, False))" |
- "sred_fun2 (((Abst a t1 \<approx>? Abst b t2)#xs,ys), nabla, s, B) = (if a = b then
-                                                        sred_fun2 (((t1\<approx>?t2)#xs,ys), nabla, s, B)
-                                                       else
-                                                        sred_fun2 (((t1\<approx>?swap [(a,b)] t2)#xs,(a\<sharp>?t2)#ys), nabla, s, B))"|
- "sred_fun2 (((Atom a\<approx>?Atom b)#xs,ys), nabla, s, B) = (if a = b then
-                                                sred_fun2 ((xs,ys), nabla, s, B)
-                                               else
-                                                (((Atom a \<approx>? Atom b)#xs,ys), nabla, s, False))" |
- "sred_fun2 (((Susp pi1 X\<approx>?Susp pi2 Y)#xs,ys), nabla, s, B) = (if X =Y then 
-                                                        sred_fun2 ((xs,(map (\<lambda>a. a\<sharp>? Susp [] X) (ds_list pi1 pi2))@ys), nabla, s, B)
-                                                       else
-                                                        sred_fun2 (apply_subst [(X,swap (rev pi1) (Susp pi2 Y))] (xs,ys), nabla, [(X,swap (rev pi1) (Susp pi2 Y))] \<bullet> s, B))"|
- "sred_fun2 (((Susp pi X\<approx>?t)#xs,ys), nabla, s, B) = (if \<not> (occurs X t) then
-                                              sred_fun2 (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B)
-                                             else (if t = Susp pi' X then
-                                                      sred_fun2 ((xs,(map (\<lambda>a. a\<sharp>? Susp [] X) (ds_list pi pi'))@ys), nabla, s, B)
-                                                    else
-                                              (((Susp pi X\<approx>?t)#xs,ys), nabla, s, False)))" |
- "sred_fun2 (((t\<approx>?Susp pi X)#xs,ys), nabla, s, B) = (if \<not> (occurs X t) then
-                                              sred_fun2 (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B)
-                                             else
-                                              (((t\<approx>?Susp pi X)#xs,ys), nabla, s, False))" |
- "sred_fun2 (([],ys), nabla, s, B) = (([], ys), nabla, s, B)" |
- "sred_fun2 ((e#xs, ys), nabla, s, B) = ((e#xs, ys), nabla, s, False)" 
-  by pat_completeness auto
-*)
-
 fun prj :: "trm \<Rightarrow> (string \<times> string) list" where
   "prj (Susp pi t) = pi" |
   "prj _ = []"
 
-function  sred_fun :: "(problem_type \<times> fresh_envs \<times> substs \<times> bool) \<Rightarrow> (problem_type \<times> fresh_envs \<times> substs \<times> bool)" where
- "sred_fun (((Unit \<approx>? Unit) # xs, ys), nabla, s, B) = sred_fun ((xs,ys), nabla, s, B)" |
- "sred_fun (((Paar t1 t2 \<approx>? Paar s1 s2)#xs,ys), nabla, s, B) = sred_fun (((t1\<approx>?s1)#(t2\<approx>?s2)#xs,ys), nabla, s, B)" |
- "sred_fun (((Func F t1 \<approx>? Func G t2)#xs,ys), nabla, s, B) = (if F = G then
-                                                        sred_fun(((t1\<approx>?t2)#xs,ys), nabla, s, B)         
-                                                       else
-                                                        (((Func F t1 \<approx>? Func G t2)#xs,ys), nabla, s, False))" |
- "sred_fun (((Abst a t1 \<approx>? Abst b t2)#xs,ys), nabla, s, B) = (if a = b then
+
+function sred_fun ::  "(problem_type \<times> fresh_envs \<times> substs \<times> bool) \<Rightarrow> (problem_type \<times> fresh_envs \<times> substs \<times> bool)" where
+"sred_fun (([],ys), nabla, s, B) = (([], ys), nabla, s, B)" |
+"sred_fun ((e#xs, ys), nabla, s, B) = 
+                        (case e of 
+                              Unit \<approx>? Unit \<Rightarrow> sred_fun ((xs,ys), nabla, s, B) |
+                              Paar t1 t2 \<approx>? Paar s1 s2 \<Rightarrow> sred_fun (((t1\<approx>?s1)#(t2\<approx>?s2)#xs,ys), nabla, s, B) |
+                              Func F t1 \<approx>? Func G t2 \<Rightarrow> (if F = G then
+                                                          sred_fun (((t1\<approx>?t2)#xs,ys), nabla, s, B) 
+                                                         else
+                                                         (((Func F t1 \<approx>? Func G t2)#xs,ys), nabla, s, False))|
+                              Abst a t1 \<approx>? Abst b t2 \<Rightarrow> (if a = b then
                                                         sred_fun (((t1\<approx>?t2)#xs,ys), nabla, s, B)
-                                                       else
-                                                        sred_fun (((t1\<approx>?swap [(a,b)] t2)#xs,(a\<sharp>?t2)#ys), nabla, s, B))"|
- "sred_fun (((Atom a\<approx>?Atom b)#xs,ys), nabla, s, B) = (if a = b then
-                                                sred_fun ((xs,ys), nabla, s, B)
-                                               else
-                                                (((Atom a \<approx>? Atom b)#xs,ys), nabla, s, False))" |
- "sred_fun (((Susp pi X\<approx>?t)#xs,ys), nabla, s, B) = (if \<not> (occurs X t) then
-                                              sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B)
-                                             else (if \<exists> pi2. t = Susp pi2 X then
-                                                        sred_fun ((xs,(map (\<lambda>a. a\<sharp>? Susp [] X) (ds_list pi (prj t)))@ys), nabla, s, B)
-                                              else
-                                              (((Susp pi X\<approx>?t)#xs,ys), nabla, s, False)))" |
- "sred_fun (((t\<approx>?Susp pi X)#xs,ys), nabla, s, B) = (if \<not> (occurs X t) then
-                                              sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B)
-                                             else
-                                              (((t\<approx>?Susp pi X)#xs,ys), nabla, s, False))" |
- "sred_fun (([],ys), nabla, s, B) = (([], ys), nabla, s, B)" |
- "fail (e#xs, ys) \<Longrightarrow> sred_fun ((e#xs, ys), nabla, s, B) = ((e#xs, ys), nabla, s, False)" 
-                      apply auto
-  defer
-  using fail_is_stuck sred_single stuck_def unit_sred apply fastforce 
+                                                        else
+                                                        sred_fun (((t1\<approx>?swap [(a,b)] t2)#xs,(a\<sharp>?t2)#ys), nabla, s, B))|
+                              Atom a\<approx>?Atom b \<Rightarrow> (if a = b then
+                                                        sred_fun ((xs,ys), nabla, s, B) 
+                                                 else
+                                                   (((Atom a \<approx>? Atom b)#xs,ys), nabla, s, False))|
+                              Susp pi X\<approx>?t \<Rightarrow> (case t of 
+                                               Susp pi2 X \<Rightarrow> sred_fun ((xs,(map (\<lambda>a. a\<sharp>? Susp [] X) (ds_list pi pi2))@ys), nabla, s, B) |
+                                               _ \<Rightarrow> (if occurs X t then
+                                                       (((Susp pi X\<approx>?t)#xs,ys), nabla, s, False)
+                                                     else
+                                                      sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B))) |
+                             t \<approx>? Susp pi X \<Rightarrow> (case t of 
+                                               Susp pi2 X \<Rightarrow> sred_fun ((xs,(map (\<lambda>a. a\<sharp>? Susp [] X) (ds_list pi pi2))@ys), nabla, s, B) |
+                                               _ \<Rightarrow> (if occurs X t then
+                                                       (((Susp pi X\<approx>?t)#xs,ys), nabla, s, False)
+                                                     else
+                                                      sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B))))"
+  by pat_completeness auto
+
+
+
 
 (*case t of Susp pi2 X' => (if X' = X then <actual case> else default) | _ => default*)
 
-thm sred_fun.psimps
+text\<open>Auxiliary lemmata for termination\<close>
 
-termination
-  sorry
-(*proof(relation rank_fun)
+lemma rank_r_fun_susp_same_var:
+  assumes "X = Y"
+  shows "(((xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys), nabla, s, B),
+        ((Susp pi1 X, Susp pi2 Y) # xs, ys), nabla, s, B)
+       \<in> rank_fun"
+proof-
+   have vars: "vars_eprobs ((Susp pi1 X, Susp pi2 Y) # xs) = {X} \<union> vars_eprobs xs" and
+          size: "size_eprobs ((Susp pi1 X, Susp pi2 Y) # xs) = 2 + size_eprobs xs"
+     using assms unfolding vars_eprobs.simps size_eprobs.simps by simp+
+    have size_leq: "size_eprobs xs < size_eprobs ((Susp pi1 Y, Susp pi2 Y) # xs)"
+      by simp
+    have "(((xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys), nabla, s, B),
+        ((Susp pi1 X, Susp pi2 Y) # xs, ys), nabla, s, B)
+       \<in> rank_fun"
+    proof(cases "X \<in> vars_eprobs xs")
+      case True
+      hence "card ({X} \<union> vars_eprobs xs) = card (vars_eprobs xs)"
+         by (simp add: insert_absorb)
+      then show ?thesis 
+        using size_leq vars unfolding rank_fun_def by simp
+    next
+      case False
+      hence "card ({X} \<union> vars_eprobs xs) = 1 + card (vars_eprobs xs)"
+        by auto
+      then show ?thesis 
+        using \<open>X = Y\<close> unfolding rank_fun_def by simp
+    qed
+    thus ?thesis by simp
+  qed
 
+lemma rank_r_fun_susp_left: 
+  assumes "\<not> occurs X t"
+  shows "((apply_subst [(X, swap (rev pi) t)] (xs, ys), nabla, [(X, swap (rev pi) t)] \<bullet> s, B),
+         ((Susp pi X, t) # xs, ys), nabla, s, B)
+       \<in> rank_fun"
+proof-
+    let ?union = "insert X (vars_trm t \<union> vars_eprobs xs)"
+      and ?size = "size_trm t + size_eprobs xs"
+    have 
+     vars: "vars_eprobs ((Susp pi X, t) # xs) = ?union" and
+     size: "size_eprobs ((Susp pi X, t) # xs) = 1 + ?size"
+      unfolding vars_eprobs.simps size_eprobs.simps by simp+
+    moreover have 
+      "apply_subst [(X, swap (rev pi) t)] (xs, ys) = (apply_subst_eprobs [(X, swap (rev pi) t)] xs, 
+    apply_subst_fprobs [(X, swap (rev pi) t)] ys)"
+      using apply_subst_equivalence by auto
+    ultimately show ?thesis
+      using vars_decrease[OF assms] unfolding rank_fun_def by simp
+  qed
+
+lemma rank_r_fun_susp_right:
+  assumes "\<not> occurs X t"
+  shows "((apply_subst [(X, swap (rev pi) t)] (xs, ys), nabla, [(X, swap (rev pi) t)] \<bullet> s, B),
+        ((t, Susp pi X) # xs, ys), nabla, s, B)
+       \<in> rank_fun"
+ proof-
+    let ?union = "insert X (vars_trm t \<union> vars_eprobs xs)"
+      and ?size = "size_trm t + size_eprobs xs"
+    have 
+     vars: "vars_eprobs ((t, Susp pi X) # xs) = ?union" and
+     size: "size_eprobs ((t, Susp pi X) # xs) = 1 + ?size"
+      unfolding vars_eprobs.simps size_eprobs.simps by simp+
+    moreover have 
+      "apply_subst [(X, swap (rev pi) t)] (xs, ys) = (apply_subst_eprobs [(X, swap (rev pi) t)] xs, 
+    apply_subst_fprobs [(X, swap (rev pi) t)] ys)"
+      using apply_subst_equivalence by auto
+    ultimately show ?thesis
+      using vars_decrease[OF assms] unfolding rank_fun_def by simp
+  qed
+
+termination sred_fun
+proof
   show "wf rank_fun" 
     unfolding rank_fun_def by simp
 
-  show "\<And>xs ys nabla s B. (((xs, ys), nabla, s, B), ((Unit, Unit) # xs, ys), nabla, s, B) \<in> rank_fun"
+  fix t1 t2 :: trm and
+      xs :: "(trm \<times> trm) list" and
+      nabla ys s B
+  have "((((t1\<approx>?t2)#xs, ys), nabla, s, B), ((xs, ys), nabla, s, B)) \<in> rank_fun"
+    unfolding rank_fun_def size_eprobs.simps size_trm.simps
+
+ (* show "\<And>xs ys nabla s B. (((xs, ys), nabla, s, B), ((Unit, Unit) # xs, ys), nabla, s, B) \<in> rank_fun"
     unfolding rank_fun_def by simp
 
   show "\<And>t1 t2 s1 s2 xs ys nabla s B.
@@ -294,19 +339,6 @@ termination
        \<in> rank_fun" using aux2 by blast
  qed*)
 
-lemma if_sred_then_not_equal:
-  assumes "P1 \<turnstile> s \<leadsto> P2"
-  shows "P1 \<noteq> P2"
-  using assms
-proof(cases rule: s_red.cases)
-  case (var_1_sred X t pi xs ys)
-  then show ?thesis 
-    by (metis assms not_Cons_self2 sred_rtc.simps sred_rtc_no_cycle subst_id_left)
-next
-  case (var_2_sred X t pi xs ys)
-  then show ?thesis 
-    by (metis assms not_Cons_self2 sred_rtc.simps sred_rtc_no_cycle subst_id_left)
-qed (simp_all)
 
 
 lemma sred_fun_sound:
