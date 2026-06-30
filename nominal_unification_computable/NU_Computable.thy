@@ -45,15 +45,13 @@ function sred_fun ::  "(problem_type \<times> fresh_envs \<times> substs \<times
                                                        (((Susp pi X\<approx>?t)#xs,ys), nabla, s, False)
                                                      else
                                                       sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B))) |
-                             t \<approx>? Susp pi X \<Rightarrow> (case t of 
-                                               Susp pi2 Y \<Rightarrow> (if X = Y then
-                                                  sred_fun ((xs,(map (\<lambda>a. a\<sharp>? Susp [] X) (ds_list pi pi2))@ys), nabla, s, B)
-                                                    else sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B)) |
-                                               _ \<Rightarrow> (if occurs X t then
+                             t \<approx>? Susp pi X \<Rightarrow> (if occurs X t then
                                                        (((Susp pi X\<approx>?t)#xs,ys), nabla, s, False)
                                                      else
-                                                      sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B))))"
+                                                      sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B)) |
+                             _ \<Rightarrow> ((e#xs, ys), nabla, s, False))"
   by pat_completeness auto
+
 
 
 
@@ -312,6 +310,10 @@ next
    show "((((t1, t2) # xs, ys), nabla, s, B), ((Func F t1, Func F t2) # xs, ys), nabla, s, B) \<in> rank_fun"
      using func_rank_fun by simp
  qed
+
+
+thm sred_fun.simps
+
 
 
 lemma sred_fun_sound:
@@ -690,7 +692,7 @@ next
     hence "sred_fun (((Susp pi' Y, Susp pi X)#xs, ys), nabla, s, True) 
    = sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, True)"
       using sred_fun.simps
-    then show ?case sledgehammer
+    then show ?case sorry
   qed (auto)
 qed(simp_all)
 
