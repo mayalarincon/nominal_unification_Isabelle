@@ -38,13 +38,17 @@ function sred_fun ::  "(problem_type \<times> fresh_envs \<times> substs \<times
                                                  else
                                                    (((Atom a \<approx>? Atom b)#xs,ys), nabla, s, False))|
                               Susp pi X\<approx>?t \<Rightarrow> (case t of 
-                                               Susp pi2 X \<Rightarrow> sred_fun ((xs,(map (\<lambda>a. a\<sharp>? Susp [] X) (ds_list pi pi2))@ys), nabla, s, B) |
+                                               Susp pi2 Y \<Rightarrow> (if X = Y then
+                                                  sred_fun ((xs,(map (\<lambda>a. a\<sharp>? Susp [] X) (ds_list pi pi2))@ys), nabla, s, B)
+                                                    else sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B)) |
                                                _ \<Rightarrow> (if occurs X t then
                                                        (((Susp pi X\<approx>?t)#xs,ys), nabla, s, False)
                                                      else
                                                       sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B))) |
                              t \<approx>? Susp pi X \<Rightarrow> (case t of 
-                                               Susp pi2 X \<Rightarrow> sred_fun ((xs,(map (\<lambda>a. a\<sharp>? Susp [] X) (ds_list pi pi2))@ys), nabla, s, B) |
+                                               Susp pi2 Y \<Rightarrow> (if X = Y then
+                                                  sred_fun ((xs,(map (\<lambda>a. a\<sharp>? Susp [] X) (ds_list pi pi2))@ys), nabla, s, B)
+                                                    else sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B)) |
                                                _ \<Rightarrow> (if occurs X t then
                                                        (((Susp pi X\<approx>?t)#xs,ys), nabla, s, False)
                                                      else
@@ -58,7 +62,52 @@ function sred_fun ::  "(problem_type \<times> fresh_envs \<times> substs \<times
 
 text\<open>Auxiliary lemmata for termination\<close>
 
-lemma rank_r_fun_susp_same_var:
+lemma wf_rank_fun:
+  shows "wf rank_fun"
+  unfolding rank_fun_def by simp
+
+lemma unit_rank_fun:
+  shows "(((xs, ys), nabla, s, B), ((Unit, Unit) # xs, ys), nabla, s, B) \<in> rank_fun"
+  unfolding rank_fun_def by simp
+
+lemma paar_rank_fun:
+  shows "((((t1, s1) # (t2, s2) # xs, ys), nabla, s, B), ((Paar t1 t2, Paar s1 s2) # xs, ys), nabla, s, B) \<in> rank_fun"
+proof-
+ let ?vars = "vars_trm s1 \<union> vars_trm s2 \<union> vars_trm t1 \<union> vars_trm t2 \<union> vars_eprobs xs"
+    and ?size = "size_trm t1 + size_trm t2 + size_trm s1 + size_trm s2 + size_eprobs xs"
+ have "vars_eprobs ((Paar t1 t2, Paar s1 s2) # xs) = ?vars"
+   unfolding vars_eprobs.simps vars_trm.simps by auto
+  moreover have "size_eprobs ((Paar t1 t2, Paar s1 s2) # xs) = 2 + ?size"
+    unfolding size_eprobs.simps using size_trm.simps(6) by auto
+  have "vars_eprobs ((t1, s1) # (t2, s2) # xs) = ?vars"
+    unfolding vars_eprobs.simps by auto
+  moreover have  "size_eprobs ((t1, s1) # (t2, s2) # xs) = ?size"
+    unfolding size_eprobs.simps by simp
+  ultimately have 
+    "size_eprobs ((t1, s1) # (t2, s2) # xs) < size_eprobs ((Paar t1 t2, Paar s1 s2) # xs)"
+    "card (vars_eprobs ((t1, s1) # (t2, s2) # xs)) = card (vars_eprobs ((Paar t1 t2, Paar s1 s2) # xs))"
+    by simp+
+  thus ?thesis unfolding rank_fun_def by simp
+qed
+
+lemma func_rank_fun:
+  shows "((((t1, t2) # xs, ys), nabla, s, B), ((Func F t1, Func F t2) # xs, ys), nabla, s, B) \<in> rank_fun"
+  unfolding rank_fun_def by simp
+
+lemma atom_rank_fun:
+   shows "(((xs, ys), nabla, s, B), ((Atom a, Atom a) # xs, ys), nabla, s, B) \<in> rank_fun"
+  unfolding rank_fun_def by simp
+
+lemma abst_aa_rank_fun:
+  shows "((((t1, t2) # xs, ys), nabla, s, B), ((Abst a t1, Abst a t2) # xs, ys), nabla, s, B) \<in> rank_fun"
+  unfolding rank_fun_def by auto
+
+lemma abst_ab_rank_fun:
+  assumes "a \<noteq> b"
+  shows "((((t1, swap [(a, b)] t2) # xs, (a, t2) # ys), nabla, s, B), ((Abst a t1, Abst b t2) # xs, ys), nabla, s, B) \<in> rank_fun"
+  using assms vars_swap unfolding rank_fun_def by simp
+
+lemma susp_rank_fun:
   assumes "X = Y"
   shows "(((xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys), nabla, s, B),
         ((Susp pi1 X, Susp pi2 Y) # xs, ys), nabla, s, B)
@@ -88,7 +137,7 @@ proof-
     thus ?thesis by simp
   qed
 
-lemma rank_r_fun_susp_left: 
+lemma var_left_rank_fun: 
   assumes "\<not> occurs X t"
   shows "((apply_subst [(X, swap (rev pi) t)] (xs, ys), nabla, [(X, swap (rev pi) t)] \<bullet> s, B),
          ((Susp pi X, t) # xs, ys), nabla, s, B)
@@ -108,7 +157,7 @@ proof-
       using vars_decrease[OF assms] unfolding rank_fun_def by simp
   qed
 
-lemma rank_r_fun_susp_right:
+lemma var_right_rank_fun:
   assumes "\<not> occurs X t"
   shows "((apply_subst [(X, swap (rev pi) t)] (xs, ys), nabla, [(X, swap (rev pi) t)] \<bullet> s, B),
         ((t, Susp pi X) # xs, ys), nabla, s, B)
@@ -128,217 +177,141 @@ lemma rank_r_fun_susp_right:
       using vars_decrease[OF assms] unfolding rank_fun_def by simp
   qed
 
+
 termination sred_fun
-proof
+proof(relation rank_fun, auto)
   show "wf rank_fun" 
     unfolding rank_fun_def by simp
-
-  fix t1 t2 :: trm and
-      xs :: "(trm \<times> trm) list" and
-      nabla ys s B
-  have "((((t1\<approx>?t2)#xs, ys), nabla, s, B), ((xs, ys), nabla, s, B)) \<in> rank_fun"
-    unfolding rank_fun_def size_eprobs.simps size_trm.simps
-
- (* show "\<And>xs ys nabla s B. (((xs, ys), nabla, s, B), ((Unit, Unit) # xs, ys), nabla, s, B) \<in> rank_fun"
-    unfolding rank_fun_def by simp
-
-  show "\<And>t1 t2 s1 s2 xs ys nabla s B.
-       ((((t1, s1) # (t2, s2) # xs, ys), nabla, s, B), ((Paar t1 t2, Paar s1 s2) # xs, ys), nabla, s, B) \<in> rank_fun"
-    unfolding rank_fun_def vars_eprobs.simps size_eprobs.simps size_trm.simps vars_trm.simps
-    by (simp add: Un_commute Un_left_commute)
-
-  show "\<And>t1 F G t2 xs ys nabla s B. F = G \<Longrightarrow>
-       ((((t1, t2) # xs, ys), nabla, s, B), ((trm.Func F t1, trm.Func G t2) # xs, ys), nabla, s, B)
-       \<in> rank_fun"
-    unfolding rank_fun_def vars_eprobs.simps size_eprobs.simps size_trm.simps vars_trm.simps
-    by simp
-
-  show  "\<And>a t1 b t2 xs ys nabla s B. a = b \<Longrightarrow>
-       ((((t1, t2) # xs, ys), nabla, s, B), ((Abst a t1, Abst b t2) # xs, ys), nabla, s, B) \<in> rank_fun"
-    unfolding rank_fun_def vars_eprobs.simps 
-      size_eprobs.simps size_trm.simps vars_trm.simps
-    by simp
-
-  show "\<And>a t1 b t2 xs ys nabla s B.
-       a \<noteq> b \<Longrightarrow>
-       ((((t1, swap [(a, b)] t2) # xs, (a, t2) # ys), nabla, s, B), ((Abst a t1, Abst b t2) # xs, ys),
+next
+  fix xs ys nabla s B a t1 t2
+  show "((((t1, t2) # xs, ys), nabla, s, B), ((Abst a t1, Abst a t2) # xs, ys), nabla, s, B) \<in> rank_fun"
+    using abst_aa_rank_fun by simp
+next
+  fix xs :: "(trm \<times> trm) list"
+    and ys :: "(string \<times> trm) list"
+    and nabla s B t1 t2 and a b :: string
+  assume "a \<noteq> b"
+  show "((((t1, swap [(a, b)] t2) # xs, (a, t2) # ys), nabla, s, B), ((Abst a t1, Abst b t2) # xs, ys),
         nabla, s, B)
        \<in> rank_fun"
-    using vars_swap unfolding rank_fun_def vars_eprobs.simps 
-        size_eprobs.simps size_trm.simps vars_trm.simps
-    by simp
-
-  show "\<And>a b xs ys nabla s B. a = b \<Longrightarrow>
-  (((xs, ys), nabla, s, B), ((Atom a, Atom b) # xs, ys), nabla, s, B) \<in> rank_fun"
-    unfolding rank_fun_def vars_eprobs.simps 
-      size_eprobs.simps size_trm.simps vars_trm.simps 
-    by simp
-
-  show "\<And>pi1 X pi2 Y xs ys nabla s B.
-       X = Y \<Longrightarrow>
-       (((xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys), nabla, s, B),
-        ((Susp pi1 X, Susp pi2 Y) # xs, ys), nabla, s, B)
+    using abst_ab_rank_fun \<open>a\<noteq> b\<close> by simp
+next
+   fix xs :: "(trm \<times> trm) list"
+    and ys :: "(string \<times> trm) list"
+    and nabla s B pi X t1 and a :: string
+   assume "\<not> occurs X t1"
+   hence "\<not> occurs X (Abst a t1)" by simp
+   thus "((apply_subst [(X, Abst (swapas (rev pi) a) (swap (rev pi) t1))] (xs, ys), nabla,
+         [(X, Abst (swapas (rev pi) a) (swap (rev pi) t1))] \<bullet> s, B),
+        ((Abst a t1, Susp pi X) # xs, ys), nabla, s, B)
        \<in> rank_fun"
-  proof-
-    fix pi1 pi2 xs ys nabla s B and X Y :: string
-    assume "X = Y"
-    hence vars: "vars_eprobs ((Susp pi1 X, Susp pi2 Y) # xs) = {X} \<union> vars_eprobs xs" and
-          size: "size_eprobs ((Susp pi1 X, Susp pi2 Y) # xs) = 2 + size_eprobs xs"
-      unfolding vars_eprobs.simps size_eprobs.simps by simp+
-    have size_leq: "size_eprobs xs < size_eprobs ((Susp pi1 Y, Susp pi2 Y) # xs)"
-      by simp
-    have "(((xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys), nabla, s, B),
-        ((Susp pi1 X, Susp pi2 Y) # xs, ys), nabla, s, B)
+     using var_right_rank_fun[OF \<open>\<not> occurs X (Abst a t1)\<close>, of pi xs ys] by auto
+ next
+ fix xs :: "(trm \<times> trm) list"
+    and ys :: "(string \<times> trm) list"
+    and nabla s B pi X t1 and a :: string
+  assume "\<not> occurs X t1"
+  hence "\<not> occurs X (Abst a t1)" by simp
+   show "((apply_subst [(X, Abst (swapas (rev pi) a) (swap (rev pi) t1))] (xs, ys), nabla,
+         [(X, Abst (swapas (rev pi) a) (swap (rev pi) t1))] \<bullet> s, B),
+        ((Susp pi X, Abst a t1) # xs, ys), nabla, s, B)
        \<in> rank_fun"
-    proof(cases "X \<in> vars_eprobs xs")
-      case True
-      hence "card ({X} \<union> vars_eprobs xs) = card (vars_eprobs xs)"
-         by (simp add: insert_absorb)
-      then show ?thesis 
-        using size_leq vars unfolding rank_fun_def by simp
-    next
-      case False
-      hence "card ({X} \<union> vars_eprobs xs) = 1 + card (vars_eprobs xs)"
-        by auto
-      then show ?thesis 
-        using \<open>X = Y\<close> unfolding rank_fun_def by simp
-    qed
-    thus "(((xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys), nabla, s, B),
-        ((Susp pi1 X, Susp pi2 Y) # xs, ys), nabla, s, B)
-       \<in> rank_fun" by simp
-  qed
-
-  have aux1: "\<not> occurs X t \<Longrightarrow> ((apply_subst [(X, swap (rev pi) t)] (xs, ys), nabla,
-         [(X, swap (rev pi) t)] \<bullet> s, B),
-        ((Susp pi X, t) # xs, ys), nabla, s, B)
-       \<in> rank_fun" for X t pi xs ys nabla s B
-  proof-
-    let ?union = "insert X (vars_trm t \<union> vars_eprobs xs)"
-      and ?size = "size_trm t + size_eprobs xs"
-    assume assm: " \<not>occurs X t"
-    have 
-     vars: "vars_eprobs ((Susp pi X, t) # xs) = ?union" and
-     size: "size_eprobs ((Susp pi X, t) # xs) = 1 + ?size"
-      unfolding vars_eprobs.simps size_eprobs.simps by simp+
-    moreover have 
-      "apply_subst [(X, swap (rev pi) t)] (xs, ys) = (apply_subst_eprobs [(X, swap (rev pi) t)] xs, 
-    apply_subst_fprobs [(X, swap (rev pi) t)] ys)"
-      using apply_subst_equivalence by auto
-    ultimately show ?thesis
-      using vars_decrease[OF assm] unfolding rank_fun_def by simp
-  qed
-
-  have aux2: "\<not> occurs X t \<Longrightarrow> ((apply_subst [(X, swap (rev pi) t)] (xs, ys), nabla,
-         [(X, swap (rev pi) t)] \<bullet> s, B),
-        ((t, Susp pi X) # xs, ys), nabla, s, B)
-       \<in> rank_fun" for X t pi xs ys nabla s B
-  proof-
-    let ?union = "insert X (vars_trm t \<union> vars_eprobs xs)"
-      and ?size = "size_trm t + size_eprobs xs"
-    assume assm: " \<not>occurs X t"
-    have 
-     vars: "vars_eprobs ((t, Susp pi X) # xs) = ?union" and
-     size: "size_eprobs ((t, Susp pi X) # xs) = 1 + ?size"
-      unfolding vars_eprobs.simps size_eprobs.simps by simp+
-    moreover have 
-      "apply_subst [(X, swap (rev pi) t)] (xs, ys) = (apply_subst_eprobs [(X, swap (rev pi) t)] xs, 
-    apply_subst_fprobs [(X, swap (rev pi) t)] ys)"
-      using apply_subst_equivalence by auto
-    ultimately show ?thesis
-      using vars_decrease[OF assm] unfolding rank_fun_def by simp
-  qed
-
-  show "\<And>pi1 X pi2 Y xs ys nabla s B.
-       X \<noteq> Y \<Longrightarrow>
-       ((apply_subst [(X, swap (rev pi1) (Susp pi2 Y))] (xs, ys), nabla,
-         [(X, swap (rev pi1) (Susp pi2 Y))] \<bullet> s, B),
-        ((Susp pi1 X, Susp pi2 Y) # xs, ys), nabla, s, B)
+     using var_left_rank_fun[OF \<open>\<not> occurs X (Abst a t1)\<close>, of pi xs ys] by auto
+ next
+   fix xs ys nabla s B pi pi' X
+   show "(((xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi pi') @ ys), nabla, s, B),
+        ((Susp pi X, Susp pi' X) # xs, ys), nabla, s, B)
        \<in> rank_fun"
-  proof-
-    fix X Y :: string and pi1 pi2 xs ys nabla s B
-    assume "X \<noteq> Y"
-    hence not_occurs: "\<not> occurs X (Susp pi2 Y)" 
-      unfolding occurs.simps by simp
-    thus "X \<noteq> Y \<Longrightarrow>
-        X \<noteq> Y \<Longrightarrow>
-       ((apply_subst [(X, swap (rev pi1) (Susp pi2 Y))] (xs, ys), nabla,
-         [(X, swap (rev pi1) (Susp pi2 Y))] \<bullet> s, B),
-        ((Susp pi1 X, Susp pi2 Y) # xs, ys), nabla, s, B)
-       \<in> rank_fun" 
-       using aux1[OF not_occurs] unfolding rank_fun_def by simp
-   qed
-
-   show "\<And>pi X v va xs ys nabla s B.
-       \<not> occurs X (Abst v va) \<Longrightarrow>
-       ((apply_subst [(X, swap (rev pi) (Abst v va))] (xs, ys), nabla,
-         [(X, swap (rev pi) (Abst v va))] \<bullet> s, B),
-        ((Susp pi X, Abst v va) # xs, ys), nabla, s, B)
+     using susp_rank_fun by simp
+ next
+   fix xs ys nabla s B pi X pi' and Y :: string
+   assume "X \<noteq> Y"
+   have "\<not> occurs X (Susp pi' Y)"
+     using occurs.simps(3) \<open>X \<noteq> Y\<close> by simp
+   thus "((apply_subst [(X, Susp (rev pi @ pi') Y)] (xs, ys), nabla, [(X, Susp (rev pi @ pi') Y)] \<bullet> s, B),
+        ((Susp pi X, Susp pi' Y) # xs, ys), nabla, s, B)
        \<in> rank_fun"
-     using aux1 by blast
-
-   show "\<And>pi X xs ys nabla s B.
-       \<not> occurs X Unit \<Longrightarrow>
-       ((apply_subst [(X, swap (rev pi) Unit)] (xs, ys), nabla, [(X, swap (rev pi) Unit)] \<bullet> s, B),
-        ((Susp pi X, Unit) # xs, ys), nabla, s, B)
-       \<in> rank_fun" using aux1 by blast
-
-   show "\<And>pi X v xs ys nabla s B.
-       \<not> occurs X (Atom v) \<Longrightarrow>
-       ((apply_subst [(X, swap (rev pi) (Atom v))] (xs, ys), nabla, [(X, swap (rev pi) (Atom v))] \<bullet> s,
-         B),
-        ((Susp pi X, Atom v) # xs, ys), nabla, s, B)
-       \<in> rank_fun" using aux1 by blast
-
-   show "\<And>pi X v va xs ys nabla s B.
-       \<not> occurs X (Paar v va) \<Longrightarrow>
-       ((apply_subst [(X, swap (rev pi) (Paar v va))] (xs, ys), nabla,
-         [(X, swap (rev pi) (Paar v va))] \<bullet> s, B),
-        ((Susp pi X, Paar v va) # xs, ys), nabla, s, B)
-       \<in> rank_fun" using aux1 by blast
-
-   show "\<And>pi X v va xs ys nabla s B.
-       \<not> occurs X (trm.Func v va) \<Longrightarrow>
-       ((apply_subst [(X, swap (rev pi) (trm.Func v va))] (xs, ys), nabla,
-         [(X, swap (rev pi) (trm.Func v va))] \<bullet> s, B),
-        ((Susp pi X, trm.Func v va) # xs, ys), nabla, s, B)
-       \<in> rank_fun" using aux1 by blast
-
-   show "\<And>v va pi X xs ys nabla s B.
-       \<not> occurs X (Abst v va) \<Longrightarrow>
-       ((apply_subst [(X, swap (rev pi) (Abst v va))] (xs, ys), nabla,
-         [(X, swap (rev pi) (Abst v va))] \<bullet> s, B),
-        ((Abst v va, Susp pi X) # xs, ys), nabla, s, B)
-       \<in> rank_fun" using aux2 by blast
-
-   show "\<And>pi X xs ys nabla s B.
-       \<not> occurs X Unit \<Longrightarrow>
-       ((apply_subst [(X, swap (rev pi) Unit)] (xs, ys), nabla, [(X, swap (rev pi) Unit)] \<bullet> s,
-         B),
-        ((Unit, Susp pi X) # xs, ys), nabla, s, B)
-       \<in> rank_fun" using aux2 by blast
-
-   show "\<And>v pi X xs ys nabla s B.
-       \<not> occurs X (Atom v) \<Longrightarrow>
-       ((apply_subst [(X, swap (rev pi) (Atom v))] (xs, ys), nabla,
-         [(X, swap (rev pi) (Atom v))] \<bullet> s, B),
-        ((Atom v, Susp pi X) # xs, ys), nabla, s, B)
-       \<in> rank_fun" using aux2 by blast
-
-   show "\<And>v va pi X xs ys nabla s B.
-       \<not> occurs X (Paar v va) \<Longrightarrow>
-       ((apply_subst [(X, swap (rev pi) (Paar v va))] (xs, ys), nabla,
-         [(X, swap (rev pi) (Paar v va))] \<bullet> s, B),
-        ((Paar v va, Susp pi X) # xs, ys), nabla, s, B)
-       \<in> rank_fun" using aux2 by blast
-
-   show "\<And>v va pi X xs ys nabla s B.
-       \<not> occurs X (trm.Func v va) \<Longrightarrow>
-       ((apply_subst [(X, swap (rev pi) (trm.Func v va))] (xs, ys), nabla,
-         [(X, swap (rev pi) (trm.Func v va))] \<bullet> s, B),
-        ((trm.Func v va, Susp pi X) # xs, ys), nabla, s, B)
-       \<in> rank_fun" using aux2 by blast
- qed*)
-
+     using var_left_rank_fun[OF \<open>\<not> occurs X (Susp pi' Y)\<close>, of pi xs ys] by auto
+ next
+   fix xs ys nabla s B pi X
+   have "\<not> occurs X Unit" by simp
+   thus"((apply_subst [(X, Unit)] (xs, ys), nabla, [(X, Unit)] \<bullet> s, B), ((Susp pi X, Unit) # xs, ys), nabla, s, B)
+       \<in> rank_fun"
+     using var_left_rank_fun[of X Unit pi xs ys nabla s B] by auto
+ next
+   fix xs ys nabla s B pi X a
+   have "\<not> occurs X (Atom a)" by simp
+   thus "((apply_subst [(X, Atom (swapas (rev pi) a))] (xs, ys), nabla, [(X, Atom (swapas (rev pi) a))] \<bullet> s, B),
+        ((Susp pi X, Atom a) # xs, ys), nabla, s, B)
+       \<in> rank_fun"
+     using var_left_rank_fun[OF \<open>\<not> occurs X (Atom a)\<close>, of pi xs ys] by auto
+ next
+   fix xs ys nabla s B pi X t1 t2
+   assume "\<not> (if occurs X t1 then True else occurs X t2)"
+   hence "\<not> occurs X (Paar t1 t2)" by simp
+   thus " ((apply_subst [(X, Paar (swap (rev pi) t1) (swap (rev pi) t2))] (xs, ys), nabla,
+         [(X, Paar (swap (rev pi) t1) (swap (rev pi) t2))] \<bullet> s, B),
+        ((Susp pi X, Paar t1 t2) # xs, ys), nabla, s, B)
+       \<in> rank_fun"
+     using var_left_rank_fun [OF \<open>\<not> occurs X (Paar t1 t2)\<close>, of pi xs ys] by auto
+ next
+   fix xs ys nabla s B pi X F t
+   assume "\<not> occurs X t"
+   hence "\<not> occurs X (Func F t)" by simp
+   thus "((apply_subst [(X, Func F (swap (rev pi) t))] (xs, ys), nabla,
+         [(X, Func F (swap (rev pi) t))] \<bullet> s, B),
+        ((Susp pi X, Func F t) # xs, ys), nabla, s, B)
+       \<in> rank_fun"
+     using var_left_rank_fun [OF \<open>\<not> occurs X (Func F t)\<close>, of pi xs ys] by auto
+ next
+   fix xs ys nabla s B pi X
+   have "\<not> occurs X Unit" by simp
+   thus"((apply_subst [(X, Unit)] (xs, ys), nabla, [(X, Unit)] \<bullet> s, B), ((Unit, Susp pi X) # xs, ys), nabla, s, B)
+       \<in> rank_fun"
+     using var_right_rank_fun[of X Unit pi xs ys nabla s B] by auto
+ next 
+   fix xs ys nabla s B
+   show "(((xs, ys), nabla, s, B), ((Unit, Unit) # xs, ys), nabla, s, B) \<in> rank_fun"
+     using unit_rank_fun by simp
+ next
+   fix xs ys nabla s B pi X a
+   have "\<not> occurs X (Atom a)" by simp
+   thus "((apply_subst [(X, Atom (swapas (rev pi) a))] (xs, ys), nabla, [(X, Atom (swapas (rev pi) a))] \<bullet> s, B),
+        ((Atom a, Susp pi X) # xs, ys), nabla, s, B)
+       \<in> rank_fun"
+     using var_right_rank_fun[OF \<open>\<not> occurs X (Atom a)\<close>, of pi xs ys] by auto
+ next
+   fix xs ys nabla s B a
+   show "(((xs, ys), nabla, s, B), ((Atom a, Atom a) # xs, ys), nabla, s, B) \<in> rank_fun"
+     using atom_rank_fun by simp
+ next
+   fix xs ys nabla s B pi X t1 t2
+   assume "\<not> (if occurs X t1 then True else occurs X t2)"
+   hence "\<not> occurs X (Paar t1 t2)" by simp
+   thus " ((apply_subst [(X, Paar (swap (rev pi) t1) (swap (rev pi) t2))] (xs, ys), nabla,
+         [(X, Paar (swap (rev pi) t1) (swap (rev pi) t2))] \<bullet> s, B),
+        ((Paar t1 t2, Susp pi X) # xs, ys), nabla, s, B)
+       \<in> rank_fun"
+     using var_right_rank_fun [OF \<open>\<not> occurs X (Paar t1 t2)\<close>, of pi xs ys] by auto
+ next
+   fix xs ys nabla s B t1 t2 s1 s2
+   show "((((t1, s1) # (t2, s2) # xs, ys), nabla, s, B), ((Paar t1 t2, Paar s1 s2) # xs, ys), nabla, s, B)
+       \<in> rank_fun"
+     using paar_rank_fun by simp
+ next
+   fix xs ys nabla s B pi X F t
+   assume "\<not> occurs X t"
+   hence "\<not> occurs X (Func F t)" by simp
+   thus "((apply_subst [(X, Func F (swap (rev pi) t))] (xs, ys), nabla,
+         [(X, Func F (swap (rev pi) t))] \<bullet> s, B),
+        ((Func F t, Susp pi X) # xs, ys), nabla, s, B)
+       \<in> rank_fun"
+     using var_right_rank_fun [OF \<open>\<not> occurs X (Func F t)\<close>, of pi xs ys] by auto
+ next
+   fix xs ys nabla s B F t1 t2
+   show "((((t1, t2) # xs, ys), nabla, s, B), ((Func F t1, Func F t2) # xs, ys), nabla, s, B) \<in> rank_fun"
+     using func_rank_fun by simp
+ qed
 
 
 lemma sred_fun_sound:
@@ -346,40 +319,13 @@ lemma sred_fun_sound:
   shows "\<exists> s1. P1 \<turnstile> s1 \<leadsto>\<^sup>* P2"
   using assms
 proof(induction "(P1, nabla, s, True)" arbitrary: P1 nabla s rule: sred_fun.induct)
-  case (1 xs ys nabla s)
-  then show ?case sorry
+  case (1 ys nabla s)
+  then show ?case by auto
 next
-  case (2 t1 t2 s1 s2 xs ys nabla s)
+  case (2 e xs ys nabla s)
   then show ?case sorry
-next
-  case (3 F t1 G t2 xs ys nabla s)
-  then show ?case sorry
-next
-  case (4 a t1 b t2 xs ys nabla s)
-  then show ?case sorry
-next
-  case (5 a b xs ys nabla s)
-  then show ?case sorry
-next
-  case (6 pi X t xs ys nabla s)
-  then show ?case sorry
-next
-  case ("7_1" v va pi X xs ys nabla s)
-  then show ?case sorry
-next
-  case ("7_2" pi X xs ys nabla s)
-  then show ?case sorry
-next
-  case ("7_3" v pi X xs ys nabla s)
-  then show ?case sorry
-next
-  case ("7_4" v va pi X xs ys nabla s)
-  then show ?case sorry
-next
-  case ("7_5" v va pi X xs ys nabla s)
-  then show ?case sorry
-qed(auto)
-
+qed
+ 
 
   (*case (1 xs ys nabla s)
   hence fun_step:
@@ -725,7 +671,7 @@ next
     then show "\<exists>s1. ((Func F t, Susp pi X) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
       by auto
   qed
-qed (auto)
+qed (auto)*)
 
 
 
@@ -741,7 +687,10 @@ next
   then show ?case
   proof(induct t)
     case (Susp pi' Y)
-    then show ?case sorry
+    hence "sred_fun (((Susp pi' Y, Susp pi X)#xs, ys), nabla, s, True) 
+   = sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, True)"
+      using sred_fun.simps
+    then show ?case sledgehammer
   qed (auto)
 qed(simp_all)
 
