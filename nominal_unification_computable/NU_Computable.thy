@@ -312,7 +312,55 @@ next
  qed
 
 
-thm sred_fun.simps
+inductive s_red2 :: "problem_type \<Rightarrow> substs \<Rightarrow> problem_type \<Rightarrow> bool"  ("_ \<turnstile> _ \<leadsto>\<^sub>2 _ " [80,80,80] 80)
+  where
+  unit_sred2[intro!]:    "((Unit \<approx>? Unit) # xs, ys) \<turnstile> [] \<leadsto>\<^sub>2 (xs, ys)" |
+  paar_sred2[intro!]:    "((Paar t1 t2 \<approx>? Paar s1 s2)#xs,ys) \<turnstile>[]\<leadsto>\<^sub>2 ((t1\<approx>?s1)#(t2\<approx>?s2)#xs,ys)" |
+  func_sred2[intro!]:    "((Func F t1 \<approx>? Func F t2)#xs,ys) \<turnstile>[]\<leadsto>\<^sub>2 ((t1\<approx>?t2)#xs,ys)" |
+  abst_aa_sred2[intro!]: "((Abst a t1 \<approx>? Abst a t2)#xs,ys) \<turnstile>[]\<leadsto>\<^sub>2 ((t1\<approx>?t2)#xs,ys)" |
+  abst_ab_sred2[intro!]: "a\<noteq>b \<Longrightarrow> 
+                       ((Abst a t1\<approx>?Abst b t2)#xs,ys) \<turnstile>[]\<leadsto>\<^sub>2 ((t1\<approx>?swap [(a,b)] t2)#xs,(a\<sharp>?t2)#ys)" |
+  atom_sred2[intro!]:    "((Atom a\<approx>?Atom a)#xs,ys) \<turnstile>[]\<leadsto>\<^sub>2 (xs,ys)" |
+  susp_sred2[intro!]:    "((Susp pi1 X\<approx>?Susp pi2 X)#xs,ys) 
+                                \<turnstile>[]\<leadsto>\<^sub>2 (xs,(map (\<lambda>a. a\<sharp>? Susp [] X) (ds_list pi1 pi2))@ys)" | 
+  var_1_sred2[intro!]:   "\<not>(occurs X t) \<Longrightarrow> ((Susp pi X\<approx>?t)#xs,ys) 
+                               \<turnstile>[(X,swap (rev pi) t)]\<leadsto>\<^sub>2 apply_subst [(X,swap (rev pi) t)] (xs,ys)" |
+  var_2_sred2[intro!]:   "\<not>(occurs X t) \<Longrightarrow> (\<nexists> pi' Y. t = Susp pi' Y) \<Longrightarrow> ((t\<approx>?Susp pi X)#xs,ys) 
+                               \<turnstile>[(X,swap (rev pi) t)]\<leadsto>\<^sub>2 apply_subst [(X,swap (rev pi) t)] (xs,ys)"
+
+
+lemma sred2_to_sred:
+  assumes "P1 \<turnstile> s \<leadsto>\<^sub>2 P2"
+  shows "P1 \<turnstile> s \<leadsto> P2"
+  using assms by (induction rule: s_red2.induct[OF assms], auto)
+
+lemma sred_to_sred2:
+  assumes "P1 \<turnstile> s \<leadsto> P2"
+  shows "P1 \<turnstile> s \<leadsto>\<^sub>2 P2"
+  using assms 
+proof(induction rule: s_red.induct[OF assms])
+  case (9 X t pi xs ys)
+  then show ?case 
+  proof(induct t)
+    case (Abst a t1)
+    then show ?case by blast
+  next
+    case (Susp pi' Y)
+    then show ?case using var_2_sred2[OF Susp(1), of pi xs ys] sorry
+  next
+    case Unit
+    then show ?case by blast
+  next
+    case (Atom a)
+    then show ?case by blast
+  next
+    case (Paar t1 t2)
+    then show ?case by blast
+  next
+    case (Func F t1)
+    then show ?case by blast
+  qed
+qed(auto)
 
 
 
@@ -327,6 +375,7 @@ next
   case (2 e xs ys nabla s)
   then show ?case sorry
 qed
+
  
 
   (*case (1 xs ys nabla s)
@@ -678,23 +727,17 @@ qed (auto)*)
 
 
 lemma sred_to_sred_fun:
-  assumes "P1 \<turnstile> s \<leadsto> P2"
+  assumes "P1 \<turnstile> s \<leadsto>\<^sub>2 P2"
   shows  "sred_fun (P1, nabla, s2, True) = sred_fun (P2, nabla, s \<bullet> s2, True)"
-proof(induct rule: s_red.induct[OF assms])
+proof(induct rule: s_red2.induct[OF assms])
   case (8 X t pi xs ys)
-  then show ?case
-    by (induct t, auto)
+  then show ?case by (induct t, auto)
 next
   case (9 X t pi xs ys)
-  then show ?case
-  proof(induct t)
-    case (Susp pi' Y)
-    hence "sred_fun (((Susp pi' Y, Susp pi X)#xs, ys), nabla, s, True) 
-   = sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, True)"
-      using sred_fun.simps
-    then show ?case sorry
-  qed (auto)
-qed(simp_all)
+  then show ?case by (induct t, auto)
+qed(auto)
+ 
+ 
 
 (*pi' Y \<approx> pi X \<Rightarrow> Y \<rightarrow> (pi'^-1 \<bullet> pi) X
 [X \<rightarrow> swap (rev pi) (Susp pi' Y))]
@@ -729,11 +772,10 @@ next
 
     then show ?thesis sorry
   qed
-qed*)
+qed
 
 
-
-function (sequential) cred_fun:: "(problem_type \<times> fresh_envs \<times> substs \<times> bool) \<Rightarrow> (problem_type \<times> fresh_envs \<times> substs \<times> bool)" 
+function  cred_fun:: "(problem_type \<times> fresh_envs \<times> substs \<times> bool) \<Rightarrow> (problem_type \<times> fresh_envs \<times> substs \<times> bool)" 
   where
 "cred_fun ((xs, (a \<sharp>? Unit)#ys), nabla, s, B) = cred_fun ((xs, ys), nabla, s, B)" |
 "cred_fun ((xs, (a \<sharp>? Paar t1 t2)#ys), nabla, s, B) = cred_fun ((xs, (a\<sharp>?t1)#(a\<sharp>?t2)#ys), nabla, s, B)" |
