@@ -1,0 +1,62 @@
+theory NU_Recursive
+imports NU_Completeness
+begin
+
+type_synonym fresh_constraint = "(string \<times> trm)"
+
+text\<open>Simplication for normal forms similarly to Definition 10 in Maribel and Gabbay's paper\<close>
+
+fun fresh_rec_aux :: "fresh_constraint \<Rightarrow> (string \<times> string) set" where
+ "fresh_rec_aux (a, Unit) = {}" |
+ "fresh_rec_aux (a, Susp \<pi> X) = {(swapas (rev \<pi>) a, X)}"|
+ "fresh_rec_aux (a, Atom b) = (if a = b then
+                                {(a, a)}
+                               else
+                                 {})" |
+ "fresh_rec_aux (a, Func f t) = fresh_rec_aux (a, t)" |
+ "fresh_rec_aux (a, Paar t1 t2) = fresh_rec_aux (a, t1) \<union> fresh_rec_aux (a, t2)" |
+ "fresh_rec_aux (a, Abst b t) = (if a = b then
+                                  {}
+                                 else
+                                  fresh_rec_aux (a, t))"
+ 
+fun fresh_rec :: "(fresh_constraint set) \<Rightarrow> (string \<times> string) set" where
+ "fresh_rec ys = \<Union>{fresh_rec_aux (a, t) | a t. (a, t) \<in> ys}"
+
+definition consistent_context :: "fresh_envs \<Rightarrow> bool" where
+  "consistent_context \<Delta> \<equiv> \<nexists> a. (a,a) \<in> \<Delta>"
+
+value "fresh_rec ({(''a'', Susp [(''a'',''b'')] ''Y''), (''b'', Paar (Atom ''b'') (Susp [(''c'',''b'')] ''X''))})"
+
+definition subst_context :: "substs \<Rightarrow> (fresh_envs) \<Rightarrow> (fresh_constraint set)"  (\<open>_\<cdot>_\<close> [102,102] 101) where 
+ "subst_context \<sigma> \<Delta> = {(a, subst \<sigma> (Susp [] X)) | a X. (a, X) \<in> \<Delta>}"
+
+inductive_set fresh_nf :: "fresh_constraint set \<Rightarrow> fresh_envs" (\<open>\<nn>\<ff>\<langle>_\<rangle>\<close> [100] 99)
+  for \<Delta> where
+  "\<lbrakk>(a,t) \<in> \<Delta>; x \<in> fresh_rec_aux (a,t)\<rbrakk> \<Longrightarrow> x \<in> fresh_nf \<Delta>"
+
+
+text\<open>Lemma 22 on the Paper\<close>
+
+lemma left_compatibility: 
+assumes "consistent_context (\<nn>\<ff>\<langle>\<sigma> \<cdot> \<Delta>\<rangle>)"
+    and "\<Delta> \<turnstile> s \<approx> t"
+shows "\<nn>\<ff>\<langle>\<sigma> \<cdot> \<Delta>\<rangle> \<turnstile> subst \<sigma> s \<approx> subst \<sigma> t"
+sorry
+
+lemma subst_left_cancel:
+assumes "consistent_context (\<nn>\<ff>\<langle>\<rho> \<cdot> \<Delta>\<rangle>)"
+    and "\<Delta> \<Turnstile> subst \<sigma> \<approx> subst \<tau>"
+shows "\<nn>\<ff>\<langle>\<rho> \<cdot> \<Delta>\<rangle> \<Turnstile> subst (\<rho> \<bullet> \<sigma>) \<approx> subst (\<rho> \<bullet> \<tau>)"
+unfolding subst_equ_def using assms equ_refl left_compatibility subst_comp_expand subst_equ_a by auto
+  
+
+
+ 
+
+
+
+
+
+
+end
