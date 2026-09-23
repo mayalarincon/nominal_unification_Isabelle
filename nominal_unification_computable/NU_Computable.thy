@@ -1,102 +1,34 @@
 (*<*)
 theory NU_Computable
-  imports NU_Recursive
+  imports NU_Completeness
 begin
 (*>*)
 
-definition rank_fun :: "((((trm \<times> trm) list \<times> (char list \<times> trm) list) \<times> fresh_envs \<times> substs \<times> bool) \<times>
-      ((trm \<times> trm) list \<times> (char list \<times> trm) list) \<times> fresh_envs \<times> substs \<times> bool) set" where
+
+text\<open>Option-typed version of sred_fun. The boolean B success flag of the
+original function is replaced by the None/Some structure of the option type,
+so the state tuple does not need the boolean component anymore. Failure cases
+of the original (returning the stuck state with False) now return None.\<close>
+
+definition rank_fun :: "(((((trm \<times> trm) list \<times> (char list \<times> trm) list) \<times> fresh_envs \<times> substs) \<times>
+      ((trm \<times> trm) list \<times> (char list \<times> trm) list) \<times> fresh_envs \<times> substs)) set" where
 "rank_fun =
   measures [
-    \<lambda>((eprobs, fprobs), s, B). card (vars_eprobs eprobs),
-    \<lambda>((eprobs, fprobs), s, B). size_eprobs eprobs,
-    \<lambda>((eprobs, fprobs), s, B). size_fprobs fprobs
+    \<lambda>((eprobs, fprobs), s). card (vars_eprobs eprobs),
+    \<lambda>((eprobs, fprobs), s). size_eprobs eprobs,
+    \<lambda>((eprobs, fprobs), s). size_fprobs fprobs
   ]"
-
-
-fun prj :: "trm \<Rightarrow> (string \<times> string) list" where
-  "prj (Susp pi t) = pi" |
-  "prj _ = []"
-
-
-
-function sred_fun ::  "(problem_type \<times> fresh_envs \<times> substs \<times> bool) \<Rightarrow> (problem_type \<times> fresh_envs \<times> substs \<times> bool)" where
-"sred_fun (([],ys), nabla, s, B) = (([], ys), nabla, s, B)" |
-"sred_fun ((e#xs, ys), nabla, s, B) = 
-                        (case e of 
-                              Unit \<approx>? Unit \<Rightarrow> sred_fun ((xs,ys), nabla, s, B) |
-                              Paar t1 t2 \<approx>? Paar s1 s2 \<Rightarrow> sred_fun (((t1\<approx>?s1)#(t2\<approx>?s2)#xs,ys), nabla, s, B) |
-                              Func F t1 \<approx>? Func G t2 \<Rightarrow> (if F = G then
-                                                          sred_fun (((t1\<approx>?t2)#xs,ys), nabla, s, B) 
-                                                         else
-                                                         (((Func F t1 \<approx>? Func G t2)#xs,ys), nabla, s, False))|
-                              Abst a t1 \<approx>? Abst b t2 \<Rightarrow> (if a = b then
-                                                        sred_fun (((t1\<approx>?t2)#xs,ys), nabla, s, B)
-                                                        else
-                                                        sred_fun (((t1\<approx>?swap [(a,b)] t2)#xs,(a\<sharp>?t2)#ys), nabla, s, B))|
-                              Atom a\<approx>?Atom b \<Rightarrow> (if a = b then
-                                                        sred_fun ((xs,ys), nabla, s, B) 
-                                                 else
-                                                   (((Atom a \<approx>? Atom b)#xs,ys), nabla, s, False))|
-                              Susp pi X\<approx>?t \<Rightarrow> (case t of 
-                                               Susp pi2 Y \<Rightarrow> (if X = Y then
-                                                  sred_fun ((xs,(map (\<lambda>a. a\<sharp>? Susp [] X) (ds_list pi pi2))@ys), nabla, s, B)
-                                                    else sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B)) |
-                                               _ \<Rightarrow> (if occurs X t then
-                                                       (((Susp pi X\<approx>?t)#xs,ys), nabla, s, False)
-                                                     else
-                                                      sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B))) |
-                             t \<approx>? Susp pi X \<Rightarrow> (if occurs X t then
-                                                       (((Susp pi X\<approx>?t)#xs,ys), nabla, s, False)
-                                                     else
-                                                      sred_fun (apply_subst [(X,swap (rev pi) t)] (xs,ys), nabla, [(X,swap (rev pi) t)] \<bullet> s, B)) |
-                             _ \<Rightarrow> ((e#xs, ys), nabla, s, False))"
-  by pat_completeness auto
-
-
-
-
-
-(*case t of Susp pi2 X' => (if X' = X then <actual case> else default) | _ => default*)
-
-
-text \<open>Definition for normal forms of sred.\<close>
-
-definition stuck_sred where
-stuck_sred_def : "stuck_sred \<equiv> {P1. \<nexists> P2 s. P1 \<turnstile> s \<leadsto> P2}"
-
-lemma stuck_sred_is_stuck:
-  assumes "fst P1 \<noteq> []"
-  shows "P1 \<in> stuck_sred \<Longrightarrow> P1 \<in> stuck"
-proof-
-  assume "P1 \<in> stuck_sred"
-  hence "\<nexists> P2 s. P1 \<turnstile> s \<leadsto> P2"
-    using stuck_sred_def by auto
-  moreover have "\<nexists> P2 nabla. P1 \<turnstile> nabla \<rightarrow> P2"
-    using assms c_red_eqs_empty by blast
-  ultimately have "\<nexists> P2 nabla s. P1 \<Turnstile> (nabla, s) \<Rightarrow> P2"
-    using red_plus.simps by metis
-  thus "P1 \<in> stuck" 
-    unfolding stuck_def by simp
-qed
-
-
-definition normal_form_sred where
-"normal_form_sred P1 \<equiv> {P2. \<exists> s. P1 \<turnstile> s \<leadsto>\<^sup>* P2 \<and> P2 \<in> stuck_sred}"
-
-
-text\<open>Auxiliary lemmata for termination\<close>
 
 lemma wf_rank_fun:
   shows "wf rank_fun"
   unfolding rank_fun_def by simp
 
 lemma unit_rank_fun:
-  shows "(((xs, ys), nabla, s, B), ((Unit, Unit) # xs, ys), nabla, s, B) \<in> rank_fun"
+  shows "(((xs, ys), nabla, s), ((Unit, Unit) # xs, ys), nabla, s) \<in> rank_fun"
   unfolding rank_fun_def by simp
 
 lemma paar_rank_fun:
-  shows "((((t1, s1) # (t2, s2) # xs, ys), nabla, s, B), ((Paar t1 t2, Paar s1 s2) # xs, ys), nabla, s, B) \<in> rank_fun"
+  shows "((((t1, s1) # (t2, s2) # xs, ys), nabla, s), ((Paar t1 t2, Paar s1 s2) # xs, ys), nabla, s) \<in> rank_fun"
 proof-
  let ?vars = "vars_trm s1 \<union> vars_trm s2 \<union> vars_trm t1 \<union> vars_trm t2 \<union> vars_eprobs xs"
     and ?size = "size_trm t1 + size_trm t2 + size_trm s1 + size_trm s2 + size_eprobs xs"
@@ -116,26 +48,26 @@ proof-
 qed
 
 lemma func_rank_fun:
-  shows "((((t1, t2) # xs, ys), nabla, s, B), ((Func F t1, Func F t2) # xs, ys), nabla, s, B) \<in> rank_fun"
+  shows "((((t1, t2) # xs, ys), nabla, s), ((Func F t1, Func F t2) # xs, ys), nabla, s) \<in> rank_fun"
   unfolding rank_fun_def by simp
 
 lemma atom_rank_fun:
-   shows "(((xs, ys), nabla, s, B), ((Atom a, Atom a) # xs, ys), nabla, s, B) \<in> rank_fun"
+   shows "(((xs, ys), nabla, s), ((Atom a, Atom a) # xs, ys), nabla, s) \<in> rank_fun"
   unfolding rank_fun_def by simp
 
 lemma abst_aa_rank_fun:
-  shows "((((t1, t2) # xs, ys), nabla, s, B), ((Abst a t1, Abst a t2) # xs, ys), nabla, s, B) \<in> rank_fun"
+  shows "((((t1, t2) # xs, ys), nabla, s), ((Abst a t1, Abst a t2) # xs, ys), nabla, s) \<in> rank_fun"
   unfolding rank_fun_def by auto
 
 lemma abst_ab_rank_fun:
   assumes "a \<noteq> b"
-  shows "((((t1, swap [(a, b)] t2) # xs, (a, t2) # ys), nabla, s, B), ((Abst a t1, Abst b t2) # xs, ys), nabla, s, B) \<in> rank_fun"
+  shows "((((t1, swap [(a, b)] t2) # xs, (a, t2) # ys), nabla, s), ((Abst a t1, Abst b t2) # xs, ys), nabla, s) \<in> rank_fun"
   using assms vars_swap unfolding rank_fun_def by simp
 
 lemma susp_rank_fun:
   assumes "X = Y"
-  shows "(((xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys), nabla, s, B),
-        ((Susp pi1 X, Susp pi2 Y) # xs, ys), nabla, s, B)
+  shows "(((xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys), nabla, s),
+        ((Susp pi1 X, Susp pi2 Y) # xs, ys), nabla, s)
        \<in> rank_fun"
 proof-
    have vars: "vars_eprobs ((Susp pi1 X, Susp pi2 Y) # xs) = {X} \<union> vars_eprobs xs" and
@@ -143,8 +75,8 @@ proof-
      using assms unfolding vars_eprobs.simps size_eprobs.simps by simp+
     have size_leq: "size_eprobs xs < size_eprobs ((Susp pi1 Y, Susp pi2 Y) # xs)"
       by simp
-    have "(((xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys), nabla, s, B),
-        ((Susp pi1 X, Susp pi2 Y) # xs, ys), nabla, s, B)
+    have "(((xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys), nabla, s),
+        ((Susp pi1 X, Susp pi2 Y) # xs, ys), nabla, s)
        \<in> rank_fun"
     proof(cases "X \<in> vars_eprobs xs")
       case True
@@ -162,10 +94,10 @@ proof-
     thus ?thesis by simp
   qed
 
-lemma var_left_rank_fun: 
+lemma var_left_rank_fun:
   assumes "\<not> occurs X t"
-  shows "((apply_subst [(X, swap (rev pi) t)] (xs, ys), nabla, [(X, swap (rev pi) t)] \<bullet> s, B),
-         ((Susp pi X, t) # xs, ys), nabla, s, B)
+  shows "((apply_subst [(X, swap (rev pi) t)] (xs, ys), nabla, [(X, swap (rev pi) t)] \<bullet> s),
+         ((Susp pi X, t) # xs, ys), nabla, s)
        \<in> rank_fun"
 proof-
     let ?union = "insert X (vars_trm t \<union> vars_eprobs xs)"
@@ -184,8 +116,8 @@ proof-
 
 lemma var_right_rank_fun:
   assumes "\<not> occurs X t"
-  shows "((apply_subst [(X, swap (rev pi) t)] (xs, ys), nabla, [(X, swap (rev pi) t)] \<bullet> s, B),
-        ((t, Susp pi X) # xs, ys), nabla, s, B)
+  shows "((apply_subst [(X, swap (rev pi) t)] (xs, ys), nabla, [(X, swap (rev pi) t)] \<bullet> s),
+        ((t, Susp pi X) # xs, ys), nabla, s)
        \<in> rank_fun"
  proof-
     let ?union = "insert X (vars_trm t \<union> vars_eprobs xs)"
@@ -202,1224 +134,682 @@ lemma var_right_rank_fun:
       using vars_decrease[OF assms] unfolding rank_fun_def by simp
   qed
 
+function sred_fun :: "(problem_type \<times> fresh_envs \<times> substs) \<Rightarrow> (problem_type \<times> fresh_envs \<times> substs) option" where
+"sred_fun (([], ys), nabla, s) = Some (([], ys), nabla, s)" |
+"sred_fun (((t1 \<approx>? t2) # xs, ys), nabla, s) =
+  (case t1 of
+    Unit \<Rightarrow> (case t2 of
+               Unit \<Rightarrow> sred_fun ((xs, ys), nabla, s)
+             | Susp pi X \<Rightarrow> sred_fun (apply_subst [(X, swap (rev pi) Unit)] (xs, ys),
+                                              nabla, [(X, swap (rev pi) Unit)] \<bullet> s)
+             | _ \<Rightarrow> None)
+   | Paar u1 u2 \<Rightarrow> (case t2 of
+                      Paar v1 v2 \<Rightarrow> sred_fun (((u1 \<approx>? v1) # (u2 \<approx>? v2) # xs, ys), nabla, s)
+                    | Susp pi X \<Rightarrow>
+                        if \<not> occurs X (Paar u1 u2)
+                        then sred_fun (apply_subst [(X, swap (rev pi) (Paar u1 u2))] (xs, ys),
+                                            nabla, [(X, swap (rev pi) (Paar u1 u2))] \<bullet> s)
+                        else None
+                    | _ \<Rightarrow> None)
+   | Func F u \<Rightarrow> (case t2 of
+                     Func G v \<Rightarrow> if F = G
+                                  then sred_fun (((u \<approx>? v) # xs, ys), nabla, s)
+                                  else None
+                   | Susp pi X \<Rightarrow>
+                       if \<not> occurs X (Func F u)
+                       then sred_fun (apply_subst [(X, swap (rev pi) (Func F u))] (xs, ys),
+                                           nabla, [(X, swap (rev pi) (Func F u))] \<bullet> s)
+                       else None
+                   | _ \<Rightarrow> None)
+   | Abst a u \<Rightarrow> (case t2 of
+                    Abst b v \<Rightarrow> if a = b
+                                 then sred_fun (((u \<approx>? v) # xs, ys), nabla, s)
+                                 else sred_fun (((u \<approx>? swap [(a, b)] v) # xs, (a \<sharp>? v) # ys), nabla, s)
+                  | Susp pi X \<Rightarrow>
+                      if \<not> occurs X (Abst a u)
+                      then sred_fun (apply_subst [(X, swap (rev pi) (Abst a u))] (xs, ys),
+                                          nabla, [(X, swap (rev pi) (Abst a u))] \<bullet> s)
+                      else None
+                  | _ \<Rightarrow> None)
+   | Atom a \<Rightarrow> (case t2 of
+                  Atom b \<Rightarrow> if a = b then sred_fun ((xs, ys), nabla, s) else None
+                | Susp pi X \<Rightarrow> sred_fun (apply_subst [(X, swap (rev pi) (Atom a))] (xs, ys),
+                                                nabla, [(X, swap (rev pi) (Atom a))] \<bullet> s)
+                | _ \<Rightarrow> None)
+   | Susp pi X \<Rightarrow> (case t2 of
+                     Unit \<Rightarrow> sred_fun (apply_subst [(X, swap (rev pi) Unit)] (xs, ys),
+                                            nabla, [(X, swap (rev pi) Unit)] \<bullet> s)
+                   | Atom a \<Rightarrow> sred_fun (apply_subst [(X, swap (rev pi) (Atom a))] (xs, ys),
+                                              nabla, [(X, swap (rev pi) (Atom a))] \<bullet> s)
+                   | Paar v1 v2 \<Rightarrow>
+                       if \<not> occurs X (Paar v1 v2)
+                       then sred_fun (apply_subst [(X, swap (rev pi) (Paar v1 v2))] (xs, ys),
+                                           nabla, [(X, swap (rev pi) (Paar v1 v2))] \<bullet> s)
+                       else None
+                   | Func G v \<Rightarrow>
+                       if \<not> occurs X (Func G v)
+                       then sred_fun (apply_subst [(X, swap (rev pi) (Func G v))] (xs, ys),
+                                           nabla, [(X, swap (rev pi) (Func G v))] \<bullet> s)
+                       else None
+                   | Abst a v \<Rightarrow>
+                       if \<not> occurs X (Abst a v)
+                       then sred_fun (apply_subst [(X, swap (rev pi) (Abst a v))] (xs, ys),
+                                           nabla, [(X, swap (rev pi) (Abst a v))] \<bullet> s)
+                       else None
+                   | Susp pi2 Y \<Rightarrow>
+                       if X = Y
+                       then sred_fun ((xs, map (\<lambda>a. a \<sharp>? Susp [] X) (ds_list pi pi2) @ ys), nabla, s)
+                       else sred_fun (apply_subst [(X, swap (rev pi) (Susp pi2 Y))] (xs, ys),
+                                           nabla, [(X, swap (rev pi) (Susp pi2 Y))] \<bullet> s)))"
+by pat_completeness auto
 
 termination sred_fun
 proof(relation rank_fun, auto)
-  show "wf rank_fun" 
+  show "wf rank_fun"
     unfolding rank_fun_def by simp
 next
-  fix xs ys nabla s B a t1 t2
-  show "((((t1, t2) # xs, ys), nabla, s, B), ((Abst a t1, Abst a t2) # xs, ys), nabla, s, B) \<in> rank_fun"
+  fix xs ys nabla s t1 a t2
+  show "((((t1, t2) # xs, ys), nabla, s), ((Abst a t1, Abst a t2) # xs, ys), nabla, s) \<in> rank_fun"
     using abst_aa_rank_fun by simp
 next
   fix xs :: "(trm \<times> trm) list"
     and ys :: "(string \<times> trm) list"
-    and nabla s B t1 t2 and a b :: string
+    and nabla s and a b :: string and t1 t2 :: trm
   assume "a \<noteq> b"
-  show "((((t1, swap [(a, b)] t2) # xs, (a, t2) # ys), nabla, s, B), ((Abst a t1, Abst b t2) # xs, ys),
-        nabla, s, B)
+  show "((((t1, swap [(a, b)] t2) # xs, (a, t2) # ys), nabla, s),
+        ((Abst a t1, Abst b t2) # xs, ys), nabla, s)
        \<in> rank_fun"
-    using abst_ab_rank_fun \<open>a\<noteq> b\<close> by simp
+    using abst_ab_rank_fun[OF \<open>a \<noteq> b\<close>] by simp
 next
-   fix xs :: "(trm \<times> trm) list"
+  fix xs :: "(trm \<times> trm) list"
     and ys :: "(string \<times> trm) list"
-    and nabla s B pi X t1 and a :: string
-   assume "\<not> occurs X t1"
-   hence "\<not> occurs X (Abst a t1)" by simp
-   thus "((apply_subst [(X, Abst (swapas (rev pi) a) (swap (rev pi) t1))] (xs, ys), nabla,
-         [(X, Abst (swapas (rev pi) a) (swap (rev pi) t1))] \<bullet> s, B),
-        ((Abst a t1, Susp pi X) # xs, ys), nabla, s, B)
+    and nabla s pi X t1 and a :: string
+  assume "\<not> occurs X t1"
+  hence "\<not> occurs X (Abst a t1)" by simp
+  thus "((apply_subst [(X, Abst (swapas (rev pi) a) (swap (rev pi) t1))] (xs, ys), nabla,
+         [(X, Abst (swapas (rev pi) a) (swap (rev pi) t1))] \<bullet> s),
+        ((Abst a t1, Susp pi X) # xs, ys), nabla, s)
        \<in> rank_fun"
-     using var_right_rank_fun[OF \<open>\<not> occurs X (Abst a t1)\<close>, of pi xs ys] by auto
+    using var_right_rank_fun[OF \<open>\<not> occurs X (Abst a t1)\<close>, of pi xs ys] by auto
 next
-   fix xs :: "(trm \<times> trm) list"
+  fix xs :: "(trm \<times> trm) list"
     and ys :: "(string \<times> trm) list"
-    and nabla s B pi X t1 and a :: string
-   assume "\<not> occurs X t1"
-   hence "\<not> occurs X (Abst a t1)" by simp
-   show "((apply_subst [(X, Abst (swapas (rev pi) a) (swap (rev pi) t1))] (xs, ys), nabla,
-         [(X, Abst (swapas (rev pi) a) (swap (rev pi) t1))] \<bullet> s, B),
-        ((Susp pi X, Abst a t1) # xs, ys), nabla, s, B)
+    and nabla s pi X t1 and a :: string
+  assume "\<not> occurs X t1"
+  hence "\<not> occurs X (Abst a t1)" by simp
+  show "((apply_subst [(X, Abst (swapas (rev pi) a) (swap (rev pi) t1))] (xs, ys), nabla,
+         [(X, Abst (swapas (rev pi) a) (swap (rev pi) t1))] \<bullet> s),
+        ((Susp pi X, Abst a t1) # xs, ys), nabla, s)
        \<in> rank_fun"
-     using var_left_rank_fun[OF \<open>\<not> occurs X (Abst a t1)\<close>, of pi xs ys] by auto
+    using var_left_rank_fun[OF \<open>\<not> occurs X (Abst a t1)\<close>, of pi xs ys] by auto
 next
-   fix xs ys nabla s B pi pi' X
-  show "(((xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi pi') @ ys), nabla, s, B),
-        ((Susp pi X, Susp pi' X) # xs, ys), nabla, s, B)
+  fix xs ys nabla s pi1 pi2 X
+  show "(((xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys), nabla, s),
+        ((Susp pi1 X, Susp pi2 X) # xs, ys), nabla, s)
        \<in> rank_fun"
     using susp_rank_fun by simp
- next
-   fix xs ys nabla s B pi X pi' and Y :: string
-   assume "X \<noteq> Y"
-   have "\<not> occurs X (Susp pi' Y)"
-     using occurs.simps(3) \<open>X \<noteq> Y\<close> by simp
-   thus "((apply_subst [(X, Susp (rev pi @ pi') Y)] (xs, ys), nabla, [(X, Susp (rev pi @ pi') Y)] \<bullet> s, B),
-        ((Susp pi X, Susp pi' Y) # xs, ys), nabla, s, B)
+next
+  fix xs ys nabla s pi X pi' and Y :: string
+  assume "X \<noteq> Y"
+  have "\<not> occurs X (Susp pi' Y)"
+    using occurs.simps(3) \<open>X \<noteq> Y\<close> by simp
+  thus "((apply_subst [(X, Susp (rev pi @ pi') Y)] (xs, ys), nabla, [(X, Susp (rev pi @ pi') Y)] \<bullet> s),
+        ((Susp pi X, Susp pi' Y) # xs, ys), nabla, s)
        \<in> rank_fun"
-     using var_left_rank_fun[OF \<open>\<not> occurs X (Susp pi' Y)\<close>, of pi xs ys] by auto
+    using var_left_rank_fun[OF \<open>\<not> occurs X (Susp pi' Y)\<close>, of pi xs ys] by auto
 next
-   fix xs ys nabla s B pi X
-   have "\<not> occurs X Unit" by simp
-   thus"((apply_subst [(X, Unit)] (xs, ys), nabla, [(X, Unit)] \<bullet> s, B), ((Susp pi X, Unit) # xs, ys), nabla, s, B)
+  fix xs ys nabla s pi X
+  have "\<not> occurs X Unit" by simp
+  thus "((apply_subst [(X, Unit)] (xs, ys), nabla, [(X, Unit)] \<bullet> s), ((Susp pi X, Unit) # xs, ys), nabla, s)
        \<in> rank_fun"
-     using var_left_rank_fun[of X Unit pi xs ys nabla s B] by auto
+    using var_left_rank_fun[of X Unit pi xs ys nabla s] by auto
 next
-   fix xs ys nabla s B pi X a
-   have "\<not> occurs X (Atom a)" by simp
-   thus "((apply_subst [(X, Atom (swapas (rev pi) a))] (xs, ys), nabla, [(X, Atom (swapas (rev pi) a))] \<bullet> s, B),
-        ((Susp pi X, Atom a) # xs, ys), nabla, s, B)
+  fix xs ys nabla s pi X a
+  have "\<not> occurs X (Atom a)" by simp
+  thus "((apply_subst [(X, Atom (swapas (rev pi) a))] (xs, ys), nabla, [(X, Atom (swapas (rev pi) a))] \<bullet> s),
+        ((Susp pi X, Atom a) # xs, ys), nabla, s)
        \<in> rank_fun"
-     using var_left_rank_fun[OF \<open>\<not> occurs X (Atom a)\<close>, of pi xs ys] by auto
+    using var_left_rank_fun[OF \<open>\<not> occurs X (Atom a)\<close>, of pi xs ys] by auto
 next
-   fix xs ys nabla s B pi X t1 t2
-   assume "\<not> (if occurs X t1 then True else occurs X t2)"
-   hence "\<not> occurs X (Paar t1 t2)" by simp
-   thus " ((apply_subst [(X, Paar (swap (rev pi) t1) (swap (rev pi) t2))] (xs, ys), nabla,
-         [(X, Paar (swap (rev pi) t1) (swap (rev pi) t2))] \<bullet> s, B),
-        ((Susp pi X, Paar t1 t2) # xs, ys), nabla, s, B)
+  fix xs ys nabla s pi X t1 t2
+  assume "\<not> (if occurs X t1 then True else occurs X t2)"
+  hence "\<not> occurs X (Paar t1 t2)" by simp
+  thus "((apply_subst [(X, Paar (swap (rev pi) t1) (swap (rev pi) t2))] (xs, ys), nabla,
+         [(X, Paar (swap (rev pi) t1) (swap (rev pi) t2))] \<bullet> s),
+        ((Susp pi X, Paar t1 t2) # xs, ys), nabla, s)
        \<in> rank_fun"
-     using var_left_rank_fun [OF \<open>\<not> occurs X (Paar t1 t2)\<close>, of pi xs ys] by auto
+    using var_left_rank_fun[OF \<open>\<not> occurs X (Paar t1 t2)\<close>, of pi xs ys] by auto
 next
-   fix xs ys nabla s B pi X F t
-   assume "\<not> occurs X t"
-   hence "\<not> occurs X (Func F t)" by simp
-   thus "((apply_subst [(X, Func F (swap (rev pi) t))] (xs, ys), nabla,
-         [(X, Func F (swap (rev pi) t))] \<bullet> s, B),
-        ((Susp pi X, Func F t) # xs, ys), nabla, s, B)
-       \<in> rank_fun"
-     using var_left_rank_fun [OF \<open>\<not> occurs X (Func F t)\<close>, of pi xs ys] by auto
-next
-   fix xs ys nabla s B pi X
-   have "\<not> occurs X Unit" by simp
-   thus"((apply_subst [(X, Unit)] (xs, ys), nabla, [(X, Unit)] \<bullet> s, B), ((Unit, Susp pi X) # xs, ys), nabla, s, B)
-       \<in> rank_fun"
-     using var_right_rank_fun[of X Unit pi xs ys nabla s B] by auto
-next 
-   fix xs ys nabla s B
-   show "(((xs, ys), nabla, s, B), ((Unit, Unit) # xs, ys), nabla, s, B) \<in> rank_fun"
-     using unit_rank_fun by simp
-next
-   fix xs ys nabla s B pi X a
-   have "\<not> occurs X (Atom a)" by simp
-   thus "((apply_subst [(X, Atom (swapas (rev pi) a))] (xs, ys), nabla, [(X, Atom (swapas (rev pi) a))] \<bullet> s, B),
-        ((Atom a, Susp pi X) # xs, ys), nabla, s, B)
-       \<in> rank_fun"
-     using var_right_rank_fun[OF \<open>\<not> occurs X (Atom a)\<close>, of pi xs ys] by auto
-next
-   fix xs ys nabla s B a
-   show "(((xs, ys), nabla, s, B), ((Atom a, Atom a) # xs, ys), nabla, s, B) \<in> rank_fun"
-     using atom_rank_fun by simp
-next
-   fix xs ys nabla s B pi X t1 t2
-   assume "\<not> (if occurs X t1 then True else occurs X t2)"
-   hence "\<not> occurs X (Paar t1 t2)" by simp
-   thus " ((apply_subst [(X, Paar (swap (rev pi) t1) (swap (rev pi) t2))] (xs, ys), nabla,
-         [(X, Paar (swap (rev pi) t1) (swap (rev pi) t2))] \<bullet> s, B),
-        ((Paar t1 t2, Susp pi X) # xs, ys), nabla, s, B)
-       \<in> rank_fun"
-     using var_right_rank_fun [OF \<open>\<not> occurs X (Paar t1 t2)\<close>, of pi xs ys] by auto
-next
-   fix xs ys nabla s B t1 t2 s1 s2
-   show "((((t1, s1) # (t2, s2) # xs, ys), nabla, s, B), ((Paar t1 t2, Paar s1 s2) # xs, ys), nabla, s, B)
-       \<in> rank_fun"
-     using paar_rank_fun by simp
-next
-  fix xs ys nabla s B pi X F t
+  fix xs ys nabla s pi X F t
   assume "\<not> occurs X t"
   hence "\<not> occurs X (Func F t)" by simp
   thus "((apply_subst [(X, Func F (swap (rev pi) t))] (xs, ys), nabla,
-         [(X, Func F (swap (rev pi) t))] \<bullet> s, B),
-        ((Func F t, Susp pi X) # xs, ys), nabla, s, B)
+         [(X, Func F (swap (rev pi) t))] \<bullet> s),
+        ((Susp pi X, Func F t) # xs, ys), nabla, s)
        \<in> rank_fun"
-    using var_right_rank_fun [OF \<open>\<not> occurs X (Func F t)\<close>, of pi xs ys] by auto
+    using var_left_rank_fun[OF \<open>\<not> occurs X (Func F t)\<close>, of pi xs ys] by auto
 next
-  fix xs ys nabla s B F t1 t2
-  show "((((t1, t2) # xs, ys), nabla, s, B), ((Func F t1, Func F t2) # xs, ys), nabla, s, B) \<in> rank_fun"
+  fix xs ys nabla s pi X
+  have "\<not> occurs X Unit" by simp
+  thus "((apply_subst [(X, Unit)] (xs, ys), nabla, [(X, Unit)] \<bullet> s), ((Unit, Susp pi X) # xs, ys), nabla, s)
+       \<in> rank_fun"
+    using var_right_rank_fun[of X Unit pi xs ys nabla s] by auto
+next
+  fix xs ys nabla s
+  show "(((xs, ys), nabla, s), ((Unit, Unit) # xs, ys), nabla, s) \<in> rank_fun"
+    using unit_rank_fun by simp
+next
+  fix xs ys nabla s pi X a
+  have "\<not> occurs X (Atom a)" by simp
+  thus "((apply_subst [(X, Atom (swapas (rev pi) a))] (xs, ys), nabla, [(X, Atom (swapas (rev pi) a))] \<bullet> s),
+        ((Atom a, Susp pi X) # xs, ys), nabla, s)
+       \<in> rank_fun"
+    using var_right_rank_fun[OF \<open>\<not> occurs X (Atom a)\<close>, of pi xs ys] by auto
+next
+  fix xs ys nabla s a
+  show "(((xs, ys), nabla, s), ((Atom a, Atom a) # xs, ys), nabla, s) \<in> rank_fun"
+    using atom_rank_fun by simp
+next
+  fix xs ys nabla s pi X t1 t2
+  assume "\<not> (if occurs X t1 then True else occurs X t2)"
+  hence "\<not> occurs X (Paar t1 t2)" by simp
+  thus "((apply_subst [(X, Paar (swap (rev pi) t1) (swap (rev pi) t2))] (xs, ys), nabla,
+         [(X, Paar (swap (rev pi) t1) (swap (rev pi) t2))] \<bullet> s),
+        ((Paar t1 t2, Susp pi X) # xs, ys), nabla, s)
+       \<in> rank_fun"
+    using var_right_rank_fun[OF \<open>\<not> occurs X (Paar t1 t2)\<close>, of pi xs ys] by auto
+next
+  fix xs ys nabla s t1 t2 s1 s2
+  show "((((t1, s1) # (t2, s2) # xs, ys), nabla, s), ((Paar t1 t2, Paar s1 s2) # xs, ys), nabla, s)
+       \<in> rank_fun"
+    using paar_rank_fun by simp
+next
+  fix xs ys nabla s pi X F t
+  assume "\<not> occurs X t"
+  hence "\<not> occurs X (Func F t)" by simp
+  thus "((apply_subst [(X, Func F (swap (rev pi) t))] (xs, ys), nabla, [(X, Func F (swap (rev pi) t))] \<bullet> s),
+        ((Func F t, Susp pi X) # xs, ys), nabla, s)
+       \<in> rank_fun"
+    using var_right_rank_fun[OF \<open>\<not> occurs X (Func F t)\<close>, of pi xs ys] by auto
+next
+  fix xs ys nabla s F t1 t2
+  show "((((t1, t2) # xs, ys), nabla, s), ((Func F t1, Func F t2) # xs, ys), nabla, s) \<in> rank_fun"
     using func_rank_fun by simp
 qed
 
 
-text\<open>Soundness of sred_fun\<close>
+function  cred_fun :: "(problem_type \<times> fresh_envs \<times> substs) \<Rightarrow> (problem_type \<times> fresh_envs \<times> substs) option"
+  where
+"cred_fun ((xs, (a \<sharp>? Unit)#ys), nabla, s) = cred_fun ((xs, ys), nabla, s)" |
+"cred_fun ((xs, (a \<sharp>? Paar t1 t2)#ys), nabla, s) = cred_fun ((xs, (a\<sharp>?t1)#(a\<sharp>?t2)#ys), nabla, s)" |
+"cred_fun ((xs, (a \<sharp>? Func F t)#ys), nabla, s) = cred_fun ((xs, (a\<sharp>?t)#ys), nabla, s)" |
+"cred_fun ((xs, (a \<sharp>? Abst b t)#ys), nabla, s) = (if a = b then
+                                                      cred_fun ((xs, ys), nabla, s)
+                                                    else
+                                                      cred_fun ((xs, (a\<sharp>?t)#ys), nabla, s))" |
+"cred_fun ((xs, (a \<sharp>? Atom b)#ys), nabla, s) = (if a = b then
+                                                  None
+                                                else
+                                                  cred_fun ((xs, ys), nabla, s))" |
+"cred_fun ((xs, (a \<sharp>? Susp pi X)#ys), nabla, s) = cred_fun ((xs, ys), {((swapas (rev pi) a),X)}\<union>nabla, s)" |
+"cred_fun ((xs, []), nabla, s) = Some ((xs, []), nabla, s)"
+  by pat_completeness auto
 
-lemma sred_fun_sound:
-  assumes  "sred_fun (P1, nabla, s, True) = (P2, nabla', s', B)"
-  shows "\<exists> s1. P1 \<turnstile> s1 \<leadsto>\<^sup>* P2"
+termination cred_fun
+  by (relation "measure (\<lambda>((xs, ys), nabla, s). size_fprobs ys)", auto)
+
+text\<open>Combines sred_fun (equation reductions) and cred_fun (freshness reductions),
+mirroring the red_plus relation: equations are solved first, then freshness
+constraints.\<close>
+
+fun red_plus_fun :: "(problem_type \<times> fresh_envs \<times> substs) \<Rightarrow> (problem_type \<times> fresh_envs \<times> substs) option" where
+"red_plus_fun (P, nabla, s) = (case sred_fun (P, nabla, s) of
+                                 Some (([], ys), nabla', s') \<Rightarrow> cred_fun (([],ys), nabla', s')
+                               | None \<Rightarrow> None)"
+
+fun nomu_unify :: "problem_type \<Rightarrow> (fresh_envs \<times> substs) option" where
+  "nomu_unify P = (case red_plus_fun (P, {}, []) of 
+                    Some (([],[]), nabla', s') \<Rightarrow> Some (nabla', s')
+                    | None \<Rightarrow> None)"
+
+text\<open>Whenever sred_fun succeeds, the first (equation) list of the resulting problem is empty:
+all equations have been solved, only freshness constraints remain.\<close>
+
+lemma sred_fun_some_fst_empty:
+  assumes "sred_fun (P, nabla, s) = Some (P', nabla', s')"
+  shows "fst P' = []"
   using assms
-proof(induction "(P1, nabla, s, True)" arbitrary: P1 nabla s rule: sred_fun.induct)
-  case (1 ys nabla s)
-  then show ?case by auto
-next
-  case (2 e xs ys nabla s)
-  then show ?case
-  proof(cases e)
-    case (Pair t1 t2)
-    have e_def: "e = t1 \<approx>? t2" by fact
-    then show ?thesis
-    proof(cases t1)
-      case (Abst a t1')
-      have t1_def: "t1 = Abst a t1'" by fact
-      then show ?thesis
-      proof(cases t2)
-        case (Abst b t2')
-        have t2_def: "t2 = Abst b t2'" by fact
-        then show ?thesis sorry
-      next
-        case (Susp x21 x22)
-        then show ?thesis sorry
-      next
-        case Unit
-        then show ?thesis sorry
-      next
-        case (Atom x4)
-        then show ?thesis sorry
-      next
-        case (Paar x51 x52)
-        then show ?thesis sorry
-      next
-        case (Func x61 x62)
-        then show ?thesis sorry
-      qed
-    next
-      case (Susp x21 x22)
-      then show ?thesis sorry
-    next
+  proof(induct "(P, nabla, s)" arbitrary: P nabla s P' nabla' s' rule: sred_fun.induct)
+    case (1 ys nabla s)
+    then show ?case by auto
+  next
+    case (2 t1 t2 xs ys nabla s)
+    note IHs = this
+    then show ?case 
+    proof (cases t1)
       case Unit
-      then show ?thesis sorry
+      note h1 = this
+      then show ?thesis using IHs by (cases t2, auto split: if_splits)
     next
-      case (Atom x4)
-      then show ?thesis sorry
+      case (Abst a t1')
+      note h1 = this
+      then show ?thesis using IHs by (cases t2, auto split: if_splits)
     next
-      case (Paar x51 x52)
-      then show ?thesis sorry
+      case (Susp pi X)
+      note h1 = this
+      then show ?thesis using IHs by (cases t2, auto split: if_splits)
     next
-      case (Func x61 x62)
-      then show ?thesis sorry
+      case (Atom a)
+      note h1 = this
+      then show ?thesis using IHs by (cases t2, auto split: if_splits)
+    next
+      case (Paar t11 t12)
+      note h1 = this
+      then show ?thesis using IHs by (cases t2, auto split: if_splits)
+    next
+      case (Func F t1')
+      note h1 = this
+      then show ?thesis using IHs by (cases t2, auto split: if_splits)
+    qed
+  qed
+
+text\<open>Whenever cred_fun succeeds, the snd (freshness) list of the resulting problem is empty:
+all freshness problems have been solved.\<close>
+
+lemma cred_fun_some_snd_empty:
+  assumes "cred_fun (P, nabla, s) = Some (P', nabla', s')"
+  shows "snd P' = []"
+  using assms by (induct "(P, nabla, s)" arbitrary: P nabla s P' nabla' s' rule: cred_fun.induct, auto split: if_splits)
+
+
+section \<open>Soundness of the computable algorithm\<close>
+
+text\<open>sred_fun is simulated by the reflexive-transitive closure of the equational reductions.\<close>
+
+lemma sred_rtc_prepend:
+  assumes "P1 \<turnstile> s1 \<leadsto> P2" and "P2 \<turnstile> s2 \<leadsto>\<^sup>* P'" and "s' = s2 \<bullet> (s1 \<bullet> s)"
+  shows "\<exists>s3. P1 \<turnstile> s3 \<leadsto>\<^sup>* P' \<and> s' = s3 \<bullet> s"
+proof-
+  have "P1 \<turnstile> (s2 \<bullet> s1) \<leadsto>\<^sup>* P'" "s' = (s2 \<bullet> s1) \<bullet> s"
+    using assms comp_assoc by auto
+  thus ?thesis by blast
+qed
+
+text\<open>One unfolding of sred_fun on a non-empty equation list corresponds to one s_red step.\<close>
+
+lemma ex_sred_stepI:
+  assumes "P \<turnstile> \<sigma> \<leadsto> Q" and "sred_fun (Q, nabla, \<sigma> \<bullet> s) = Some r"
+  shows "\<exists>\<sigma> Q. P \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = Some r"
+  using assms by blast
+
+lemma sred_fun_unfold_step:
+  assumes "sred_fun (((t1 \<approx>? t2) # xs, ys), nabla, s) = Some r"
+  shows "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = Some r"
+  using assms
+  apply (subst (asm) sred_fun.simps(2))
+  apply (cases t1; cases t2; auto simp del: sred_fun.simps split_paired_Ex split: if_splits)
+  apply ((rule ex_sred_stepI, rule s_red.intros, auto simp del: sred_fun.simps)[1])+
+  done
+
+lemma sred_fun_sred_rtc:
+  assumes "sred_fun (P, nabla, s) = Some (P', nabla', s')"
+  shows "nabla' = nabla \<and> (\<exists>s1. P \<turnstile> s1 \<leadsto>\<^sup>* P' \<and> s' = s1 \<bullet> s)"
+  using assms
+proof(induct P arbitrary: s rule: wf_induct[OF wf_rank_r])
+  case (1 P)
+  obtain eqs ys where P_def: "P = (eqs, ys)" by (cases P)
+  show ?case
+  proof(cases eqs)
+    case Nil
+    then show ?thesis using 1(2) P_def by force
+  next
+    case (Cons e xs)
+    obtain t1 t2 where e_def: "e = (t1 \<approx>? t2)" by (cases e)
+    obtain \<sigma> Q where step: "P \<turnstile> \<sigma> \<leadsto> Q" and rec: "sred_fun (Q, nabla, \<sigma> \<bullet> s) = Some (P', nabla', s')"
+      using sred_fun_unfold_step 1(2) unfolding P_def Cons e_def by blast
+    have "(Q, P) \<in> rank_r"
+      using rank_r_sred[OF step] .
+    hence "nabla' = nabla \<and> (\<exists>s1. Q \<turnstile> s1 \<leadsto>\<^sup>* P' \<and> s' = s1 \<bullet> (\<sigma> \<bullet> s))"
+      using 1(1) rec by blast
+    then show ?thesis
+      using sred_rtc_prepend[OF step] by blast
+  qed
+qed
+
+text\<open>cred_fun is simulated by the reflexive-transitive closure of the freshness reductions.\<close>
+
+lemma cred_rtc_prepend:
+  assumes "P1 \<turnstile> n1 \<rightarrow> P2" and "P2 \<turnstile> n2 \<rightarrow>\<^sup>* P'" and "nabla' = n2 \<union> (n1 \<union> nabla)"
+  shows "\<exists>n3. P1 \<turnstile> n3 \<rightarrow>\<^sup>* P' \<and> nabla' = n3 \<union> nabla"
+proof-
+  have "P1 \<turnstile> (n2 \<union> n1) \<rightarrow>\<^sup>* P'" "nabla' = (n2 \<union> n1) \<union> nabla"
+    using assms by auto
+  thus ?thesis by blast
+qed
+
+lemma cred_fun_cred_rtc:
+  assumes "cred_fun ((xs, ys), nabla, s) = Some (P', nabla', s')" and "xs = []"
+  shows "s' = s \<and> (\<exists>n1. ([], ys) \<turnstile> n1 \<rightarrow>\<^sup>* P' \<and> nabla' = n1 \<union> nabla)"
+  using assms
+proof(induct "((xs, ys), nabla, s)" arbitrary: xs ys nabla s rule: cred_fun.induct)
+  case (1 xs a ys nabla s)
+  then show ?case using cred_rtc_prepend[OF unit_cred] by auto
+next
+  case (2 xs a t1 t2 ys nabla s)
+  then show ?case using cred_rtc_prepend[OF paar_cred] by auto
+next
+  case (3 xs a F t ys nabla s)
+  then show ?case using cred_rtc_prepend[OF func_cred] by auto
+next
+  case (4 xs a b t ys nabla s)
+  then show ?case 
+    using cred_rtc_prepend[OF abst_aa_cred] cred_rtc_prepend[OF abst_ab_cred]
+    by (cases "a = b") auto
+next
+  case (5 xs a b ys nabla s)
+  then show ?case using cred_rtc_prepend[OF atom_cred] by (auto split: if_splits)
+next
+  case (6 xs a pi X ys nabla s)
+  then show ?case using cred_rtc_prepend[OF susp_cred] by auto
+next
+  case (7 xs nabla s)
+  then show ?case by force
+qed
+
+lemma cred_fun_some_fst:
+  assumes "cred_fun ((xs, ys), nabla, s) = Some (P', nabla', s')"
+  shows "fst P' = xs"
+  using assms 
+  by (induct "((xs, ys), nabla, s)" arbitrary: xs ys nabla s rule: cred_fun.induct, auto split: if_splits)
+
+text\<open>Gluing the closures of the equational and freshness reductions into red_plus.\<close>
+
+lemma sred_rtc_red_plus_append:
+  assumes "P1 \<turnstile> s \<leadsto>\<^sup>* P2" and "P2 \<Turnstile> (nabla, []) \<Rightarrow> P3"
+  shows "P1 \<Turnstile> (nabla, s) \<Rightarrow> P3"
+  using assms by (induct rule: sred_rtc.induct) auto
+
+lemma cred_rtc_red_plus:
+  assumes "P1 \<turnstile> nabla \<rightarrow>\<^sup>* P2"
+  shows "(P1 = P2 \<and> nabla = {}) \<or> P1 \<Turnstile> (nabla, []) \<Rightarrow> P2"
+  using assms
+proof(induct rule: cred_rtc.induct)
+  case (cred_refl P1)
+  then show ?case by simp
+next
+  case (cred_rtc_step P1 nabla1 P2 nabla2 P3)
+  show ?case
+  proof(cases "P2 = P3 \<and> nabla2 = {}")
+    case True
+    then show ?thesis using cred_single[OF cred_rtc_step(1)] by simp
+  next
+    case False
+    hence "P2 \<Turnstile> (nabla2, []) \<Rightarrow> P3" 
+      using cred_rtc_step(3) False by auto
+    then show ?thesis using cred_step[OF cred_rtc_step(1)] by simp
+  qed
+qed
+
+text\<open>A successful run of the algorithm corresponds to a sequence of equational reductions 
+followed by a sequence of freshness reductions ending in the empty problem.\<close>
+
+lemma nomu_unify_some_rtc:
+  assumes "nomu_unify P = Some (nabla, s)"
+  shows "\<exists>P3. P \<turnstile> s \<leadsto>\<^sup>* P3 \<and> P3 \<turnstile> nabla \<rightarrow>\<^sup>* ([],[])"
+proof-
+  obtain R where R: "red_plus_fun (P, {}, []) = Some R"
+    using assms by (cases "red_plus_fun (P, {}, [])") auto
+  obtain xs ys nabla0 s0 where S: "sred_fun (P, {}, []) = Some ((xs, ys), nabla0, s0)"
+    using R by (cases "sred_fun (P, {}, [])") auto
+  have "xs = []"
+    using sred_fun_some_fst_empty[OF S] by simp
+  obtain P1 nabla1 s1 where C: "cred_fun (([], ys), nabla0, s0) = Some (P1, nabla1, s1)"
+    using R S \<open>xs = []\<close> by (cases R) auto
+  have "P1 = ([],[])"
+    using cred_fun_some_fst[OF C] cred_fun_some_snd_empty[OF C] by (cases P1) auto
+  hence "nabla1 = nabla" "s1 = s"
+    using assms R S C \<open>xs = []\<close> by auto
+  obtain s2 where "nabla0 = {}" "P \<turnstile> s2 \<leadsto>\<^sup>* ([], ys)" "s0 = s2"
+    using sred_fun_sred_rtc[OF S] \<open>xs = []\<close> by auto
+  moreover obtain n where "s1 = s0" "([], ys) \<turnstile> n \<rightarrow>\<^sup>* P1" "nabla1 = n \<union> nabla0"
+    using cred_fun_cred_rtc[OF C] by auto
+  ultimately show ?thesis
+    using \<open>P1 = ([],[])\<close> \<open>nabla1 = nabla\<close> \<open>s1 = s\<close> by auto
+qed
+
+text\<open>For a non-trivial problem, a successful run of the algorithm corresponds to a red_plus 
+derivation to the empty problem.\<close>
+
+lemma nomu_unify_some_red_plus:
+  assumes "nomu_unify P = Some (nabla, s)" and "P \<noteq> ([],[])"
+  shows "P \<Turnstile> (nabla, s) \<Rightarrow> ([],[])"
+proof-
+  obtain P3 where sred: "P \<turnstile> s \<leadsto>\<^sup>* P3" and cred: "P3 \<turnstile> nabla \<rightarrow>\<^sup>* ([],[])"
+    using nomu_unify_some_rtc[OF assms(1)] by blast
+  show ?thesis
+  proof(cases "P3 = ([],[]) \<and> nabla = {}")
+    case True
+    then show ?thesis 
+      using sred_rtc_to_redplus[of P "([],[])" s] sred assms(2) by simp
+  next
+    case False
+    then have "P3 \<Turnstile> (nabla, []) \<Rightarrow> ([],[])" 
+      using cred_rtc_red_plus[OF cred] by metis
+    then show ?thesis 
+      by (rule sred_rtc_red_plus_append[OF sred])
+  qed
+qed
+
+text\<open>Soundness: whenever the algorithm returns a result, it is an idempotent most general 
+unifier of the input problem.\<close>
+
+theorem nomu_unify_sound:
+  assumes "nomu_unify P = Some (nabla, s)"
+  shows "(nabla, s) \<in> U P \<and> mgu P (nabla, s) \<and> idem (nabla, s)"
+proof-
+  obtain P3 where sred: "P \<turnstile> s \<leadsto>\<^sup>* P3" and cred: "P3 \<turnstile> nabla \<rightarrow>\<^sup>* ([],[])"
+    using nomu_unify_some_rtc[OF assms] by blast
+  show ?thesis
+  proof(cases "P = ([],[])")
+    case True
+    have "P3 = P \<and> s = []"
+      using sred True by (cases rule: sred_rtc.cases) (auto dest: sred_eqs_not_empty)
+    moreover have "nabla = {}"
+      using cred True calculation by (cases rule: cred_rtc.cases) (auto elim: c_red.cases)
+    ultimately show ?thesis 
+      using True subst_equ_refl
+      unfolding all_solutions_def mgu_def idem_def ext_subst_def by auto
+  next
+    case False
+    have red: "P \<Turnstile> (nabla, s) \<Rightarrow> ([],[])"
+      using nomu_unify_some_red_plus[OF assms False] .
+    have "({}, []) \<in> U ([],[])" 
+      unfolding all_solutions_def by simp
+    hence "({} \<union> nabla, [] \<bullet> s) \<in> U P"
+      using P1_from_P2_red_plus[OF red _ ext_subst_id] by blast
+    then show ?thesis 
+      using mgu[OF red] by simp
+  qed
+qed
+
+section \<open>Completeness of the computable algorithm\<close>
+
+text\<open>One unfolding of a failing sred_fun either hits a failure pattern or performs an s_red step
+after which sred_fun still fails.\<close>
+
+lemma ex_sred_stepI_gen:
+  assumes "P \<turnstile> \<sigma> \<leadsto> Q" and "sred_fun (Q, nabla, \<sigma> \<bullet> s) = r"
+  shows "\<exists>\<sigma> Q. P \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = r"
+  using assms by blast
+
+lemma sred_fun_unfold_none:
+  assumes "sred_fun (((t1 \<approx>? t2) # xs, ys), nabla, s) = None"
+  shows "fail ((t1 \<approx>? t2) # xs, ys) \<or> 
+         (\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None)"
+  using assms
+  apply (subst (asm) sred_fun.simps(2))
+  apply (cases t1; cases t2; simp del: sred_fun.simps split_paired_Ex split: if_splits)
+  apply (((rule disjI1, ((rule fail.intros(1-16)); blast)) 
+        | (rule disjI1, rule fail_sym, ((rule fail.intros(1-16)); blast)) 
+        | (rule disjI2, rule ex_sred_stepI_gen, rule s_red.intros, 
+           force simp del: sred_fun.simps, force simp del: sred_fun.simps)
+        | (rule disjI2, rule ex_sred_stepI_gen, rule s_red.intros, 
+           force simp del: sred_fun.simps))[1])+
+  done
+
+text\<open>If sred_fun fails, the problem has no solution.\<close>
+
+lemma sred_fun_none_empty:
+  assumes "sred_fun (P, nabla, s) = None"
+  shows "U P = {}"
+  using assms
+proof(induct P arbitrary: s rule: wf_induct[OF wf_rank_r])
+  case (1 P)
+  obtain eqs ys where P_def: "P = (eqs, ys)" by (cases P)
+  show ?case
+  proof(cases eqs)
+    case Nil
+    then show ?thesis using 1(2) P_def by simp
+  next
+    case (Cons e xs)
+    obtain t1 t2 where e_def: "e = (t1 \<approx>? t2)" by (cases e)
+    have H: "sred_fun (((t1 \<approx>? t2) # xs, ys), nabla, s) = None"
+      using 1(2) unfolding P_def Cons e_def .
+    have "fail P \<or> (\<exists>\<sigma> Q. P \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None)"
+      unfolding P_def Cons e_def by (rule sred_fun_unfold_none[OF H])
+    then show ?thesis
+    proof
+      assume "fail P"
+      then show ?thesis using fail_then_empty by simp
+    next
+      assume "\<exists>\<sigma> Q. P \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
+      then obtain \<sigma> Q where step: "P \<turnstile> \<sigma> \<leadsto> Q" and rec: "sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
+        by blast
+      have "(Q, P) \<in> rank_r"
+        using rank_r_sred[OF step] .
+      hence "U Q = {}"
+        using 1(1) rec by blast
+      then show ?thesis 
+        using u_empty_sred[OF step] by simp
     qed
   qed
 qed
 
- 
-
-  (*case (1 xs ys nabla s)
-  hence fun_step:
-    "sred_fun ((xs, ys), nabla, s, True) = (P2, nabla', s', B)"
-    by simp
-  with 1(1) show "\<exists>s1. ((Unit, Unit) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-    by auto
-next
-  case (2 t1 t2 s1 s2 xs ys nabla s)
-  hence fun_step:
-    "sred_fun (((t1, s1) # (t2, s2) # xs, ys), nabla, s, True) = (P2, nabla', s', B)"
-    by simp
-   with 2(1) show "\<exists>\<sigma>. ((Paar t1 t2, Paar s1 s2) # xs, ys) \<turnstile> \<sigma> \<leadsto>\<^sup>* P2" 
-     by auto
-next
-  case (3 F t1 G t2 xs ys nabla s)
-  then show "\<exists>s1. ((Func F t1, Func G t2) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2"
-  proof(cases "F = G")
-    case True
-    with 3(2) have "sred_fun (((t1, t2) # xs, ys), nabla, s, True) = (P2, nabla', s', B)"
-      by simp
-    with 3(1) True
-    show "\<exists>s1. ((Func F t1, Func G t2) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2"
-      by auto
-  next
-    case False
-    hence "sred_fun (((Func F t1, Func G t2) # xs, ys), nabla, s, True) 
-    = (((Func F t1 \<approx>? Func G t2)#xs,ys), nabla, s, False)" 
-      by simp
-    with 3(2) have P2_def: "P2 = ((Func F t1 \<approx>? Func G t2)#xs,ys)" 
-      by simp
-    have "((Func F t1, Func G t2) # xs, ys) \<turnstile> [] \<leadsto>\<^sup>* P2"
-      using P2_def sred_refl by simp
-    thus "\<exists>s1. ((Func F t1, Func G t2) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-      by auto
-  qed
-next
-  case (4 a t1 b t2 xs ys nabla s)
-  then show "\<exists>s1. ((Abst a t1, Abst b t2) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-  proof(cases "a = b")
-    case True
-    with 4(3) have "sred_fun (((t1, t2) # xs, ys), nabla, s, True) = (P2, nabla', s', B)"
-      by simp
-    with 4(1) True
-    show "\<exists>s1. ((Abst a t1, Abst b t2) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2"
-      by auto
-  next
-    case False
-    with 4(3) have "sred_fun (((t1, swap [(a, b)] t2) # xs, (a, t2) # ys), nabla, s, True) =
-    (P2, nabla', s', B)" by simp
-    with 4(2) False
-    show "\<exists>s1. ((Abst a t1, Abst b t2) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2"
-      by auto
-  qed
-next
-  case (5 a b xs ys nabla s)
-  then show "\<exists>s1. ((Atom a, Atom b) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2"
-  proof(cases "a=b")
-    case True
-    with 5(2) have "sred_fun ((xs, ys), nabla, s, True) = (P2, nabla', s', B)"
-      by simp
-    with 5(1) True show "\<exists>s1. ((Atom a, Atom b) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2"
-      by auto
-  next
-    case False
-    hence "sred_fun (((Atom a, Atom b) # xs, ys), nabla, s, True) 
-    = (((Atom a \<approx>? Atom b)#xs,ys), nabla, s, False)" 
-      by simp
-    with 5(2) have "P2 = ((Atom a \<approx>? Atom b)#xs,ys)" 
-      by simp
-    hence "((Atom a, Atom b) # xs, ys) \<turnstile> [] \<leadsto>\<^sup>* P2"
-      using sred_refl by simp
-    then show "\<exists>s1. ((Atom a, Atom b) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2"
-      by auto
-  qed
-next
-  case (6 pi1 X pi2 Y xs ys nabla s)
-  then show "\<exists>s1. ((Susp pi1 X, Susp pi2 Y) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2"
-  proof(cases "X = Y")
-    case True
-    with 6(3) have "sred_fun ((xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys), nabla, s, True) =
-    (P2, nabla', s', B)"
-      by simp
-    with 6(1) True show "\<exists>s1. ((Susp pi1 X, Susp pi2 Y) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2"
-      by auto
-  next
-    case False
-    with 6(3) have "sred_fun
-     (apply_subst [(X, swap (rev pi1) (Susp pi2 Y))] (xs, ys), nabla,
-      [(X, swap (rev pi1) (Susp pi2 Y))] \<bullet> s, True) =
-    (P2, nabla', s', B)" by simp
-    with 6(2) False obtain s2 where 
-      more: "apply_subst [(X, swap (rev pi1) (Susp pi2 Y))] (xs, ys) \<turnstile> s2 \<leadsto>\<^sup>* P2"
-      by auto
-    moreover have first: "((Susp pi1 X, Susp pi2 Y) # xs, ys) \<turnstile> [(X, swap (rev pi1) (Susp pi2 Y))]
-                                       \<leadsto> apply_subst [(X, swap (rev pi1) (Susp pi2 Y))] (xs, ys)"
-      using False var_1_sred occurs.simps by force
-    ultimately have 
-      "((Susp pi1 X, Susp pi2 Y) # xs, ys) \<turnstile> s2 \<bullet> [(X, swap (rev pi1) (Susp pi2 Y))] \<leadsto>\<^sup>* P2"
-      using sred_rtc_step by simp
-    then show "\<exists>s1. ((Susp pi1 X, Susp pi2 Y) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2"
-      by auto
-  qed
-next
-  case ("7_1" pi X a t xs ys nabla s)
-  then show "\<exists>s1. ((Susp pi X, Abst a t) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2"
-  proof(cases "occurs X (Abst a t)")
-    case True
-    hence "sred_fun (((Susp pi X, Abst a t) # xs, ys), nabla, s, True) 
-      = (((Susp pi X, Abst a t) # xs, ys), nabla, s, False)" by simp
-    with "7_1"(2) have "((Susp pi X, Abst a t) # xs, ys) \<turnstile> [] \<leadsto>\<^sup>* P2" 
-      by auto
-    then show "\<exists>s1. ((Susp pi X, Abst a t) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-      by auto
-  next
-    case False
-    with "7_1"(2) have "sred_fun
-     (apply_subst [(X, swap (rev pi) (Abst a t))] (xs, ys), nabla,
-      [(X, swap (rev pi) (Abst a t))] \<bullet> s, True) =
-    (P2, nabla', s', B)" by simp
-    with "7_1"(1) False obtain s2 where
-    more: "apply_subst [(X, swap (rev pi) (Abst a t))] (xs, ys) \<turnstile> s2 \<leadsto>\<^sup>* P2"
-      by auto
-    moreover have first: "((Susp pi X, Abst a t) # xs, ys) \<turnstile> 
-        [(X, swap (rev pi) (Abst a t))] \<leadsto> apply_subst [(X, swap (rev pi) (Abst a t))] (xs, ys)"
-      using False var_1_sred occurs.simps by force
-    ultimately have "((Susp pi X, Abst a t) # xs, ys) \<turnstile> 
-              s2 \<bullet> [(X, swap (rev pi) (Abst a t))] \<leadsto>\<^sup>* P2"
-      using sred_rtc_step by simp
-    then show "\<exists>s1. ((Susp pi X, Abst a t) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-      by auto
-  qed
-next
-  case ("7_2" pi X xs ys nabla s)
-  hence "sred_fun
-     (apply_subst [(X, swap (rev pi) Unit)] (xs, ys), nabla, [(X, swap (rev pi) Unit)] \<bullet> s,
-      True) =
-    (P2, nabla', s', B)" by simp
-  moreover have not_occurs: "\<not> occurs X Unit" by simp
-  ultimately obtain s2 where
-    more: "apply_subst [(X, swap (rev pi) Unit)] (xs, ys) \<turnstile> s2 \<leadsto>\<^sup>* P2"
-    using "7_2"(1) by auto
-  moreover have first: "((Susp pi X, Unit) # xs, ys) \<turnstile> [(X, swap (rev pi) Unit)]
-      \<leadsto> apply_subst [(X, swap (rev pi) Unit)] (xs, ys)"
-    using not_occurs var_1_sred by blast
-  ultimately have "((Susp pi X, Unit) # xs, ys) \<turnstile> s2 \<bullet> [(X, swap (rev pi) Unit)] \<leadsto>\<^sup>* P2"
-    using sred_rtc_step by simp
-  then show "\<exists>s1. ((Susp pi X, Unit) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-    by auto
-next
-  case ("7_3" pi X a xs ys nabla s)
-  hence "sred_fun
-     (apply_subst [(X, swap (rev pi) (Atom a))] (xs, ys), nabla, [(X, swap (rev pi) (Atom a))] \<bullet> s,
-      True) =
-    (P2, nabla', s', B)" by simp
-  moreover have not_occurs: "\<not> occurs X (Atom a)" by simp
-  ultimately obtain s2 where
-    more: "apply_subst [(X, swap (rev pi) (Atom a))] (xs, ys) \<turnstile> s2 \<leadsto>\<^sup>* P2"
-    using "7_3"(1) by auto
-  moreover have first: "((Susp pi X, Atom a) # xs, ys) \<turnstile> [(X, swap (rev pi) (Atom a))]
-      \<leadsto> apply_subst [(X, swap (rev pi) (Atom a))] (xs, ys)"
-    using not_occurs var_1_sred by blast
-  ultimately have "((Susp pi X, Atom a) # xs, ys) \<turnstile> s2 \<bullet> [(X, swap (rev pi) (Atom a))] \<leadsto>\<^sup>* P2"
-    using sred_rtc_step by simp
-  then show "\<exists>s1. ((Susp pi X, Atom a) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-    by auto
-next
-  case ("7_4" pi X t1 t2 xs ys nabla s)
-  then show "\<exists>s1. ((Susp pi X, Paar t1 t2) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2"
-  proof(cases "occurs X (Paar t1 t2)")
-    case True
-    hence "sred_fun (((Susp pi X, Paar t1 t2) # xs, ys), nabla, s, True) 
-      = (((Susp pi X, Paar t1 t2) # xs, ys), nabla, s, False)" by simp
-    with "7_4"(2) have "((Susp pi X, Paar t1 t2) # xs, ys) \<turnstile> [] \<leadsto>\<^sup>* P2" 
-      by auto
-    then show "\<exists>s1. ((Susp pi X, Paar t1 t2) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-      by auto
-  next
-    case False
-    with "7_4"(2) have "sred_fun
-     (apply_subst [(X, swap (rev pi) (Paar t1 t2))] (xs, ys), nabla,
-      [(X, swap (rev pi) (Paar t1 t2))] \<bullet> s, True) =
-    (P2, nabla', s', B)" by simp
-    with "7_4"(1) False obtain s2 where
-    more: "apply_subst [(X, swap (rev pi) (Paar t1 t2))] (xs, ys) \<turnstile> s2 \<leadsto>\<^sup>* P2"
-      by auto
-    moreover have first: "((Susp pi X, Paar t1 t2) # xs, ys) \<turnstile> 
-        [(X, swap (rev pi) (Paar t1 t2))] \<leadsto> apply_subst [(X, swap (rev pi) (Paar t1 t2))] (xs, ys)"
-      using False var_1_sred occurs.simps by force
-    ultimately have "((Susp pi X, Paar t1 t2) # xs, ys) \<turnstile> 
-              s2 \<bullet> [(X, swap (rev pi) (Paar t1 t2))] \<leadsto>\<^sup>* P2"
-      using sred_rtc_step by simp
-    then show "\<exists>s1. ((Susp pi X, Paar t1 t2) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-      by auto
-  qed
-next
-  case ("7_5" pi X F t xs ys nabla s)
-  then show "\<exists>s1. ((Susp pi X, Func F t) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2"
-  proof(cases "occurs X (Func F t)")
-    case True
-    hence "sred_fun (((Susp pi X, Func F t) # xs, ys), nabla, s, True) 
-      = (((Susp pi X, Func F t) # xs, ys), nabla, s, False)" by simp
-    with "7_5"(2) have "((Susp pi X, Func F t) # xs, ys) \<turnstile> [] \<leadsto>\<^sup>* P2" 
-      by auto
-    then show "\<exists>s1. ((Susp pi X, Func F t) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-      by auto
-  next
-    case False
-    with "7_5"(2) have "sred_fun
-     (apply_subst [(X, swap (rev pi) (Func F t))] (xs, ys), nabla,
-      [(X, swap (rev pi) (Func F t))] \<bullet> s, True) =
-    (P2, nabla', s', B)" by simp
-    with "7_5"(1) False obtain s2 where
-    more: "apply_subst [(X, swap (rev pi) (Func F t))] (xs, ys) \<turnstile> s2 \<leadsto>\<^sup>* P2"
-      by auto
-    moreover have first: "((Susp pi X, Func F t) # xs, ys) \<turnstile> 
-        [(X, swap (rev pi) (Func F t))] \<leadsto> apply_subst [(X, swap (rev pi) (Func F t))] (xs, ys)"
-      using False var_1_sred occurs.simps by force
-    ultimately have "((Susp pi X, Func F t) # xs, ys) \<turnstile> 
-              s2 \<bullet> [(X, swap (rev pi) (Func F t))] \<leadsto>\<^sup>* P2"
-      using sred_rtc_step by simp
-    then show "\<exists>s1. ((Susp pi X, Func F t) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-      by auto
-  qed
-next
-  case ("8_1" a t pi X xs ys nabla s)
-   then show "\<exists>s1. ((Abst a t, Susp pi X) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2"
-  proof(cases "occurs X (Abst a t)")
-    case True
-    hence "sred_fun (((Abst a t, Susp pi X) # xs, ys), nabla, s, True) 
-      = (((Abst a t, Susp pi X) # xs, ys), nabla, s, False)" by simp
-    with "8_1"(2) have "((Abst a t, Susp pi X) # xs, ys) \<turnstile> [] \<leadsto>\<^sup>* P2" 
-      by auto
-    then show "\<exists>s1. ((Abst a t, Susp pi X) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-      by auto
-  next
-    case False
-    with "8_1"(2) have "sred_fun
-     (apply_subst [(X, swap (rev pi) (Abst a t))] (xs, ys), nabla,
-      [(X, swap (rev pi) (Abst a t))] \<bullet> s, True) =
-    (P2, nabla', s', B)" by simp
-    with "8_1"(1) False obtain s2 where
-    more: "apply_subst [(X, swap (rev pi) (Abst a t))] (xs, ys) \<turnstile> s2 \<leadsto>\<^sup>* P2"
-      by auto
-    moreover have first: "((Abst a t, Susp pi X) # xs, ys) \<turnstile> 
-        [(X, swap (rev pi) (Abst a t))] \<leadsto> apply_subst [(X, swap (rev pi) (Abst a t))] (xs, ys)"
-      using False var_2_sred occurs.simps by force
-    ultimately have "((Abst a t, Susp pi X) # xs, ys) \<turnstile> 
-              s2 \<bullet> [(X, swap (rev pi) (Abst a t))] \<leadsto>\<^sup>* P2"
-      using sred_rtc_step by simp
-    then show "\<exists>s1. ((Abst a t, Susp pi X) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-      by auto
-  qed
-next
-  case ("8_2" pi X xs ys nabla s)
-  hence "sred_fun
-     (apply_subst [(X, swap (rev pi) Unit)] (xs, ys), nabla, [(X, swap (rev pi) Unit)] \<bullet> s,
-      True) =
-    (P2, nabla', s', B)" by simp
-  moreover have not_occurs: "\<not> occurs X Unit" by simp
-  ultimately obtain s2 where
-    more: "apply_subst [(X, swap (rev pi) Unit)] (xs, ys) \<turnstile> s2 \<leadsto>\<^sup>* P2"
-    using "8_2"(1) by auto
-  moreover have first: "((Unit, Susp pi X) # xs, ys) \<turnstile> [(X, swap (rev pi) Unit)]
-      \<leadsto> apply_subst [(X, swap (rev pi) Unit)] (xs, ys)"
-    using not_occurs var_2_sred by blast
-  ultimately have "((Unit, Susp pi X) # xs, ys) \<turnstile> s2 \<bullet> [(X, swap (rev pi) Unit)] \<leadsto>\<^sup>* P2"
-    using sred_rtc_step by simp
-  then show "\<exists>s1. ((Unit, Susp pi X) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-    by auto
-next
-  case ("8_3" a pi X xs ys nabla s)
-  hence "sred_fun
-     (apply_subst [(X, swap (rev pi) (Atom a))] (xs, ys), nabla, [(X, swap (rev pi) (Atom a))] \<bullet> s,
-      True) =
-    (P2, nabla', s', B)" by simp
-  moreover have not_occurs: "\<not> occurs X (Atom a)" by simp
-  ultimately obtain s2 where
-    more: "apply_subst [(X, swap (rev pi) (Atom a))] (xs, ys) \<turnstile> s2 \<leadsto>\<^sup>* P2"
-    using "8_3"(1) by auto
-  moreover have first: "((Atom a, Susp pi X) # xs, ys) \<turnstile> [(X, swap (rev pi) (Atom a))]
-      \<leadsto> apply_subst [(X, swap (rev pi) (Atom a))] (xs, ys)"
-    using not_occurs var_2_sred by blast
-  ultimately have "((Atom a, Susp pi X) # xs, ys) \<turnstile> s2 \<bullet> [(X, swap (rev pi) (Atom a))] \<leadsto>\<^sup>* P2"
-    using sred_rtc_step by simp
-  then show "\<exists>s1. ((Atom a, Susp pi X) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-    by auto
-next
-  case ("8_4" t1 t2 pi X xs ys nabla s)
-  then show "\<exists>s1. ((Paar t1 t2, Susp pi X) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2"
-  proof(cases "occurs X (Paar t1 t2)")
-    case True
-    hence "sred_fun (((Paar t1 t2, Susp pi X) # xs, ys), nabla, s, True) 
-      = (((Paar t1 t2, Susp pi X) # xs, ys), nabla, s, False)" by simp
-    with "8_4"(2) have "((Paar t1 t2, Susp pi X) # xs, ys) \<turnstile> [] \<leadsto>\<^sup>* P2" 
-      by auto
-    then show "\<exists>s1. ((Paar t1 t2, Susp pi X) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-      by auto
-  next
-    case False
-    with "8_4"(2) have "sred_fun
-     (apply_subst [(X, swap (rev pi) (Paar t1 t2))] (xs, ys), nabla,
-      [(X, swap (rev pi) (Paar t1 t2))] \<bullet> s, True) =
-    (P2, nabla', s', B)" by simp
-    with "8_4"(1) False obtain s2 where
-    more: "apply_subst [(X, swap (rev pi) (Paar t1 t2))] (xs, ys) \<turnstile> s2 \<leadsto>\<^sup>* P2"
-      by auto
-    moreover have first: "((Paar t1 t2, Susp pi X) # xs, ys) \<turnstile> 
-        [(X, swap (rev pi) (Paar t1 t2))] \<leadsto> apply_subst [(X, swap (rev pi) (Paar t1 t2))] (xs, ys)"
-      using False var_2_sred occurs.simps by force
-    ultimately have "((Paar t1 t2, Susp pi X) # xs, ys) \<turnstile> 
-              s2 \<bullet> [(X, swap (rev pi) (Paar t1 t2))] \<leadsto>\<^sup>* P2"
-      using sred_rtc_step by simp
-    then show "\<exists>s1. ((Paar t1 t2, Susp pi X) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-      by auto
-  qed
-next
-  case ("8_5" F t pi X xs ys nabla s)
-  then show "\<exists>s1. ((Func F t, Susp pi X) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2"
-  proof(cases "occurs X (Func F t)")
-    case True
-    hence "sred_fun (((Func F t, Susp pi X) # xs, ys), nabla, s, True) 
-      = (((Func F t, Susp pi X) # xs, ys), nabla, s, False)" by simp
-    with "8_5"(2) have "((Func F t, Susp pi X) # xs, ys) \<turnstile> [] \<leadsto>\<^sup>* P2" 
-      by auto
-    then show "\<exists>s1. ((Func F t, Susp pi X) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-      by auto
-  next
-    case False
-    with "8_5"(2) have "sred_fun
-     (apply_subst [(X, swap (rev pi) (Func F t))] (xs, ys), nabla,
-      [(X, swap (rev pi) (Func F t))] \<bullet> s, True) =
-    (P2, nabla', s', B)" by simp
-    with "8_5"(1) False obtain s2 where
-    more: "apply_subst [(X, swap (rev pi) (Func F t))] (xs, ys) \<turnstile> s2 \<leadsto>\<^sup>* P2"
-      by auto
-    moreover have first: "((Func F t, Susp pi X) # xs, ys) \<turnstile> 
-        [(X, swap (rev pi) (Func F t))] \<leadsto> apply_subst [(X, swap (rev pi) (Func F t))] (xs, ys)"
-      using False var_2_sred occurs.simps by force
-    ultimately have "((Func F t, Susp pi X) # xs, ys) \<turnstile> 
-              s2 \<bullet> [(X, swap (rev pi) (Func F t))] \<leadsto>\<^sup>* P2"
-      using sred_rtc_step by simp
-    then show "\<exists>s1. ((Func F t, Susp pi X) # xs, ys) \<turnstile> s1 \<leadsto>\<^sup>* P2" 
-      by auto
-  qed
-qed (auto)*)
-
-
-text \<open>Equivalence between problems\<close>
-
-fun equation_equiv :: "fresh_envs \<Rightarrow> (trm \<times> trm) \<Rightarrow> (trm \<times> trm) \<Rightarrow> bool"  (" _ \<Turnstile> _ \<simeq>\<^sub>e  _" [80,80,80] 80)
-where
-  "nabla \<Turnstile> (t11 \<approx>? t12) \<simeq>\<^sub>e (t21 \<approx>? t22) = (if (nabla \<turnstile> t11 \<approx> t21) \<and> (nabla\<turnstile> t12 \<approx> t22) then 
-                                            True 
-                                           else 
-                                            False)"
-
-lemma equation_equiv_refl:
-shows "nabla \<Turnstile> (t1 \<approx>? t2) \<simeq>\<^sub>e (t1 \<approx>? t2)"
-using equ_refl by simp
-
-lemma equation_equiv_refl2:
-shows "nabla \<Turnstile> e1 \<simeq>\<^sub>e e1"
-  using surjective_pairing[of e1] equation_equiv_refl[of nabla \<open>fst e1\<close> \<open>snd e1\<close>] by simp
-
-lemma equation_equiv_symm:
-assumes "nabla \<Turnstile> (t11 \<approx>? t12) \<simeq>\<^sub>e (t21 \<approx>? t22)"
-shows "nabla \<Turnstile> (t21 \<approx>? t22) \<simeq>\<^sub>e (t11 \<approx>? t12)"
-proof-
-  have "nabla \<turnstile> t11 \<approx> t21" and "nabla \<turnstile> t12 \<approx> t22"
-    using assms unfolding equation_equiv.simps by presburger+
-  hence "nabla \<turnstile> t21 \<approx> t11" and "nabla \<turnstile> t22 \<approx> t12"
-    using equ_symm by simp+
-  thus "nabla \<Turnstile> (t21, t22) \<simeq>\<^sub>e  (t11, t12)" 
-    unfolding equation_equiv.simps by simp
-qed
-
-lemma equation_equiv_symm2:
-assumes "nabla \<Turnstile> e1 \<simeq>\<^sub>e e2"
-shows "nabla \<Turnstile> e2 \<simeq>\<^sub>e e1"
-using assms surjective_pairing[of e1] surjective_pairing[of e2] equation_equiv_symm[of _ \<open>fst e1\<close> \<open>snd e1\<close> \<open>fst e2\<close> \<open>snd e2\<close>] by simp
-
-lemma equation_equiv_trans: 
-assumes "nabla \<Turnstile> (t11 \<approx>? t12) \<simeq>\<^sub>e (t21 \<approx>? t22)" and "nabla \<Turnstile> (t21 \<approx>? t22) \<simeq>\<^sub>e (t31 \<approx>? t32)"
-shows "nabla \<Turnstile> (t11 \<approx>? t12) \<simeq>\<^sub>e (t31 \<approx>? t32)"
-proof-
-  have "nabla \<turnstile> t11 \<approx> t21" and "nabla \<turnstile> t12 \<approx> t22" and "nabla \<turnstile> t21 \<approx> t31" and "nabla \<turnstile> t22 \<approx> t32"
-    using assms unfolding equation_equiv.simps by presburger+
-  hence "nabla \<turnstile> t11 \<approx> t31" and "nabla \<turnstile> t12 \<approx> t32"
-    using equ_trans by auto+
-  thus "nabla \<Turnstile> (t11 \<approx>? t12) \<simeq>\<^sub>e (t31 \<approx>? t32)"
-    unfolding equation_equiv.simps by simp
-qed
-
-lemma equation_equiv_trans2: 
-assumes "nabla \<Turnstile> e1 \<simeq>\<^sub>e e2" and "nabla \<Turnstile> e2 \<simeq>\<^sub>e e3"
-shows "nabla \<Turnstile> e1 \<simeq>\<^sub>e e3"
-using equation_equiv_trans[of _ \<open>fst e1\<close> \<open>snd e1\<close> \<open>fst e2\<close> \<open>snd e2\<close> \<open>fst e3\<close> \<open>snd e3\<close>] assms surjective_pairing[of e1] surjective_pairing[of e2] surjective_pairing[of e3] by simp
-
-fun fresh_equiv :: "fresh_envs \<Rightarrow> (string \<times> trm) \<Rightarrow> (string \<times> trm) \<Rightarrow> bool"  (" _ \<Turnstile> _ \<simeq>\<^sub>f  _" [80,80,80] 80)
-where
-  "nabla \<Turnstile> a \<sharp>? t1  \<simeq>\<^sub>f b \<sharp>? t2 = (if a = b then 
-                                  (if nabla \<turnstile> t1 \<approx> t2 then True else False)
-                                 else
-                                  False)"
-
-lemma fresh_equiv_refl:
-shows "nabla \<Turnstile> a \<sharp>? t1 \<simeq>\<^sub>f a \<sharp>? t1"
-using equ_refl by simp
-
-lemma fresh_equiv_ref2l:
-shows "nabla \<Turnstile> f1 \<simeq>\<^sub>f f1"
-using surjective_pairing[of f1] fresh_equiv_refl[of _ \<open>fst f1\<close> \<open>snd f1\<close>] by simp
-
-lemma fresh_equiv_symm:
-assumes "nabla \<Turnstile> a \<sharp>? t1 \<simeq>\<^sub>f b \<sharp>? t2"
-shows "nabla \<Turnstile> b \<sharp>? t2  \<simeq>\<^sub>f a \<sharp>? t1"
-proof-
-have "a = b" and "nabla \<turnstile> t1 \<approx> t2"
-  using assms unfolding fresh_equiv.simps by presburger+
-hence "b = a" and "nabla \<turnstile> t2 \<approx> t1" 
-  using equ_symm by auto+
-thus "nabla \<Turnstile> b \<sharp>? t2  \<simeq>\<^sub>f a \<sharp>? t1"
-  unfolding fresh_equiv.simps by simp
-qed
-
-lemma fresh_equiv_symm2:
-assumes "nabla \<Turnstile> f1 \<simeq>\<^sub>f f2"
-shows "nabla \<Turnstile> f2 \<simeq>\<^sub>f f1"
-using assms  surjective_pairing[of f1] surjective_pairing[of f2] fresh_equiv_symm[of _ \<open>fst f1\<close> \<open>snd f1\<close> \<open>fst f2\<close> \<open>snd f2\<close>] by simp
-
-
-lemma fresh_equiv_trans:
-assumes "nabla \<Turnstile> a \<sharp>? t1 \<simeq>\<^sub>f b \<sharp>? t2" and "nabla \<Turnstile> b \<sharp>? t2 \<simeq>\<^sub>f c \<sharp>? t3"
-shows "nabla \<Turnstile> a \<sharp>? t1 \<simeq>\<^sub>f c \<sharp>? t3"
-proof-
-have "a = b" and "b = c" and "nabla \<turnstile> t1 \<approx> t2" and "nabla \<turnstile> t2 \<approx> t3"
-  using assms unfolding fresh_equiv.simps by presburger+
-hence "a = c" and "nabla \<turnstile> t1 \<approx> t3"
-  using equ_trans by auto+
-thus "nabla \<Turnstile> a \<sharp>? t1 \<simeq>\<^sub>f c \<sharp>? t3"
-  unfolding fresh_equiv.simps by simp
-qed
-
-lemma fresh_equiv_trans2:
-assumes "nabla \<Turnstile> f1 \<simeq>\<^sub>f f2" and "nabla \<Turnstile> f2 \<simeq>\<^sub>f f3"
-shows "nabla \<Turnstile> f1 \<simeq>\<^sub>f f3"
-using assms surjective_pairing[of f1] surjective_pairing[of f2] surjective_pairing[of f3] fresh_equiv_trans[of _ \<open>fst f1\<close> \<open>snd f1\<close> \<open>fst f2\<close> \<open>snd f2\<close> \<open>fst f3\<close> \<open>snd f3\<close>] by simp
-  
-
-fun eprobs_equiv :: "fresh_envs \<Rightarrow> eprobs \<Rightarrow> eprobs \<Rightarrow> bool" (" _ \<Turnstile> _ \<simeq>\<^sub>E  _" [80,80,80] 80)
-where 
-  "nabla \<Turnstile> [] \<simeq>\<^sub>E []  = True" |
-  "nabla \<Turnstile> (e1 # eqs1) \<simeq>\<^sub>E (e2 # eqs2) = (if (nabla \<Turnstile> e1 \<simeq>\<^sub>e e2) \<and> (nabla \<Turnstile> eqs1 \<simeq>\<^sub>E eqs2) then
-                                            True
-                                           else
-                                            False)" |
-  "_ \<Turnstile> _ \<simeq>\<^sub>E _ = False"
-
-
-lemma eprobs_equiv_refl:
-shows "nabla \<Turnstile> eqs1 \<simeq>\<^sub>E eqs1"
-proof(induct eqs1)
-  case Nil
-  then show "nabla \<Turnstile> [] \<simeq>\<^sub>E []" by simp
-next
-  case (Cons e1 eqs1')
-  have "(nabla \<Turnstile> e1 \<simeq>\<^sub>e e1)"
-   using equation_equiv_refl2 by simp
-  then show "nabla \<Turnstile> (e1 # eqs1') \<simeq>\<^sub>E  (e1 # eqs1')"
-   using Cons unfolding eprobs_equiv.simps by simp
-qed
-
-lemma eprobs_equiv_symm:
-assumes "nabla \<Turnstile> eqs1 \<simeq>\<^sub>E eqs2"
-shows "nabla \<Turnstile> eqs2 \<simeq>\<^sub>E eqs1"
-using assms
-proof(induct rule: eprobs_equiv.induct)
-  case (2 nabla e1 eqs1 e2 eqs2)
-  have "nabla \<Turnstile> e2 \<simeq>\<^sub>e e1" "nabla \<Turnstile> eqs2 \<simeq>\<^sub>E eqs1"
-    using 2(2) unfolding eprobs_equiv.simps by presburger+
-  hence "nabla \<Turnstile> e1 \<simeq>\<^sub>e e2" "nabla \<Turnstile> eqs1 \<simeq>\<^sub>E eqs2"
-    using 2(1) equation_equiv_symm2 equation_equiv.elims(3) by (metis, simp)
-  then show "nabla \<Turnstile> (e1 # eqs1) \<simeq>\<^sub>E  (e2 # eqs2)" 
-    unfolding eprobs_equiv.simps by simp
-qed (auto)
-
-lemma eprobs_equiv_trans:
-assumes "nabla \<Turnstile> eqs1 \<simeq>\<^sub>E eqs2" "nabla \<Turnstile> eqs2 \<simeq>\<^sub>E eqs3"
-shows "nabla \<Turnstile> eqs1 \<simeq>\<^sub>E eqs3"
-using assms
-proof (induction eqs1 arbitrary: eqs2 eqs3)
-  case Nil
-  then show "nabla \<Turnstile> [] \<simeq>\<^sub>E eqs3"
-    using eprobs_equiv.elims(2) by auto
-next
-  case (Cons e1 eqs1')
-  then have "eqs2 \<noteq> []"
-   by auto
-  then obtain e2 eqs2' where eqs2_is_cons: "eqs2 = e2 # eqs2'"
-    using neq_Nil_conv[of eqs2] by auto
-  hence "nabla \<Turnstile> e1 \<simeq>\<^sub>e e2" "nabla \<Turnstile> eqs1' \<simeq>\<^sub>E eqs2'"
-    using Cons(2) eprobs_equiv.simps(2) by metis+
-
-  moreover from eqs2_is_cons Cons(3) have "eqs3 \<noteq> []"
-    by auto
-  then obtain e3 eqs3' where eqs3_is_cons: "eqs3 = e3 # eqs3'"
-    using neq_Nil_conv[of eqs3] by auto
-  hence "nabla \<Turnstile> e2 \<simeq>\<^sub>e e3" "nabla \<Turnstile> eqs2' \<simeq>\<^sub>E eqs3'"
-    using Cons(3) eprobs_equiv.simps(2) unfolding eqs2_is_cons by metis+
-
-  ultimately have "nabla \<Turnstile> eqs1' \<simeq>\<^sub>E  eqs3'"
-    using Cons(1) by simp
-  moreover have "nabla \<Turnstile> e1 \<simeq>\<^sub>e e3"
-    using \<open>nabla \<Turnstile> e1 \<simeq>\<^sub>e e2\<close> \<open>nabla \<Turnstile> e2 \<simeq>\<^sub>e e3\<close> equation_equiv_trans2
-      by blast
-  ultimately show "nabla \<Turnstile> (e1 # eqs1') \<simeq>\<^sub>E eqs3" 
-    unfolding eqs3_is_cons eprobs_equiv.simps by simp
-qed
-  
-
-fun fprobs_equiv :: "fresh_envs \<Rightarrow> fprobs \<Rightarrow> fprobs \<Rightarrow> bool" (" _ \<Turnstile> _ \<simeq>\<^sub>F  _" [80,80,80] 80)
-where   
-  "nabla \<Turnstile> [] \<simeq>\<^sub>F [] = True" |
-  "nabla \<Turnstile> (f1 # freshs1) \<simeq>\<^sub>F (f2 # freshs2) = (if (nabla \<Turnstile> f1 \<simeq>\<^sub>f f2) \<and> (nabla \<Turnstile> freshs1 \<simeq>\<^sub>F freshs2) then 
-                                                True
-                                               else
-                                                False)" |
-  "_ \<Turnstile> _ \<simeq>\<^sub>F _ = False"
-
-
-lemma fprobs_equiv_refl:
-shows "nabla \<Turnstile> freshs1 \<simeq>\<^sub>F freshs1"
-proof(induct freshs1)
-  case Nil
-  then show "nabla \<Turnstile> [] \<simeq>\<^sub>F []" by simp
-next
-  case (Cons f1 freshs1')
-  have "nabla \<Turnstile> f1 \<simeq>\<^sub>f f1"
-    using fresh_equiv_refl fresh_equiv.elims(3) by blast
-  with Cons show "nabla \<Turnstile> (f1 # freshs1') \<simeq>\<^sub>F  (f1 # freshs1')"
-    using fprobs_equiv.simps by simp
-qed
-
-lemma fprobs_equiv_symm:
-assumes "nabla \<Turnstile> freshs1 \<simeq>\<^sub>F freshs2"
-shows "nabla \<Turnstile> freshs2 \<simeq>\<^sub>F freshs1"
-using assms
-proof(induct freshs1 arbitrary: freshs2)
-  case Nil
-  then have "freshs2 = []"
-    using fprobs_equiv.elims(2) by blast
-  then show "nabla \<Turnstile> freshs2 \<simeq>\<^sub>F []"
-    by simp
-next
-  case (Cons f1 freshs1')
-  hence "freshs2 \<noteq> []"
-    by auto
-  then obtain f2 freshs2' where freshs2_is_cons: "freshs2 = f2 # freshs2'"
-    using neq_Nil_conv[of freshs2] by auto
-  have "nabla \<Turnstile> f1 \<simeq>\<^sub>f f2" "nabla \<Turnstile> freshs1' \<simeq>\<^sub>F freshs2'"
-    using Cons(2) unfolding freshs2_is_cons fprobs_equiv.simps by presburger+
-  hence "nabla \<Turnstile> f2 \<simeq>\<^sub>f f1" "nabla \<Turnstile> freshs2' \<simeq>\<^sub>F freshs1'"
-    using fresh_equiv_symm2 Cons(1) by auto
-  then show "nabla \<Turnstile> freshs2 \<simeq>\<^sub>F  (f1 # freshs1')"
-    unfolding freshs2_is_cons by simp
-qed
-
-lemma fprobs_equiv_trans:
-assumes "nabla \<Turnstile> freshs1 \<simeq>\<^sub>F freshs2" "nabla \<Turnstile> freshs2 \<simeq>\<^sub>F freshs3"
-shows "nabla \<Turnstile> freshs1 \<simeq>\<^sub>F freshs3"
-using assms
-proof (induction freshs1 arbitrary: freshs2 freshs3)
-  case Nil
-  then show ?case
-    using fprobs_equiv.elims(2) by auto
-next
-  case (Cons f1 freshs1')
-  then have "freshs2 \<noteq> []"
-   by auto
-  then obtain f2 freshs2' where freshs2_is_cons: "freshs2 = f2 # freshs2'"
-    using neq_Nil_conv[of freshs2] by auto
-  hence "nabla \<Turnstile> f1 \<simeq>\<^sub>f f2" "nabla \<Turnstile> freshs1' \<simeq>\<^sub>F freshs2'"
-    using Cons(2) fprobs_equiv.simps(2) by metis+
-  
-  moreover from freshs2_is_cons Cons(3) have "freshs3 \<noteq> []"
-    by auto
-  then obtain f3 freshs3' where freshs3_is_cons: "freshs3 = f3 # freshs3'"
-    using neq_Nil_conv[of freshs3] by auto
-  hence "nabla \<Turnstile> f2 \<simeq>\<^sub>f f3" "nabla \<Turnstile> freshs2' \<simeq>\<^sub>F freshs3'"
-    using Cons(3) fprobs_equiv.simps(2) unfolding freshs2_is_cons by metis+
-
-  ultimately have "nabla \<Turnstile> freshs1' \<simeq>\<^sub>F  freshs3'"
-    using Cons(1) by simp
-  moreover have "nabla \<Turnstile> f1 \<simeq>\<^sub>f f3"
-    using \<open>nabla \<Turnstile> f1 \<simeq>\<^sub>f f2\<close> \<open>nabla \<Turnstile> f2 \<simeq>\<^sub>f f3\<close> fresh_equiv_trans2
-      by blast
-  ultimately show "nabla \<Turnstile> (f1 # freshs1') \<simeq>\<^sub>F freshs3" 
-    unfolding freshs3_is_cons by simp
-qed
-
-
-definition prob_equiv :: "fresh_envs \<Rightarrow> problem_type \<Rightarrow> problem_type \<Rightarrow> bool" (" _ \<Turnstile> _ \<simeq>  _" [80,80,80] 80) where
- "nabla \<Turnstile> P1 \<simeq> P2 \<equiv> nabla \<Turnstile> fst P1 \<simeq>\<^sub>E fst P2 \<and> nabla \<Turnstile> snd P1 \<simeq>\<^sub>F snd P2"
-
-lemma prob_equiv_refl:
- shows "nabla \<Turnstile> P1 \<simeq> P1"
-using eprobs_equiv_refl fprobs_equiv_refl unfolding prob_equiv_def by simp
-
-lemma prob_equiv_symm:
-  assumes "nabla \<Turnstile> P1 \<simeq> P2"
-    shows "nabla \<Turnstile> P2 \<simeq> P1"
-using assms eprobs_equiv_symm fprobs_equiv_symm unfolding prob_equiv_def by simp
-
-lemma prob_equiv_trans:
-  assumes "nabla \<Turnstile> P1 \<simeq> P2" "nabla \<Turnstile> P2 \<simeq> P3"
-    shows "nabla \<Turnstile> P1 \<simeq> P3"
-using assms eprobs_equiv_trans fprobs_equiv_trans unfolding prob_equiv_def by auto
-  
-
-lemma subst_equ_leads_to_equiv_eprobs:
-  assumes "nabla \<Turnstile> subst s1 \<approx> subst s2"
-  shows "nabla \<Turnstile> map (\<lambda>(t1, t2). (subst s1 t1, subst s1 t2))
-               eqs \<simeq>\<^sub>E  map (\<lambda>(t1, t2). (subst s2 t1, subst s2 t2)) eqs"
-using assms
-proof(induct eqs)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons e eqs')
-  obtain t1 t2 where e_def: "e = (t1,t2)"
-    by force
-  hence "nabla \<Turnstile> (t1,t2) \<simeq>\<^sub>e (t1, t2)"
-   using equation_equiv_refl by blast
-  hence "nabla \<turnstile> subst s1 t1 \<approx> subst s2 t1" "nabla \<turnstile> subst s1 t2 \<approx> subst s2 t2"
-   using subst_equ_to_trm Cons unfolding equation_equiv.simps by auto+ 
-  hence "nabla \<Turnstile>  (\<lambda>(t1, t2). (subst s1 t1, subst s1 t2))
-               e \<simeq>\<^sub>e (\<lambda>(t1, t2). (subst s2 t1, subst s2 t2)) e"
-    using Cons(2) subst_equ_to_trm e_def by simp
-  then show ?case 
-    using Cons by simp
-qed
-
-lemma subst_equ_leads_to_equiv_fprobs:
-  assumes "nabla \<Turnstile> subst s1 \<approx> subst s2"
-  shows "nabla \<Turnstile> map (\<lambda>(a, t1). (a, subst s1 t1))
-               freshs \<simeq>\<^sub>F  map (\<lambda>(a, t1). (a, subst s2 t1)) freshs"
-using assms
-proof(induct freshs)
-  case Nil
-  then show ?case by simp
-next
-  case (Cons f freshs')
-  obtain a t1 where f_def: "f = (a,t1)"
-    by force
-  hence "nabla \<Turnstile> (a,t1) \<simeq>\<^sub>f (a, t1)"
-   using fresh_equiv_refl by blast
-  hence "nabla \<turnstile> subst s1 t1 \<approx> subst s2 t1"
-   using subst_equ_to_trm Cons by auto
-  hence "nabla \<Turnstile>  (\<lambda>(a, t1). (a, subst s1 t1)) f \<simeq>\<^sub>f (\<lambda>(a, t1). (a, subst s2 t1)) f"
-    using Cons(2) subst_equ_to_trm f_def by simp
-  then show ?case 
-    using Cons by simp
-qed
-
-lemma subst_equ_leads_to_equiv_probs:
-  assumes "nabla \<Turnstile> subst s1 \<approx> subst s2"
-  shows "nabla \<Turnstile> apply_subst s1 P1 \<simeq> apply_subst s2 P1"
-using assms subst_equ_leads_to_equiv_eprobs subst_equ_leads_to_equiv_fprobs unfolding prob_equiv_def apply_subst_def by simp
-
-lemma apply_subst_trans:
-  assumes "nabla \<Turnstile> P1 \<simeq> apply_subst \<sigma>\<^sub>1 P2"
-      and "nabla \<Turnstile> P2 \<simeq> apply_subst \<sigma>\<^sub>2 P3"
-    shows "nabla \<Turnstile> P1 \<simeq> apply_subst \<sigma>\<^sub>1 (apply_subst \<sigma>\<^sub>2 P3)"
-using assms unfolding apply_subst_def prob_equiv_def sorry
-
-(*requires equivariance of problems*)
-
-lemma apply_subst_comp_expand:
-  "apply_subst (s1 \<bullet> s2) P = apply_subst s1 (apply_subst s2 P)"
-  using apply_subst_def subst_comp_expand by auto
-
-lemma apply_subst_id:
-  "apply_subst [] P = P"
-unfolding apply_subst_def by simp
-
-lemma apply_subst_comp_id:
-  "apply_subst (s \<bullet> []) P = apply_subst s P"
-using apply_subst_comp_expand apply_subst_id by simp
-
-
-
-text\<open>Completeness of sred_fun\<close>
-
-lemma sred_fun_completeness_aux1:
-  assumes "X \<noteq> Y"
-  shows "nabla \<Turnstile> subst [(Y, swap (rev pi') (Susp pi X))] \<approx> subst ([(Y, swap (rev pi') (Susp pi X))] \<bullet> [(X, swap (rev pi) (Susp pi' Y))])"
-proof-
-  have "subst ([(Y, swap (rev pi') (Susp pi X))] \<bullet> [(X, swap (rev pi) (Susp pi' Y))]) (Susp [] X) =  subst [(Y, swap (rev pi') (Susp pi X))] (swap (rev pi) (Susp pi' Y))"
-    using assms subst_comp_expand[of \<open>[(Y, swap (rev pi') (Susp pi X))]\<close> \<open>[(X, swap (rev pi) (Susp pi' Y))]\<close> \<open>Susp [] X\<close>] unfolding subst.simps(2) look_up.simps by simp
-  also have "... = subst [(Y, swap (rev pi') (Susp pi X))] (Susp (rev pi @ pi') Y)"
-    using swap.simps(3) by simp
-  also have "...  = swap (rev pi @ pi') (swap (rev pi') (Susp pi X))"
-    unfolding subst.simps(2) look_up.simps by simp
-  also have "... = swap (rev pi@ pi') (swap ((rev pi') @ pi) (Susp [] X))" 
-    using swap.simps by simp
-  finally have left_subst_X: "subst ([(Y, swap (rev pi') (Susp pi X))] \<bullet> [(X, swap (rev pi) (Susp pi' Y))]) (Susp [] X) = swap (rev pi @ pi') (swap (rev (rev pi @ pi')) (Susp [] X))"
-    using rev_rev_ident rev_append by simp
-
-  have "subst ([(Y, swap (rev pi') (Susp pi X))] \<bullet> [(X, swap (rev pi) (Susp pi' Y))]) (Susp [] Y) =  subst [(Y, swap (rev pi') (Susp pi X))] (Susp [] Y)"
-    using assms subst_comp_expand subst_not_occurs by simp
-  hence left_subst_Y : "subst ([(Y, swap (rev pi') (Susp pi X))] \<bullet> [(X, swap (rev pi) (Susp pi' Y))]) (Susp [] Y) = Susp (rev pi' @ pi) X"
-    unfolding subst.simps look_up.simps by simp
-
-  have right_subst_X: "subst [(Y, swap (rev pi') (Susp pi X))] (Susp [] X) = Susp [] X"
-    using assms subst_not_occurs by simp
-
-  have right_subst_Y: "subst [(Y, swap (rev pi') (Susp pi X))] (Susp [] Y) = Susp (rev pi' @ pi) X"
-    unfolding subst.simps look_up.simps by simp
-
-  have "nabla \<turnstile> subst [(Y, swap (rev pi') (Susp pi X))] (Susp [] Y) \<approx> subst ([(Y, swap (rev pi') (Susp pi X))] \<bullet> [(X, swap (rev pi) (Susp pi' Y))]) (Susp [] Y)"
-    using left_subst_Y right_subst_Y equ_refl by simp
-
-  moreover have "nabla \<turnstile> swap (rev pi @ pi') (swap (rev (rev pi @ pi')) (Susp [] X)) \<approx> subst ([(Y, swap (rev pi') (Susp pi X))] \<bullet> [(X, swap (rev pi) (Susp pi' Y))]) (Susp [] X)"
-    using left_subst_X equ_refl by simp
-  hence "nabla \<turnstile> Susp [] X \<approx> subst ([(Y, swap (rev pi') (Susp pi X))] \<bullet> [(X, swap (rev pi) (Susp pi' Y))]) (Susp [] X)"
-    using rev_pi_pi_equ[of nabla] equ_involutive_right swap_inv_side
-    by (meson)
-  hence "nabla \<turnstile> subst [(Y, swap (rev pi') (Susp pi X))] (Susp [] X) \<approx> subst ([(Y, swap (rev pi') (Susp pi X))] \<bullet> [(X, swap (rev pi) (Susp pi' Y))]) (Susp [] X) "
-    using right_subst_X equ_trans equ_refl by simp
-
-  ultimately show ?thesis 
-    using \<open>subst ([(Y, swap (rev pi') (Susp pi X))] \<bullet> [(X, swap (rev pi) (Susp pi' Y))]) (Susp [] X) = subst [(Y, swap (rev pi') (Susp pi X))] (swap (rev pi) (Susp pi' Y))\<close> rev.simps(1) subst_equ_symm swap_id unif_1 
-    by metis
-qed
-
-lemma equiv_aux:
-assumes "sred_fun (P1, nabla, s, True) = sred_fun (P2, nabla, \<sigma> \<bullet> s, True)"
-    and "{} \<Turnstile> P1' \<simeq> apply_subst \<gamma> P1"
-shows "\<exists> P2' \<sigma>'. sred_fun (P1', nabla, s, True) = sred_fun (P2', nabla, \<sigma>' \<bullet> s, True) \<and>
-       {} \<Turnstile> P2' \<simeq> apply_subst \<gamma> P2 \<and> {} \<Turnstile> subst \<sigma>' \<approx> subst \<sigma>"
-sorry
-
-lemma sred_to_sred_fun:
-  assumes "P1 \<turnstile> \<sigma> \<leadsto> P2" 
-  shows "\<exists> \<sigma>' P2' \<gamma> . sred_fun (P1, nabla, s, True) = sred_fun (P2', nabla, \<sigma>' \<bullet> s, True) \<and>
-        {} \<Turnstile> subst \<sigma>' \<approx> subst (\<gamma> \<bullet> \<sigma>) \<and>
-        {} \<Turnstile> P2' \<simeq> apply_subst \<gamma> P2"
-proof(induct rule: s_red.induct[OF assms(1)])
-  case (1 xs ys)
-  have "sred_fun (((Unit, Unit) # xs, ys), nabla, s, True) = sred_fun ((xs,ys), nabla, [] \<bullet> s, True)"
-    by auto
-  moreover have "{} \<Turnstile> subst [] \<approx> subst ([] \<bullet> [])"
-    using subst_equ_refl by auto
-  moreover have "(xs, ys) = apply_subst [] (xs, ys)" 
-    unfolding apply_subst_def by simp
-  hence "{} \<Turnstile> (xs, ys) \<simeq> apply_subst [] (xs, ys)" 
-    using prob_equiv_refl by simp
-  ultimately show ?case by blast
-next
-  case (2 t1 t2 s1 s2 xs ys)
-  have "sred_fun (((Paar t1 t2, Paar s1 s2)# xs, ys), nabla, s, True) = sred_fun (((t1,s1) # (t2,s2) # xs, ys), nabla, [] \<bullet> s, True)"
-    by auto
-  moreover have "{} \<Turnstile> subst [] \<approx> subst ([] \<bullet> [])"
-    using subst_equ_refl by auto
-  moreover have "((t1,s1) # (t2,s2) # xs, ys) = apply_subst [] ((t1,s1) # (t2,s2) # xs, ys)" 
-    unfolding apply_subst_def by simp
-  hence "{} \<Turnstile> ((t1,s1) # (t2,s2) # xs, ys) \<simeq> apply_subst [] ((t1,s1) # (t2,s2) # xs, ys)"
-    using prob_equiv_refl by simp
-  ultimately show ?case by blast
-next
-  case (3 F t1 t2 xs ys)
-  have "sred_fun (((Func F t1, Func F t2)# xs, ys), nabla, s, True) = sred_fun (((t1,t2) # xs, ys), nabla, [] \<bullet> s, True)"
-    by auto
-  moreover have "{} \<Turnstile> subst [] \<approx> subst ([] \<bullet> [])"
-    using subst_equ_refl by auto
-  moreover have "((t1,t2) # xs, ys) = apply_subst [] ((t1,t2) # xs, ys)" 
-    unfolding apply_subst_def by simp
-  hence "{} \<Turnstile> ((t1,t2) # xs, ys) \<simeq> apply_subst [] ((t1,t2) # xs, ys)"
-    using prob_equiv_refl by simp
-  ultimately show ?case by blast
-next
-  case (4 a t1 t2 xs ys)
-  have "sred_fun (((Abst a t1, Abst a t2)# xs, ys), nabla, s, True) = sred_fun (((t1,t2) # xs, ys), nabla, [] \<bullet> s, True)"
-    by auto
-  moreover have "{} \<Turnstile> subst [] \<approx> subst ([] \<bullet> [])"
-    using subst_equ_refl by auto
-  moreover have "((t1,t2) # xs, ys) = apply_subst [] ((t1,t2) # xs, ys)" 
-    unfolding apply_subst_def by simp
-  hence "{} \<Turnstile> ((t1,t2) # xs, ys) \<simeq> apply_subst [] ((t1,t2) # xs, ys)"
-     using prob_equiv_refl by simp
-  ultimately show ?case by blast
-next
-  case (5 a b t1 t2 xs ys)
-  hence "sred_fun (((Abst a t1, Abst b t2) # xs, ys), nabla, s, True) = sred_fun (((t1, swap [(a, b)] t2) # xs, (a, t2) # ys), nabla, [] \<bullet> s, True)"
-    by auto
-  moreover have "{} \<Turnstile> subst [] \<approx> subst ([] \<bullet> [])"
-    using subst_equ_refl by auto
-  moreover have "((t1, swap [(a, b)] t2) # xs, (a, t2) # ys) = apply_subst [] ((t1, swap [(a, b)] t2) # xs, (a, t2) # ys)"
-    unfolding apply_subst_def by simp
-  hence "{} \<Turnstile> ((t1, swap [(a, b)] t2) # xs, (a, t2) # ys) \<simeq> apply_subst [] ((t1, swap [(a, b)] t2) # xs, (a, t2) # ys)"
-    using prob_equiv_refl by simp
-  ultimately show ?case by blast
-next
-  case (6 a xs ys)
-  have "sred_fun (((Atom a, Atom a) # xs, ys), nabla, s, True) = sred_fun ((xs,ys), nabla, [] \<bullet> s, True)"
-    by auto
-  moreover have "{} \<Turnstile> subst [] \<approx> subst ([] \<bullet> [])"
-    using subst_equ_refl by auto
-  moreover have "(xs, ys) = apply_subst [] (xs, ys)" 
-    unfolding apply_subst_def by simp
-  hence "{} \<Turnstile> (xs, ys) \<simeq> apply_subst [] (xs, ys)"
-    using prob_equiv_refl by simp
-  ultimately show ?case by blast
-next
-  case (7 pi1 X pi2 xs ys)
-  have " sred_fun (((Susp pi1 X, Susp pi2 X) # xs, ys), nabla, s, True) = sred_fun ((xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys), nabla, [] \<bullet> s, True)"
-    by auto
-  moreover have "{} \<Turnstile> subst [] \<approx> subst ([] \<bullet> [])"
-    using subst_equ_refl by auto
-  moreover have "(xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys) = apply_subst [] (xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys)"
-    unfolding apply_subst_def by simp
-  hence "{} \<Turnstile> (xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys) \<simeq> apply_subst [] (xs, map (\<lambda>a. (a, Susp [] X)) (ds_list pi1 pi2) @ ys)"
-    using prob_equiv_refl by simp
-  ultimately show ?case by blast
-next
-  case (8 X t pi xs ys)
-  hence "sred_fun (((Susp pi X, t) # xs, ys), nabla, s, True) = sred_fun (apply_subst [(X, swap (rev pi) t)] (xs, ys), nabla, [(X, swap (rev pi) t)] \<bullet> s, True)"
-    by (cases t, auto)
-  moreover have "{} \<Turnstile> subst ([(X, swap (rev pi) t)])\<approx> subst  ([] \<bullet> [(X, swap (rev pi) t)])"
-    using subst_equ_refl by simp
-  moreover have "apply_subst [(X, swap (rev pi) t)] (xs, ys) = apply_subst [] (apply_subst [(X, swap (rev pi) t)] (xs, ys))"
-    unfolding apply_subst_def by simp
-  hence "{} \<Turnstile> apply_subst [(X, swap (rev pi) t)] (xs, ys) \<simeq> apply_subst [] (apply_subst [(X, swap (rev pi) t)] (xs, ys))"
-    using prob_equiv_refl by simp
-  ultimately show ?case by blast
-next
-  case (9 X t pi xs ys)
-  then show ?case 
-  proof(cases t)
-    case (Abst a t1)
-    hence "sred_fun (((t, Susp pi X) # xs, ys), nabla, s, True) = sred_fun (apply_subst [(X, swap (rev pi) t)] (xs, ys), nabla, [(X, swap (rev pi) t)] \<bullet> s, True)"
-      using 9 by auto
-    moreover have "{} \<Turnstile> subst ([(X, swap (rev pi) t)]) \<approx> subst  ([] \<bullet> [(X, swap (rev pi) t)])"
-      using subst_equ_refl by simp
-    moreover have "apply_subst [(X, swap (rev pi) t)] (xs, ys) = apply_subst [] (apply_subst [(X, swap (rev pi) t)] (xs, ys))"
-      unfolding apply_subst_def by simp
-    hence "{} \<Turnstile> apply_subst [(X, swap (rev pi) t)] (xs, ys) \<simeq> apply_subst [] (apply_subst [(X, swap (rev pi) t)] (xs, ys))"
-      using prob_equiv_refl by simp
-    ultimately show ?thesis by blast
-  next
-    case (Susp pi' Y)
-    hence "sred_fun (((Susp pi' Y, Susp pi X) # xs, ys), nabla, s, True) = sred_fun (apply_subst [(Y, swap (rev pi') (Susp pi X))] (xs, ys), nabla, [(Y, swap (rev pi') (Susp pi X))] \<bullet> s, True)" 
-      using 9 occurs.simps(3) by auto
-    moreover have substs_equiv: "{} \<Turnstile> subst ([(Y, swap (rev pi') (Susp pi X))] ) \<approx> subst ([(Y, swap (rev pi') (Susp pi X))] \<bullet> [(X, swap (rev pi) (Susp pi' Y))])" 
-      using subst_id_right sred_fun_completeness_aux1 9 occurs.simps(3) Susp by metis
-    moreover have "{} \<Turnstile> apply_subst [(Y, swap (rev pi') (Susp pi X))] (xs, ys) \<simeq> apply_subst [(Y, swap (rev pi') (Susp pi X))] (apply_subst [(X, swap (rev pi) (Susp pi' Y))] (xs, ys))" 
-      using subst_equ_leads_to_equiv_probs[OF substs_equiv, of \<open>(xs,ys)\<close>] apply_subst_comp_id 
-       apply_subst_comp_expand by simp
-    ultimately show ?thesis 
-      using Susp 9 by blast
-  next
-    case Unit
-    hence "sred_fun (((t, Susp pi X) # xs, ys), nabla, s, True) = sred_fun (apply_subst [(X, swap (rev pi) t)] (xs, ys), nabla, [(X, swap (rev pi) t)] \<bullet> s, True)"
-      using 9 by auto
-    moreover have "{} \<Turnstile> subst ([(X, swap (rev pi) t)]) \<approx> subst ([] \<bullet> [(X, swap (rev pi) t)])"
-      using subst_equ_refl by simp
-    moreover have "apply_subst [(X, swap (rev pi) t)] (xs, ys) = apply_subst [] (apply_subst [(X, swap (rev pi) t)] (xs, ys))"
-      unfolding apply_subst_def by simp
-    hence "{} \<Turnstile> apply_subst [(X, swap (rev pi) t)] (xs, ys) \<simeq> apply_subst [] (apply_subst [(X, swap (rev pi) t)] (xs, ys))"
-      using prob_equiv_refl by simp
-    ultimately show ?thesis by blast
-  next
-    case (Atom a)
-    hence "sred_fun (((t, Susp pi X) # xs, ys), nabla, s, True) = sred_fun (apply_subst [(X, swap (rev pi) t)] (xs, ys), nabla, [(X, swap (rev pi) t)] \<bullet> s, True)"
-      using 9 by auto
-    moreover have "{} \<Turnstile> subst ([(X, swap (rev pi) t)]) \<approx> subst  ([] \<bullet> [(X, swap (rev pi) t)])"
-      using subst_equ_refl by simp
-    moreover have "apply_subst [(X, swap (rev pi) t)] (xs, ys) = apply_subst [] (apply_subst [(X, swap (rev pi) t)] (xs, ys))"
-      unfolding apply_subst_def by simp
-    hence "{} \<Turnstile> apply_subst [(X, swap (rev pi) t)] (xs, ys) \<simeq> apply_subst [] (apply_subst [(X, swap (rev pi) t)] (xs, ys))"
-      using prob_equiv_refl by simp
-    ultimately show ?thesis by blast
-  next
-    case (Paar t1 t2)
-    hence "sred_fun (((t, Susp pi X) # xs, ys), nabla, s, True) = sred_fun (apply_subst [(X, swap (rev pi) t)] (xs, ys), nabla, [(X, swap (rev pi) t)] \<bullet> s, True)"
-      using 9 by auto
-    moreover have "{} \<Turnstile> subst ([(X, swap (rev pi) t)]) \<approx> subst  ([] \<bullet> [(X, swap (rev pi) t)])"
-      using subst_equ_refl by simp
-    moreover have "apply_subst [(X, swap (rev pi) t)] (xs, ys) = apply_subst [] (apply_subst [(X, swap (rev pi) t)] (xs, ys))"
-      unfolding apply_subst_def by simp
-    hence "{} \<Turnstile> apply_subst [(X, swap (rev pi) t)] (xs, ys) \<simeq> apply_subst [] (apply_subst [(X, swap (rev pi) t)] (xs, ys))"
-      using prob_equiv_refl by simp
-    ultimately show ?thesis by blast
-  next
-    case (Func F t1)
-    hence "sred_fun (((t, Susp pi X) # xs, ys), nabla, s, True) = sred_fun (apply_subst [(X, swap (rev pi) t)] (xs, ys), nabla, [(X, swap (rev pi) t)] \<bullet> s, True)"
-      using 9 by auto
-    moreover have "{} \<Turnstile> subst ([(X, swap (rev pi) t)]) \<approx> subst  ([] \<bullet> [(X, swap (rev pi) t)])"
-      using subst_equ_refl by simp
-    moreover have "apply_subst [(X, swap (rev pi) t)] (xs, ys) = apply_subst [] (apply_subst [(X, swap (rev pi) t)] (xs, ys))"
-      unfolding apply_subst_def by simp
-    hence "{} \<Turnstile> apply_subst [(X, swap (rev pi) t)] (xs, ys) \<simeq> apply_subst [] (apply_subst [(X, swap (rev pi) t)] (xs, ys))"
-      using prob_equiv_refl by simp
-    ultimately show ?thesis by blast
-  qed
-qed
-
-
-lemma sred_rtc_to_sred_fun: 
-  assumes "P1 \<turnstile> \<sigma> \<leadsto>\<^sup>* P2"
-  shows "\<exists> \<sigma>' P2' \<gamma> . sred_fun (P1, nabla, s, True) = sred_fun (P2', nabla, \<sigma>' \<bullet> s, True) \<and>
-        {} \<Turnstile> subst \<sigma>' \<approx> subst (\<gamma> \<bullet> \<sigma>) \<and>
-        {} \<Turnstile> P2' \<simeq> apply_subst \<gamma> P2"
-using assms
-proof(induct arbitrary: s rule: sred_rtc.induct)
-  case (sred_refl P1)
-  have "sred_fun (P1, nabla, s, True) = sred_fun (P1, nabla, [] \<bullet> s, True)"
-   by simp
-  moreover have "{} \<Turnstile> subst [] \<approx> subst ([] \<bullet> [])"
-   using subst_equ_refl by auto
-  moreover have "{} \<Turnstile> P1 \<simeq> apply_subst [] P1"
-   using apply_subst_id prob_equiv_refl by simp
-  ultimately show ?case
-    using subst_id_left by blast 
-next
-  case (sred_rtc_step P1 s1 P2 s2 P3)
-  then obtain \<sigma>\<^sub>1 P2' \<gamma>\<^sub>1 where 
-       one_step: "sred_fun (P1, nabla, s, True) = sred_fun (P2', nabla, \<sigma>\<^sub>1 \<bullet> s, True)"
-        "{} \<Turnstile> subst \<sigma>\<^sub>1 \<approx> subst (\<gamma>\<^sub>1 \<bullet> s1)" "{} \<Turnstile> P2' \<simeq> apply_subst \<gamma>\<^sub>1 P2"
-    using  sred_to_sred_fun by blast
-  moreover obtain \<sigma>\<^sub>2 P3' \<gamma>\<^sub>2 where IH: "sred_fun (P2, nabla, \<sigma>\<^sub>1 \<bullet> s, True) = sred_fun (P3', nabla, \<sigma>\<^sub>2 \<bullet> (\<sigma>\<^sub>1 \<bullet> s), True)"
-        "{} \<Turnstile> subst \<sigma>\<^sub>2 \<approx> subst (\<gamma>\<^sub>2 \<bullet> s2)" "{} \<Turnstile> P3' \<simeq> apply_subst \<gamma>\<^sub>2 P3" 
-    using sred_rtc_step(3) by blast
-  ultimately obtain P3'' \<sigma>\<^sub>2' where aux: "sred_fun (P2', nabla, \<sigma>\<^sub>1 \<bullet> s, True) = sred_fun (P3'', nabla, \<sigma>\<^sub>2' \<bullet> (\<sigma>\<^sub>1 \<bullet> s), True)"
-    "{} \<Turnstile> P3'' \<simeq> apply_subst \<gamma>\<^sub>1 P3'" "{} \<Turnstile> subst \<sigma>\<^sub>2' \<approx> subst \<sigma>\<^sub>2" 
-    using equiv_aux[OF IH(1) one_step(3)] by auto
-  with one_step have iii: "sred_fun (P1, nabla, s, True) = sred_fun (P3'', nabla, \<sigma>\<^sub>2' \<bullet> (\<sigma>\<^sub>1 \<bullet> s), True)"
-    "{} \<Turnstile> P3'' \<simeq> apply_subst (\<gamma>\<^sub>1 \<bullet> \<gamma>\<^sub>2) P3" "{} \<Turnstile> subst \<sigma>\<^sub>2' \<approx> subst (\<gamma>\<^sub>2 \<bullet> s2)"
-    using apply_subst_trans[OF aux(2) IH(3)] apply_subst_comp_expand[of \<open>\<gamma>\<^sub>1\<close> \<open>\<gamma>\<^sub>2\<close> P3] 
-      subst_trans[OF aux(3) IH(2)] by auto
-  have "{} \<Turnstile> subst (\<sigma>\<^sub>2' \<bullet> \<sigma>\<^sub>1) \<approx> subst ((\<gamma>\<^sub>2 \<bullet> s2) \<bullet> (\<gamma>\<^sub>1 \<bullet> s1))" 
-    using iii(3) one_step(2) subst_cancel_right[OF iii(3), of \<open>\<sigma>\<^sub>1\<close>] subst_left_cancel_empty subst_trans by blast
-  hence "{} \<Turnstile> subst (\<sigma>\<^sub>2' \<bullet> \<sigma>\<^sub>1) \<approx> subst ((\<gamma>\<^sub>2 \<bullet> \<gamma>\<^sub>1) \<bullet> (s2 \<bullet> s1))"
-    sorry
- 
-  
-  (*using this and by the lemma equiv_aux there exists \<rho>
- P3'' such that sred_fun (P2', nabla, s, True) = sred_fun (P3'', nabla, \<sigma>' \<bullet> s, B)*)
-  then show ?case sorry
-qed
-
-
-
-
-function  cred_fun:: "(problem_type \<times> fresh_envs \<times> substs \<times> bool) \<Rightarrow> (problem_type \<times> fresh_envs \<times> substs \<times> bool)" 
-  where
-"cred_fun ((xs, (a \<sharp>? Unit)#ys), nabla, s, B) = cred_fun ((xs, ys), nabla, s, B)" |
-"cred_fun ((xs, (a \<sharp>? Paar t1 t2)#ys), nabla, s, B) = cred_fun ((xs, (a\<sharp>?t1)#(a\<sharp>?t2)#ys), nabla, s, B)" |
-"cred_fun ((xs, (a \<sharp>? Func F t)#ys), nabla, s, B) = cred_fun ((xs, (a\<sharp>?t)#ys), nabla, s, B)" |
-"cred_fun ((xs, (a \<sharp>? Abst b t)#ys), nabla, s, B) = (if a = b then
-                                                      cred_fun ((xs, ys), nabla, s, B)
-                                                    else
-                                                      cred_fun ((xs, (a\<sharp>?t)#ys), nabla, s, B))" |
-"cred_fun ((xs, (a \<sharp>? Atom b)#ys), nabla, s, B) = (if a = b then
-                                                      ((xs, (a \<sharp>? Atom a)#ys), nabla, s, False)
-                                                    else
-                                                      cred_fun ((xs, ys), nabla, s, B))" |
-"cred_fun ((xs, (a \<sharp>? Susp pi X)#ys), nabla, s, B) = cred_fun ((xs, ys), {((swapas (rev pi) a),X)}\<union>nabla, s, B)" |
-"cred_fun ((xs, []), nabla, s, B) = ((xs, []), nabla, s, B)"
-  by pat_completeness auto
-
-termination by (relation rank_fun, unfold rank_fun_def, auto)
-
-lemma cred_fun_sound:
-  assumes "fst P1 = []"
-    and "cred_fun (P1, nabla, s, True) = (P2, nabla', s, B)"
-  shows "\<exists> nabla1. P1 \<turnstile> nabla1 \<rightarrow>\<^sup>* P2"
+text\<open>If cred_fun fails, the (freshness) problem has no solution.\<close>
+
+lemma cred_fun_none_empty:
+  assumes "cred_fun ((xs, ys), nabla, s) = None" and "xs = []"
+  shows "U ([], ys) = {}"
   using assms
-proof(induction "(P1, nabla, s, True)"  arbitrary: P1 nabla s rule: cred_fun.induct)
+proof(induct "((xs, ys), nabla, s)" arbitrary: xs ys nabla s rule: cred_fun.induct)
+  case (1 xs a ys nabla s)
+  then show ?case using u_empty_cred[OF unit_cred] by auto
+next
+  case (2 xs a t1 t2 ys nabla s)
+  then show ?case using u_empty_cred[OF paar_cred] by auto
+next
+  case (3 xs a F t ys nabla s)
+  then show ?case using u_empty_cred[OF func_cred] by auto
+next
   case (4 xs a b t ys nabla s)
-  then show "\<exists>nabla1. (xs, (a, Abst b t) # ys) \<turnstile> nabla1 \<rightarrow>\<^sup>* P2"
-    by (cases "a = b", auto)
+  then show ?case 
+    using u_empty_cred[OF abst_aa_cred] u_empty_cred[OF abst_ab_cred]
+    by (cases "a = b") auto
 next
   case (5 xs a b ys nabla s)
-  then show "\<exists>nabla1. (xs, (a, Atom b) # ys) \<turnstile> nabla1 \<rightarrow>\<^sup>* P2"
-    by(cases "a = b", auto) 
-qed (auto)
-
-lemma cred_to_cred_fun: 
-  assumes "P1 \<turnstile> nabla \<rightarrow> P2"
-  shows "cred_fun (P1, nabla1, s, True) = cred_fun (P2, nabla \<union> nabla1, s, True)"
-  by (induct rule: c_red.induct[OF assms], auto)
-  
-
-lemma cred_fun_completeness:
-  assumes "P1 \<turnstile> nabla1 \<rightarrow>\<^sup>* P2"
-  shows "cred_fun (P1, nabla, s, True) = cred_fun (P2, nabla1 \<union> nabla, s, True)"
-  using assms
-proof(induct arbitrary: nabla rule: cred_rtc.induct[OF assms(1)])
-  case (1 P1)
-  then show ?case by simp
+  then show ?case 
+    using u_empty_cred[OF atom_cred] fail_then_empty[OF fail_fresh_atom]
+    by (cases "a = b") auto
 next
-  case (2 P1 nabla1 P2 nabla2 P3)
-  show ?case using 2(3)[OF 2(2)] cred_to_cred_fun[OF 2(1), of nabla s] by (simp add: Un_assoc)
+  case (6 xs a pi X ys nabla s)
+  then show ?case using u_empty_cred[OF susp_cred] by auto
+next
+  case (7 xs nabla s)
+  then show ?case by simp
 qed
 
+lemma u_empty_sred_rtc:
+  assumes "P1 \<turnstile> s \<leadsto>\<^sup>* P2" and "U P2 = {}"
+  shows "U P1 = {}"
+  using assms
+proof(induct rule: sred_rtc.induct)
+  case (sred_refl P1)
+  then show ?case by simp
+next
+  case (sred_rtc_step P1 s1 P2 s2 P3)
+  then have "U P2 = {}" by simp
+  then show ?case using u_empty_sred[OF sred_rtc_step(1)] by simp
+qed
 
-(*show these lemmas
+text\<open>Completeness: whenever the algorithm fails, the problem has no solution.\<close>
 
-next steps:
-0. add nabla in the sred_fun (DONE)
-1. define the function for freshness (cred_fun) (DONE)
-2. prove termination (DONE)
-3. prove equivalence
-4. define the unif computable function that takes as input a problem and calls the functions
-sred_fun and cred_fun
-5. prove termination of unif*)
+theorem nomu_unify_none:
+  assumes "nomu_unify P = None"
+  shows "U P = {}"
+proof(cases "sred_fun (P, {}, [])")
+  case None
+  then show ?thesis using sred_fun_none_empty by blast
+next
+  case (Some R)
+  then obtain xs ys nabla0 s0 where S: "sred_fun (P, {}, []) = Some ((xs, ys), nabla0, s0)"
+    by (cases R) auto
+  have "xs = []"
+    using sred_fun_some_fst_empty[OF S] by simp
+  obtain s1 where rtc: "P \<turnstile> s1 \<leadsto>\<^sup>* ([], ys)"
+    using sred_fun_sred_rtc[OF S] \<open>xs = []\<close> by auto
+  show ?thesis
+  proof(cases "cred_fun (([], ys), nabla0, s0)")
+    case None
+    then have "U ([], ys) = {}" 
+      using cred_fun_none_empty by blast
+    then show ?thesis 
+      using u_empty_sred_rtc[OF rtc] by simp
+  next
+    case (Some C)
+    then obtain P1 nabla1 s1' where C: "cred_fun (([], ys), nabla0, s0) = Some (P1, nabla1, s1')"
+      by (cases C) auto
+    have "P1 = ([],[])"
+      using cred_fun_some_fst[OF C] cred_fun_some_snd_empty[OF C] by (cases P1) auto
+    hence "nomu_unify P = Some (nabla1, s1')"
+      using S C \<open>xs = []\<close> by simp
+    then show ?thesis using assms by simp
+  qed
+qed
 
+text\<open>Together with soundness: the algorithm fails exactly on the problems without solutions.\<close>
 
+corollary nomu_unify_none_iff:
+  shows "nomu_unify P = None \<longleftrightarrow> U P = {}"
+proof
+  assume "nomu_unify P = None"
+  then show "U P = {}" using nomu_unify_none by simp
+next
+  assume "U P = {}"
+  show "nomu_unify P = None"
+  proof(rule ccontr)
+    assume "nomu_unify P \<noteq> None"
+    then obtain nabla s where "nomu_unify P = Some (nabla, s)" by auto
+    then have "(nabla, s) \<in> U P" using nomu_unify_sound by simp
+    then show False using \<open>U P = {}\<close> by simp
+  qed
+qed
 
+text\<open>Completeness in the style of @{thm [source] completeness}: whenever a (non-trivial) 
+problem has a solution, the algorithm returns a result that is reached by red_plus and is
+a most general unifier.\<close>
+
+theorem nomu_unify_complete:
+  assumes "P \<noteq> ([],[])" "U P \<noteq> {}"
+  shows "\<exists>nabla s. nomu_unify P = Some (nabla, s) \<and> P \<Turnstile> (nabla, s) \<Rightarrow> ([],[]) \<and> mgu P (nabla, s)"
+proof-
+  obtain nabla s where res: "nomu_unify P = Some (nabla, s)"
+    using assms(2) nomu_unify_none_iff by (cases "nomu_unify P") auto
+  have "P \<Turnstile> (nabla, s) \<Rightarrow> ([],[])"
+    using nomu_unify_some_red_plus[OF res assms(1)] .
+  moreover have "mgu P (nabla, s)"
+    using nomu_unify_sound[OF res] by simp
+  ultimately show ?thesis using res by blast
+qed
 
 
 (*<*)

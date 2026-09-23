@@ -141,15 +141,43 @@ proof(induct t)
   qed
 qed (simp_all)
 
+lemma comp_diag:
+  shows "s1 \<bullet> s2 = map (\<lambda>(x, y). (x, subst s1 y)) s2 @ s1"
+  unfolding comp_def by (induct s2) auto
+
+lemma comp_assoc:
+  shows "s1 \<bullet> (s2 \<bullet> s3) = (s1 \<bullet> s2) \<bullet> s3"
+proof(induct s3)
+  case Nil
+  then show ?case by simp
+next
+  case (Cons p s3)
+  obtain x y where p[simp]: "p = (x, y)" by (cases p) auto
+  have "s1 \<bullet> (s2 \<bullet> (p # s3)) = s1 \<bullet> ((x, subst s2 y) # (s2 \<bullet> s3))"
+    using comp_diag by simp
+  also have "... = (x, subst s1 (subst s2 y)) # (s1 \<bullet> (s2 \<bullet> s3))"
+    using comp_diag by simp
+  also have "... = (x, subst (s1 \<bullet> s2) y) # ((s1 \<bullet> s2) \<bullet> s3)"
+    using Cons.hyps by (simp add: subst_comp_expand[symmetric])
+  also have "... = (s1 \<bullet> s2) \<bullet> (p # s3)"
+    using comp_diag by simp
+  finally show ?case by simp
+qed
+
 lemma subst_assoc: 
   shows "subst (s1 \<bullet> (s2 \<bullet> s3)) = subst ((s1 \<bullet> s2) \<bullet> s3)"
-proof(rule ext)
-  fix t 
-  show "subst (s1 \<bullet> (s2 \<bullet> s3)) t = subst (s1 \<bullet> s2 \<bullet> s3) t"
-  proof(induct t)
-    case (Susp pi X)
-    then show ?case using subst_comp_expand by simp
-  qed (simp_all)
+using comp_assoc by simp
+
+lemma comp_cancel_right:
+  assumes "s1 \<bullet> s = s2 \<bullet> s"
+  shows "s1 = s2"
+proof-
+  have "s1 = drop (length s) (map (\<lambda>(x, y). (x, subst s1 y)) s @ s1)" by simp
+  also have "... = drop (length s) (s1 \<bullet> s)" by (simp add: comp_diag)
+  also have "... = drop (length s) (s2 \<bullet> s)" using assms by simp
+  also have "... = drop (length s) (map (\<lambda>(x, y). (x, subst s2 y)) s @ s2)" by (simp add: comp_diag)
+  also have "... = s2" by simp
+  finally show ?thesis .
 qed
 
 lemma fresh_subst:
