@@ -800,14 +800,12 @@ a most general unifier.\<close>
 
 theorem nomu_unify_complete:
   assumes "P \<noteq> ([],[])" "U P \<noteq> {}"
-  shows "\<exists>nabla s. nomu_unify P = Some (nabla, s) \<and> P \<Turnstile> (nabla, s) \<Rightarrow> ([],[]) \<and> mgu P (nabla, s)"
+  shows "\<exists>nabla s. nomu_unify P = Some (nabla, s) \<and> mgu P (nabla, s) \<and> idem (nabla, s)"
 proof-
   obtain nabla s where res: "nomu_unify P = Some (nabla, s)"
     using assms(2) nomu_unify_none_iff by (cases "nomu_unify P") auto
-  have "P \<Turnstile> (nabla, s) \<Rightarrow> ([],[])"
-    using nomu_unify_some_red_plus[OF res assms(1)] .
-  moreover have "mgu P (nabla, s)"
-    using nomu_unify_sound[OF res] by simp
+  moreover have "mgu P (nabla, s)" "idem (nabla, s)"
+    using nomu_unify_sound[OF res] by simp+
   ultimately show ?thesis using res by blast
 qed
 
