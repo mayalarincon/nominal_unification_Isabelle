@@ -226,7 +226,7 @@ lemma problem_subst_comm:
 text \<open>Preservation of solutions\<close>
 
 lemma P1_to_P2_sred:
-  assumes "(nabla1,s1) \<in> U P1" and "P1 \<turnstile>s2 \<leadsto> P2"
+  assumes "(nabla1,s1) \<in> U P1" and "P1 \<turnstile> s2 \<leadsto> P2"
   shows "(nabla1,s1) \<in> U P2  \<and> (nabla1\<Turnstile>subst (s1\<bullet>s2)\<approx>subst s1)"
   using assms
 proof(induction arbitrary: nabla1 s1 rule: s_red.induct[OF \<open>P1 \<turnstile> s2 \<leadsto> P2\<close>])
