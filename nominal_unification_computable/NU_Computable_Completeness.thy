@@ -588,9 +588,8 @@ next
   qed
 qed
 
-text\<open>Completeness in the style of @{thm [source] completeness}: whenever a 
-problem has a solution, the algorithm returns a result that is reached by red_plus and is
-a most general unifier.\<close>
+text\<open>Completeness in the style of @{thm [source] completeness}: whenever a problem has a
+solution, the algorithm returns a result that is an idempotent most general unifier.\<close>
 
 theorem nomu_unify_complete:
   assumes "U P \<noteq> {}"
