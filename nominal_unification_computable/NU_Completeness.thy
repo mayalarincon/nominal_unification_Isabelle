@@ -70,7 +70,7 @@ proof(rule ccontr)
   thus "False" using wf_rank_r by simp
 qed
 
-text\<open>If P1 reduces to a diferent P2 under steps of sred, then it reduces via red_plus.\<close>
+text\<open>If P1 reduces to a diferent P2 under steps of sred, then it reduces via \<open>red_plus\<close>.\<close>
 
 lemma sred_rtc_to_redplus:
   assumes "P1 \<noteq> P2"  "P1 \<turnstile> s \<leadsto>\<^sup>* P2"
@@ -134,7 +134,7 @@ proof-
     using cred_rtc_step by simp
 qed
 
-text\<open>If there is a reduction from P1 to P2 via red_plus, we can split into equational reductions
+text\<open>If there is a reduction from P1 to P2 via \<open>red_plus\<close>, we can split into equational reductions
 first and freshness reductions after.\<close>
 
 lemma red_plus_decompose:
@@ -179,7 +179,7 @@ next
     by blast
 qed
 
-text\<open>A form of transitivity of red_plus.\<close>
+text\<open>A form of transitivity of \<open>red_plus\<close>.\<close>
 
 lemma red_plus_transitivity:
   assumes "P1 \<Turnstile> (nabla1, s1) \<Rightarrow> P2"
@@ -254,7 +254,7 @@ proof(induction P rule: wf_induct_rule[OF wf_rank_r])
 qed
 
 
-text\<open>The procedure is complete, i.e., if a non-empty problem has a solution, then red_plus finds
+text\<open>The procedure is complete, i.e., if a non-empty problem has a solution, then \<open>red_plus\<close> finds
 the most general solution.\<close>
 
 theorem completeness:

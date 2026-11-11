@@ -3,9 +3,9 @@ theory NU_Computable
   imports NU_Completeness
 begin
 (*>*)
+section \<open>The Computable Algorithm\<close>
 
-
-text\<open>Option-typed version of sred_fun. The boolean B success flag of the
+text\<open>Option-typed version of \<open>sred_fun\<close>. The boolean B success flag of the
 original function is replaced by the None/Some structure of the option type,
 so the state tuple does not need the boolean component anymore. Failure cases
 of the original (returning the stuck state with False) now return None.\<close>
@@ -79,8 +79,8 @@ function sred_fun :: "(problem_type \<times> fresh_envs \<times> substs) \<Right
                                            nabla, [(X, swap (rev pi) (Susp pi2 Y))] \<bullet> s)))"
 by pat_completeness auto
 
-text\<open>sred_fun terminates because every recursive call performs an s_red step on
-the problem component, so rank_r decreases on it.\<close>
+text\<open>\<open>sred_fun\<close> terminates because every recursive call performs an \<open>s_red\<close> step on
+the problem component, so \<open>rank_r\<close> decreases on it.\<close>
 
 termination sred_fun
   by (relation "inv_image rank_r fst")
@@ -106,9 +106,7 @@ function  cred_fun :: "(problem_type \<times> fresh_envs \<times> substs) \<Righ
 termination cred_fun
   by (relation "measure (\<lambda>((xs, ys), nabla, s). size_fprobs ys)", auto)
 
-text\<open>Combines sred_fun (equation reductions) and cred_fun (freshness reductions),
-mirroring the red_plus relation: equations are solved first, then freshness
-constraints.\<close>
+text\<open>Combines \<open>sred_fun\<close>  and \<open>cred_fun\<close>, mirroring the \<open>red_plus\<close> relation: equations are solved first, then freshness constraints.\<close>
 
 fun red_plus_fun :: "(problem_type \<times> fresh_envs \<times> substs) \<Rightarrow> (problem_type \<times> fresh_envs \<times> substs) option" where
 "red_plus_fun (P, nabla, s) = (case sred_fun (P, nabla, s) of
@@ -124,7 +122,7 @@ text\<open>In generated SML code, equality on booleans is the native one.\<close
 
 code_printing constant "HOL.equal :: bool \<Rightarrow> bool \<Rightarrow> bool" \<rightharpoonup> (SML) "!((_ : bool) = _)"
 
-text\<open>Whenever cred_fun succeeds, the snd (freshness) list of the resulting problem is empty:
+text\<open>Whenever \<open>cred_fun\<close> succeeds, the snd (freshness) list of the resulting problem is empty:
 all freshness problems have been solved.\<close>
 
 lemma cred_fun_some_snd_empty:

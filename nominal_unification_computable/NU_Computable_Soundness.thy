@@ -6,16 +6,16 @@ begin
 
 section \<open>Soundness of the computable algorithm\<close>
 
-text\<open>sred_fun is simulated by the reflexive-transitive closure of the equational reductions.\<close>
+text\<open>\<open>sred_fun\<close> is simulated by the reflexive-transitive closure of the equational reductions.\<close>
 
-text\<open>One unfolding of sred_fun on a non-empty equation list corresponds to one s_red step.\<close>
+text\<open>One unfolding of \<open>sred_fun\<close> on a non-empty equation list corresponds to one \<open>s_red\<close> step.\<close>
 
 lemma sred_fun_unfold_step:
   assumes "sred_fun (((t1 \<approx>? t2) # xs, ys), nabla, s) = Some r"
   shows "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = Some r"
 proof -
-  \<comment> \<open>Unfold sred_fun exactly once: H is the case distinction of the definition, whose 
-     value is Some r. From now on sred_fun is never unfolded again.\<close>
+  \<comment> \<open>Unfold \<open>sred_fun\<close> exactly once: H is the case distinction of the definition, whose 
+     value is Some r. From now on \<open>sred_fun\<close> is never unfolded again.\<close>
   note H = trans[OF sred_fun.simps(2)[symmetric] assms]
   show ?thesis
   proof (cases t1)
@@ -23,7 +23,7 @@ proof -
     show ?thesis
     proof (cases t2)
       case Unit
-      \<comment> \<open>Rule unit_sred: the equation is simply removed.\<close>
+      \<comment> \<open>Rule \<open>unit_sred\<close>: the equation is simply removed.\<close>
       have step: "((Unit \<approx>? Unit) # xs, ys) \<turnstile> [] \<leadsto> (xs, ys)"
         using unit_sred by simp
       have "sred_fun ((xs, ys), nabla, [] \<bullet> s) = Some r"
@@ -31,20 +31,20 @@ proof -
       then show ?thesis unfolding \<open>t1 = Unit\<close> \<open>t2 = Unit\<close> using step by blast
     next
       case (Susp pi X)
-      \<comment> \<open>Rule var_2_sred: X is instantiated with Unit.\<close>
+      \<comment> \<open>Rule \<open>var_2_sred\<close>: X is instantiated with Unit.\<close>
       let ?\<sigma> = "[(X, swap (rev pi) Unit)]"
       have step: "((Unit \<approx>? Susp pi X) # xs, ys) \<turnstile> ?\<sigma> \<leadsto> apply_subst ?\<sigma> (xs, ys)"
         using var_2_sred by (simp del: swap.simps)
       have "sred_fun (apply_subst ?\<sigma> (xs, ys), nabla, ?\<sigma> \<bullet> s) = Some r"
         using H unfolding \<open>t1 = Unit\<close> \<open>t2 = Susp pi X\<close> by (simp del: sred_fun.simps)
       then show ?thesis unfolding \<open>t1 = Unit\<close> \<open>t2 = Susp pi X\<close> using step by blast
-    qed (use H Unit in \<open>simp_all del: sred_fun.simps\<close>) \<comment> \<open>clashes: sred_fun returns None\<close>
+    qed (use H Unit in \<open>simp_all del: sred_fun.simps\<close>) \<comment> \<open>clashes: \<open>sred_fun\<close> returns None\<close>
   next
     case (Atom a)
     show ?thesis
     proof (cases t2)
       case (Atom b)
-      \<comment> \<open>Rule atom_sred: only applicable (and only Some) when a = b.\<close>
+      \<comment> \<open>Rule \<open>atom_sred\<close>: only applicable (and only Some) when a = b.\<close>
       have "a = b"
         using H \<open>t1 = Atom a\<close> \<open>t2 = Atom b\<close> by (simp del: sred_fun.simps split: if_splits)
       have step: "((Atom a \<approx>? Atom a) # xs, ys) \<turnstile> [] \<leadsto> (xs, ys)"
@@ -54,7 +54,7 @@ proof -
       then show ?thesis unfolding \<open>t1 = Atom a\<close> \<open>t2 = Atom b\<close> \<open>a = b\<close> using step by blast
     next
       case (Susp pi X)
-      \<comment> \<open>Rule var_2_sred: X is instantiated with the (permuted) atom.\<close>
+      \<comment> \<open>Rule \<open>var_2_sred\<close>: X is instantiated with the (permuted) atom.\<close>
       let ?\<sigma> = "[(X, swap (rev pi) (Atom a))]"
       have step: "((Atom a \<approx>? Susp pi X) # xs, ys) \<turnstile> ?\<sigma> \<leadsto> apply_subst ?\<sigma> (xs, ys)"
         using var_2_sred by (simp del: swap.simps)
@@ -67,7 +67,7 @@ proof -
     show ?thesis
     proof (cases t2)
       case (Paar v1 v2)
-      \<comment> \<open>Rule paar_sred: the pair equation is split into two equations.\<close>
+      \<comment> \<open>Rule \<open>paar_sred\<close>: the pair equation is split into two equations.\<close>
       have step: "((Paar u1 u2 \<approx>? Paar v1 v2) # xs, ys) \<turnstile> [] \<leadsto> ((u1 \<approx>? v1) # (u2 \<approx>? v2) # xs, ys)"
         using paar_sred by simp
       have "sred_fun (((u1 \<approx>? v1) # (u2 \<approx>? v2) # xs, ys), nabla, [] \<bullet> s) = Some r"
@@ -75,7 +75,7 @@ proof -
       then show ?thesis unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Paar v1 v2\<close> using step by blast
     next
       case (Susp pi X)
-      \<comment> \<open>Rule var_2_sred: Some is only returned when the occurs check succeeds.\<close>
+      \<comment> \<open>Rule \<open>var_2_sred\<close>: Some is only returned when the occurs check succeeds.\<close>
       have nocc: "\<not> occurs X (Paar u1 u2)"
         using H \<open>t1 = Paar u1 u2\<close> \<open>t2 = Susp pi X\<close> by (auto simp del: sred_fun.simps split: if_splits)
       let ?\<sigma> = "[(X, swap (rev pi) (Paar u1 u2))]"
@@ -90,7 +90,7 @@ proof -
     show ?thesis
     proof (cases t2)
       case (Func G v)
-      \<comment> \<open>Rule func_sred: only applicable (and only Some) when F = G.\<close>
+      \<comment> \<open>Rule \<open>func_sred\<close>: only applicable (and only Some) when F = G.\<close>
       have "F = G"
         using H \<open>t1 = Func F u\<close> \<open>t2 = Func G v\<close> by (simp del: sred_fun.simps split: if_splits)
       have step: "((Func F u \<approx>? Func F v) # xs, ys) \<turnstile> [] \<leadsto> ((u \<approx>? v) # xs, ys)"
@@ -100,7 +100,7 @@ proof -
       then show ?thesis unfolding \<open>t1 = Func F u\<close> \<open>t2 = Func G v\<close> \<open>F = G\<close> using step by blast
     next
       case (Susp pi X)
-      \<comment> \<open>Rule var_2_sred: Some is only returned when the occurs check succeeds.\<close>
+      \<comment> \<open>Rule \<open>var_2_sred\<close>: Some is only returned when the occurs check succeeds.\<close>
       have nocc: "\<not> occurs X (Func F u)"
         using H \<open>t1 = Func F u\<close> \<open>t2 = Susp pi X\<close> by (auto simp del: sred_fun.simps split: if_splits)
       let ?\<sigma> = "[(X, swap (rev pi) (Func F u))]"
@@ -118,7 +118,7 @@ proof -
       show ?thesis
       proof (cases "a = b")
         case True
-        \<comment> \<open>Rule abst_aa_sred: same binder, compare the bodies.\<close>
+        \<comment> \<open>Rule \<open>abst_aa_sred\<close>: same binder, compare the bodies.\<close>
         have step: "((Abst a u \<approx>? Abst a v) # xs, ys) \<turnstile> [] \<leadsto> ((u \<approx>? v) # xs, ys)"
           using abst_aa_sred by simp
         have "sred_fun (((u \<approx>? v) # xs, ys), nabla, [] \<bullet> s) = Some r"
@@ -126,8 +126,8 @@ proof -
         then show ?thesis unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Abst b v\<close> \<open>a = b\<close> using step by blast
       next
         case False
-        \<comment> \<open>Rule abst_ab_sred: different binders, swap a and b in the right body
-           and add the freshness constraint a # v.\<close>
+        \<comment> \<open>Rule \<open>abst_ab_sred\<close>: different binders, swap a and b in the right body
+           and add the freshness constraint \<open>a # v\<close>.\<close>
         have step: "((Abst a u \<approx>? Abst b v) # xs, ys) \<turnstile> [] \<leadsto> ((u \<approx>? swap [(a, b)] v) # xs, (a \<sharp>? v) # ys)"
           using False abst_ab_sred by simp
         have "sred_fun (((u \<approx>? swap [(a, b)] v) # xs, (a \<sharp>? v) # ys), nabla, [] \<bullet> s) = Some r"
@@ -136,7 +136,7 @@ proof -
       qed
     next
       case (Susp pi X)
-      \<comment> \<open>Rule var_2_sred: Some is only returned when the occurs check succeeds.\<close>
+      \<comment> \<open>Rule \<open>var_2_sred\<close>: Some is only returned when the occurs check succeeds.\<close>
       have nocc: "\<not> occurs X (Abst a u)"
         using H \<open>t1 = Abst a u\<close> \<open>t2 = Susp pi X\<close> by (auto simp del: sred_fun.simps split: if_splits)
       let ?\<sigma> = "[(X, swap (rev pi) (Abst a u))]"
@@ -149,7 +149,7 @@ proof -
   next
     case (Susp pi X)
     \<comment> \<open>Left-hand side is a suspension: unless both sides are suspensions of the same
-       variable, the step is always var_1_sred (X is instantiated with the right side).\<close>
+       variable, the step is always \<open>var_1_sred\<close> (X is instantiated with the right side).\<close>
     have var_1: "sred_fun (apply_subst [(X, swap (rev pi) t2)] (xs, ys), nabla, 
                            [(X, swap (rev pi) t2)] \<bullet> s) = Some r \<Longrightarrow> \<not> occurs X t2 \<Longrightarrow> ?thesis"
     proof -
@@ -166,7 +166,7 @@ proof -
       show ?thesis
       proof (cases "X = Y")
         case True
-        \<comment> \<open>Rule susp_sred: same variable, generate freshness constraints for the 
+        \<comment> \<open>Rule \<open>susp_sred\<close>: same variable, generate freshness constraints for the 
            disagreement set of the two permutations.\<close>
         have step: "((Susp pi X \<approx>? Susp pi2 X) # xs, ys) \<turnstile> [] \<leadsto> 
                       (xs, map (\<lambda>a. a \<sharp>? Susp [] X) (ds_list pi pi2) @ ys)"
@@ -178,7 +178,7 @@ proof -
           using step by blast
       next
         case False
-        \<comment> \<open>Different variables: var_1_sred, the occurs check holds trivially.\<close>
+        \<comment> \<open>Different variables: \<open>var_1_sred\<close>, the occurs check holds trivially.\<close>
         have rec: "sred_fun (apply_subst [(X, swap (rev pi) t2)] (xs, ys), nabla,
                              [(X, swap (rev pi) t2)] \<bullet> s) = Some r"
           using H False unfolding \<open>t1 = Susp pi X\<close> \<open>t2 = Susp pi2 Y\<close>
@@ -192,7 +192,7 @@ proof -
   qed
 qed
 
-text\<open>Whenever sred_fun succeeds, the first (equation) list of the resulting problem is empty:
+text\<open>Whenever \<open>sred_fun\<close> succeeds, the first (equation) list of the resulting problem is empty:
 all equations have been solved, only freshness constraints remain.\<close>
 
 lemma sred_fun_some_fst_empty:
@@ -205,11 +205,11 @@ proof(induct P arbitrary: s rule: wf_induct[OF wf_rank_r])
   show ?case
   proof(cases eqs)
     case Nil
-    \<comment> \<open>No equations left: sred_fun returns the problem unchanged.\<close>
+    \<comment> \<open>No equations left: \<open>sred_fun\<close> returns the problem unchanged.\<close>
     then show ?thesis using 1(2) P_def by auto
   next
     case (Cons e xs)
-    \<comment> \<open>One equation is processed by an s_red step, after which sred_fun still succeeds
+    \<comment> \<open>One equation is processed by an \<open>s_red\<close> step, after which \<open>sred_fun\<close> still succeeds
        on a problem of smaller rank: apply the induction hypothesis.\<close>
     obtain t1 t2 where e_def: "e = (t1 \<approx>? t2)" by (cases e)
     obtain \<sigma> Q where step: "P \<turnstile> \<sigma> \<leadsto> Q" and rec: "sred_fun (Q, nabla, \<sigma> \<bullet> s) = Some (P', nabla', s')"
@@ -246,7 +246,7 @@ proof(induct P arbitrary: s rule: wf_induct[OF wf_rank_r])
   qed
 qed
 
-text\<open>cred_fun is simulated by the reflexive-transitive closure of the freshness reductions.\<close>
+text\<open>\<open>cred_fun\<close> is simulated by the reflexive-transitive closure of the freshness reductions.\<close>
 
 lemma cred_fun_cred_rtc:
   assumes "cred_fun ((xs, ys), nabla, s) = Some (P', nabla', s')" and "xs = []"
@@ -283,7 +283,7 @@ lemma cred_fun_some_fst:
   using assms 
   by (induct "((xs, ys), nabla, s)" arbitrary: xs ys nabla s rule: cred_fun.induct, auto split: if_splits)
 
-text\<open>Gluing the closures of the equational and freshness reductions into red_plus.\<close>
+text\<open>Gluing the closures of the equational and freshness reductions into \<open>red_plus\<close>.\<close>
 
 lemma sred_rtc_red_plus_append:
   assumes "P1 \<turnstile> s \<leadsto>\<^sup>* P2" and "P2 \<Turnstile> (nabla, []) \<Rightarrow> P3"
@@ -338,7 +338,7 @@ proof-
     using \<open>P1 = ([],[])\<close> \<open>nabla1 = nabla\<close> \<open>s1 = s\<close> by auto
 qed
 
-text\<open>For a non-trivial problem, a successful run of the algorithm corresponds to a red_plus 
+text\<open>For a non-trivial problem, a successful run of the algorithm corresponds to a \<open>red_plus\<close> 
 derivation to the empty problem.\<close>
 
 lemma nomu_unify_some_red_plus:

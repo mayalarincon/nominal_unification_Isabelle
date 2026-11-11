@@ -6,26 +6,26 @@ begin
 
 section \<open>Completeness of the computable algorithm\<close>
 
-text\<open>One unfolding of a failing sred_fun either hits a failure pattern or performs an s_red step
-after which sred_fun still fails.\<close>
+text\<open>One unfolding of a failing \<open>sred_fun\<close> either hits a failure pattern or performs an \<open>s_red\<close> step
+after which \<open>sred_fun\<close> still fails.\<close>
 
 lemma sred_fun_unfold_none:
   assumes "sred_fun (((t1 \<approx>? t2) # xs, ys), nabla, s) = None"
   shows "fail ((t1 \<approx>? t2) # xs, ys) \<or> 
          (\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None)"
 proof -
-  \<comment> \<open>Unfold sred_fun exactly once: H is the case distinction of the definition, whose 
-     value is None. From now on sred_fun is never unfolded again.\<close>
+  \<comment> \<open>Unfold \<open>sred_fun\<close> exactly once: H is the case distinction of the definition, whose 
+     value is None. From now on \<open>sred_fun\<close> is never unfolded again.\<close>
   note H = trans[OF sred_fun.simps(2)[symmetric] assms]
   \<comment> \<open>The goal has two ways out: either the problem is a failure pattern (a fail fact),
-     or one s_red step leads to a problem on which sred_fun still fails.\<close>
+     or one \<open>s_red\<close> step leads to a problem on which \<open>sred_fun\<close> still fails.\<close>
   show ?thesis
   proof (cases t1)
     case Unit
     show ?thesis
     proof (cases t2)
       case Unit
-      \<comment> \<open>Rule unit_sred: the equation is removed, the recursive call fails.\<close>
+      \<comment> \<open>Rule \<open>unit_sred\<close>: the equation is removed, the recursive call fails.\<close>
       have "sred_fun ((xs, ys), nabla, [] \<bullet> s) = None"
         using H unfolding \<open>t1 = Unit\<close> \<open>t2 = Unit\<close> by (simp del: sred_fun.simps)
       then have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
@@ -33,7 +33,7 @@ proof -
       then show ?thesis by simp
     next
       case (Susp pi X)
-      \<comment> \<open>Rule var_2_sred: X is instantiated with Unit, the recursive call fails.\<close>
+      \<comment> \<open>Rule \<open>var_2_sred\<close>: X is instantiated with Unit, the recursive call fails.\<close>
       let ?\<sigma> = "[(X, swap (rev pi) Unit)]"
       have step: "((Unit \<approx>? Susp pi X) # xs, ys) \<turnstile> ?\<sigma> \<leadsto> apply_subst ?\<sigma> (xs, ys)"
         using var_2_sred by (simp del: swap.simps)
@@ -79,7 +79,7 @@ proof -
       show ?thesis
       proof (cases "a = b")
         case True
-        \<comment> \<open>Rule atom_sred: equal atoms are removed, the recursive call fails.\<close>
+        \<comment> \<open>Rule \<open>atom_sred\<close>: equal atoms are removed, the recursive call fails.\<close>
         have "sred_fun ((xs, ys), nabla, [] \<bullet> s) = None"
           using H unfolding \<open>t1 = Atom a\<close> \<open>t2 = Atom b\<close> \<open>a = b\<close> by (simp del: sred_fun.simps)
         then have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
@@ -95,7 +95,7 @@ proof -
       qed
     next
       case (Susp pi X)
-      \<comment> \<open>Rule var_2_sred: X is instantiated with the (permuted) atom.\<close>
+      \<comment> \<open>Rule \<open>var_2_sred\<close>: X is instantiated with the (permuted) atom.\<close>
       let ?\<sigma> = "[(X, swap (rev pi) (Atom a))]"
       have step: "((Atom a \<approx>? Susp pi X) # xs, ys) \<turnstile> ?\<sigma> \<leadsto> apply_subst ?\<sigma> (xs, ys)"
         using var_2_sred by (simp del: swap.simps)
@@ -138,7 +138,7 @@ proof -
     show ?thesis
     proof (cases t2)
       case (Paar v1 v2)
-      \<comment> \<open>Rule paar_sred: split into two equations, the recursive call fails.\<close>
+      \<comment> \<open>Rule \<open>paar_sred\<close>: split into two equations, the recursive call fails.\<close>
       have "sred_fun (((u1 \<approx>? v1) # (u2 \<approx>? v2) # xs, ys), nabla, [] \<bullet> s) = None"
         using H unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Paar v1 v2\<close> by (simp del: sred_fun.simps)
       then have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
@@ -158,7 +158,7 @@ proof -
           by simp
       next
         case False
-        \<comment> \<open>Rule var_2_sred: X is instantiated with the pair, the recursive call fails.\<close>
+        \<comment> \<open>Rule \<open>var_2_sred\<close>: X is instantiated with the pair, the recursive call fails.\<close>
         let ?\<sigma> = "[(X, swap (rev pi) (Paar u1 u2))]"
         have step: "((Paar u1 u2 \<approx>? Susp pi X) # xs, ys) \<turnstile> ?\<sigma> \<leadsto> apply_subst ?\<sigma> (xs, ys)"
           using False var_2_sred by (simp del: swap.simps)
@@ -205,7 +205,7 @@ proof -
       show ?thesis
       proof (cases "F = G")
         case True
-        \<comment> \<open>Rule func_sred: compare the arguments, the recursive call fails.\<close>
+        \<comment> \<open>Rule \<open>func_sred\<close>: compare the arguments, the recursive call fails.\<close>
         have "sred_fun (((u \<approx>? v) # xs, ys), nabla, [] \<bullet> s) = None"
           using H unfolding \<open>t1 = Func F u\<close> \<open>t2 = Func G v\<close> \<open>F = G\<close> by (simp del: sred_fun.simps)
         then have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
@@ -233,7 +233,7 @@ proof -
           by simp
       next
         case False
-        \<comment> \<open>Rule var_2_sred: X is instantiated with the function application.\<close>
+        \<comment> \<open>Rule \<open>var_2_sred\<close>: X is instantiated with the function application.\<close>
         let ?\<sigma> = "[(X, swap (rev pi) (Func F u))]"
         have step: "((Func F u \<approx>? Susp pi X) # xs, ys) \<turnstile> ?\<sigma> \<leadsto> apply_subst ?\<sigma> (xs, ys)"
           using False var_2_sred by (simp del: swap.simps)
@@ -280,7 +280,7 @@ proof -
       show ?thesis
       proof (cases "a = b")
         case True
-        \<comment> \<open>Rule abst_aa_sred: same binder, compare the bodies.\<close>
+        \<comment> \<open>Rule \<open>abst_aa_sred\<close>: same binder, compare the bodies.\<close>
         have "sred_fun (((u \<approx>? v) # xs, ys), nabla, [] \<bullet> s) = None"
           using H unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Abst b v\<close> \<open>a = b\<close> by (simp del: sred_fun.simps)
         then have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
@@ -288,7 +288,7 @@ proof -
         then show ?thesis by simp
       next
         case False
-        \<comment> \<open>Rule abst_ab_sred: different binders, swap in the right body and add a # v.\<close>
+        \<comment> \<open>Rule \<open>abst_ab_sred\<close>: different binders, swap in the right body and add \<open>a # v\<close>.\<close>
         have step: "((Abst a u \<approx>? Abst b v) # xs, ys) \<turnstile> [] \<leadsto> ((u \<approx>? swap [(a, b)] v) # xs, (a \<sharp>? v) # ys)"
           using False abst_ab_sred by simp
         have "sred_fun (((u \<approx>? swap [(a, b)] v) # xs, (a \<sharp>? v) # ys), nabla, [] \<bullet> s) = None"
@@ -311,7 +311,7 @@ proof -
           by simp
       next
         case False
-        \<comment> \<open>Rule var_2_sred: X is instantiated with the abstraction.\<close>
+        \<comment> \<open>Rule \<open>var_2_sred\<close>: X is instantiated with the abstraction.\<close>
         let ?\<sigma> = "[(X, swap (rev pi) (Abst a u))]"
         have step: "((Abst a u \<approx>? Susp pi X) # xs, ys) \<turnstile> ?\<sigma> \<leadsto> apply_subst ?\<sigma> (xs, ys)"
           using False var_2_sred by (simp del: swap.simps)
@@ -353,7 +353,7 @@ proof -
   next
     case (Susp pi X)
     \<comment> \<open>Left-hand side is a suspension: unless both sides are suspensions of the same
-       variable or the occurs check fails, the step is var_1_sred.\<close>
+       variable or the occurs check fails, the step is \<open>var_1_sred\<close>.\<close>
     have var_1: "\<not> occurs X t2 \<Longrightarrow> sred_fun (apply_subst [(X, swap (rev pi) t2)] (xs, ys), nabla, 
                            [(X, swap (rev pi) t2)] \<bullet> s) = None \<Longrightarrow> ?thesis"
     proof -
@@ -370,7 +370,7 @@ proof -
       show ?thesis
       proof (cases "X = Y")
         case True
-        \<comment> \<open>Rule susp_sred: same variable, freshness constraints for the disagreement set.\<close>
+        \<comment> \<open>Rule \<open>susp_sred\<close>: same variable, freshness constraints for the disagreement set.\<close>
         have "sred_fun ((xs, map (\<lambda>a. a \<sharp>? Susp [] X) (ds_list pi pi2) @ ys), nabla, [] \<bullet> s) = None"
           using H unfolding \<open>t1 = Susp pi X\<close> \<open>t2 = Susp pi2 Y\<close> \<open>X = Y\<close>[symmetric] 
           by (simp del: sred_fun.simps)
@@ -379,7 +379,7 @@ proof -
         then show ?thesis by simp
       next
         case False
-        \<comment> \<open>Different variables: var_1_sred, the occurs check holds trivially.\<close>
+        \<comment> \<open>Different variables: \<open>var_1_sred\<close>, the occurs check holds trivially.\<close>
         have nocc: "\<not> occurs X t2"
           using False unfolding \<open>t2 = Susp pi2 Y\<close> by simp
         have rec: "sred_fun (apply_subst [(X, swap (rev pi) t2)] (xs, ys), nabla,
@@ -391,12 +391,12 @@ proof -
       qed
     next
       case Unit
-      \<comment> \<open>Rule var_1_sred: X is instantiated with Unit.\<close>
+      \<comment> \<open>Rule \<open>var_1_sred\<close>: X is instantiated with Unit.\<close>
       show ?thesis
         using H by (intro var_1) (simp_all add: \<open>t1 = Susp pi X\<close> \<open>t2 = Unit\<close> del: sred_fun.simps)
     next
       case (Atom b)
-      \<comment> \<open>Rule var_1_sred: X is instantiated with the (permuted) atom.\<close>
+      \<comment> \<open>Rule \<open>var_1_sred\<close>: X is instantiated with the (permuted) atom.\<close>
       show ?thesis
         using H by (intro var_1) (simp_all add: \<open>t1 = Susp pi X\<close> \<open>t2 = Atom b\<close> del: sred_fun.simps)
     next
@@ -411,7 +411,7 @@ proof -
           by simp
       next
         case False
-        \<comment> \<open>Rule var_1_sred: X is instantiated with the pair.\<close>
+        \<comment> \<open>Rule \<open>var_1_sred\<close>: X is instantiated with the pair.\<close>
         show ?thesis
           using H False by (intro var_1) (simp_all add: \<open>t1 = Susp pi X\<close> \<open>t2 = Paar v1 v2\<close> del: sred_fun.simps)
       qed
@@ -427,7 +427,7 @@ proof -
           by simp
       next
         case False
-        \<comment> \<open>Rule var_1_sred: X is instantiated with the function application.\<close>
+        \<comment> \<open>Rule \<open>var_1_sred\<close>: X is instantiated with the function application.\<close>
         show ?thesis
           using H False by (intro var_1) (simp_all add: \<open>t1 = Susp pi X\<close> \<open>t2 = Func G v\<close> del: sred_fun.simps)
       qed
@@ -443,7 +443,7 @@ proof -
           by simp
       next
         case False
-        \<comment> \<open>Rule var_1_sred: X is instantiated with the abstraction.\<close>
+        \<comment> \<open>Rule \<open>var_1_sred\<close>: X is instantiated with the abstraction.\<close>
         show ?thesis
           using H False by (intro var_1) (simp_all add: \<open>t1 = Susp pi X\<close> \<open>t2 = Abst b v\<close> del: sred_fun.simps)
       qed
@@ -451,7 +451,7 @@ proof -
   qed
 qed
 
-text\<open>If sred_fun fails, the problem has no solution.\<close>
+text\<open>If \<open>sred_fun\<close> fails, the problem has no solution.\<close>
 
 lemma sred_fun_none_empty:
   assumes "sred_fun (P, nabla, s) = None"
@@ -489,7 +489,7 @@ proof(induct P arbitrary: s rule: wf_induct[OF wf_rank_r])
   qed
 qed
 
-text\<open>If cred_fun fails, the (freshness) problem has no solution.\<close>
+text\<open>If \<open>cred_fun\<close> fails, the (freshness) problem has no solution.\<close>
 
 lemma cred_fun_none_empty:
   assumes "cred_fun ((xs, ys), nabla, s) = None" and "xs = []"
