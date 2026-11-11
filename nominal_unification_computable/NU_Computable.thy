@@ -112,13 +112,17 @@ constraints.\<close>
 
 fun red_plus_fun :: "(problem_type \<times> fresh_envs \<times> substs) \<Rightarrow> (problem_type \<times> fresh_envs \<times> substs) option" where
 "red_plus_fun (P, nabla, s) = (case sred_fun (P, nabla, s) of
-                                 Some (([], ys), nabla', s') \<Rightarrow> cred_fun (([],ys), nabla', s')
+                                 Some ((xs, ys), nabla', s') \<Rightarrow> cred_fun ((xs,ys), nabla', s')
                                | None \<Rightarrow> None)"
 
 fun nomu_unify :: "problem_type \<Rightarrow> (fresh_envs \<times> substs) option" where
   "nomu_unify P = (case red_plus_fun (P, {}, []) of 
-                    Some (([],[]), nabla', s') \<Rightarrow> Some (nabla', s')
+                    Some (_, nabla', s') \<Rightarrow> Some (nabla', s')
                     | None \<Rightarrow> None)"
+
+text\<open>In generated SML code, equality on booleans is the native one.\<close>
+
+code_printing constant "HOL.equal :: bool \<Rightarrow> bool \<Rightarrow> bool" \<rightharpoonup> (SML) "!((_ : bool) = _)"
 
 text\<open>Whenever cred_fun succeeds, the snd (freshness) list of the resulting problem is empty:
 all freshness problems have been solved.\<close>
