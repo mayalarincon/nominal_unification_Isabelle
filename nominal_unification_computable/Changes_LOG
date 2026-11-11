@@ -1,0 +1,8 @@
+Added lemma comp_diag in NU_Substs.thy [line 144]
+Added lemma comp_assoc in NU_Substs.thy [line 148]
+Added lemma comp_cancel_right in NU_Substs [line 171]
+Changed red_plus_fun in NU_Computable.thy [line 113]: the case on sred_fun matches Some ((xs, ys), nabla', s') instead of Some (([], ys), nabla', s'), so the pattern is exhaustive
+Changed nomu_unify in NU_Computable.thy [line 118]: the case on red_plus_fun matches Some (_, nabla', s') instead of Some (([],[]), nabla', s'), so the pattern is exhaustive
+Added code_printing for HOL.equal on bool in NU_Computable.thy [line 125]: generated SML uses native boolean equality
+Changed ds_list_def in NU_Disagreement.thy [line 120]: filters by swapas pi1 x ≠ swapas pi2 x directly instead of x ∈ ds pi1 pi2, so the generated code does not use Set.filter
+Added folder generated_code with the extracted SML code Nominal_Unification.ML and the examples examples.sml (run with Isabelle's Poly/ML)

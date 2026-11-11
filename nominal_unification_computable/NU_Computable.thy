@@ -5,10 +5,7 @@ begin
 (*>*)
 section \<open>The Computable Algorithm\<close>
 
-text\<open>Option-typed version of \<open>sred_fun\<close>. The boolean B success flag of the
-original function is replaced by the None/Some structure of the option type,
-so the state tuple does not need the boolean component anymore. Failure cases
-of the original (returning the stuck state with False) now return None.\<close>
+text\<open>Option-typed version of \<open>sred_fun\<close>.\<close>
 
 function sred_fun :: "(problem_type \<times> fresh_envs \<times> substs) \<Rightarrow> (problem_type \<times> fresh_envs \<times> substs) option" where
 "sred_fun (([], ys), nabla, s) = Some (([], ys), nabla, s)" |

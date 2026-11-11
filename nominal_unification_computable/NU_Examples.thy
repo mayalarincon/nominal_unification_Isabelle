@@ -6,23 +6,6 @@ begin
 
 section \<open>Executable examples\<close>
 
-text \<open>
-Each example runs the algorithm @{const nomu_unify} on a unification problem.
-The comment above each example writes the problem in the usual nominal notation:
-
-  \<^item> \<open>a, b, c\<close> are atoms (\<open>Atom ''a''\<close>), \<open>X, Y\<close> are variables;
-  \<^item> \<open>\<pi>\<cdot>X\<close> is a suspension (\<open>Susp \<pi> ''X''\<close>), and \<open>X\<close> alone means \<open>Susp [] ''X''\<close>;
-  \<^item> \<open>(a b)\<close> is the swapping of \<open>a\<close> and \<open>b\<close> (the permutation \<open>[(''a'', ''b'')]\<close>);
-  \<^item> \<open>[a]t\<close> is the abstraction \<open>Abst ''a'' t\<close>;
-  \<^item> \<open>\<langle>t\<^sub>1, t\<^sub>2\<rangle>\<close> is the pair \<open>Paar t\<^sub>1 t\<^sub>2\<close> and \<open>\<langle>\<rangle>\<close> is \<open>Unit\<close>;
-  \<^item> \<open>f t\<close> is the function application \<open>Func ''f'' t\<close>;
-  \<^item> \<open>s \<approx>? t\<close> is an equation and \<open>a #? t\<close> a freshness problem.
-
-The result is \<open>None\<close> if the problem has no solution, and otherwise
-\<open>Some (\<nabla>, \<sigma>)\<close> with a freshness context \<open>\<nabla>\<close> (pairs \<open>(a, X)\<close> read as \<open>a # X\<close>)
-and a substitution \<open>\<sigma>\<close> (pairs \<open>(X, t)\<close> read as \<open>X \<mapsto> t\<close>).
-\<close>
-
 subsection \<open>Equations\<close>
 
 text \<open>\<open>a \<approx>? a\<close>: solvable with the empty substitution: \<open>Some ({}, [])\<close>.\<close>
