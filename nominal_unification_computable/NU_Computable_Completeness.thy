@@ -9,11 +9,6 @@ section \<open>Completeness of the computable algorithm\<close>
 text\<open>One unfolding of a failing sred_fun either hits a failure pattern or performs an s_red step
 after which sred_fun still fails.\<close>
 
-lemma ex_sred_stepI_gen:
-  assumes "P \<turnstile> \<sigma> \<leadsto> Q" and "sred_fun (Q, nabla, \<sigma> \<bullet> s) = r"
-  shows "\<exists>\<sigma> Q. P \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = r"
-  using assms by blast
-
 lemma sred_fun_unfold_none:
   assumes "sred_fun (((t1 \<approx>? t2) # xs, ys), nabla, s) = None"
   shows "fail ((t1 \<approx>? t2) # xs, ys) \<or> 
@@ -22,10 +17,8 @@ proof -
   \<comment> \<open>Unfold sred_fun exactly once: H is the case distinction of the definition, whose 
      value is None. From now on sred_fun is never unfolded again.\<close>
   note H = trans[OF sred_fun.simps(2)[symmetric] assms]
-  \<comment> \<open>The goal has two ways out: either the problem is a failure pattern (disjI1 + a fail rule),
-     or one s_red step leads to a problem on which sred_fun still fails (disjI2 + blast).
-     Note: blast is never called on a goal mentioning fail, since the safe intro rule
-     fail_sym would make it loop.\<close>
+  \<comment> \<open>The goal has two ways out: either the problem is a failure pattern (a fail fact),
+     or one s_red step leads to a problem on which sred_fun still fails.\<close>
   show ?thesis
   proof (cases t1)
     case Unit
@@ -35,38 +28,48 @@ proof -
       \<comment> \<open>Rule unit_sred: the equation is removed, the recursive call fails.\<close>
       have "sred_fun ((xs, ys), nabla, [] \<bullet> s) = None"
         using H unfolding \<open>t1 = Unit\<close> \<open>t2 = Unit\<close> by (simp del: sred_fun.simps)
-      then show ?thesis 
-        using unit_sred unfolding \<open>t1 = Unit\<close> \<open>t2 = Unit\<close> by - (rule disjI2, blast)
+      then have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
+        using unit_sred unfolding \<open>t1 = Unit\<close> \<open>t2 = Unit\<close> by blast
+      then show ?thesis by simp
     next
       case (Susp pi X)
       \<comment> \<open>Rule var_2_sred: X is instantiated with Unit, the recursive call fails.\<close>
       let ?\<sigma> = "[(X, swap (rev pi) Unit)]"
       have step: "((Unit \<approx>? Susp pi X) # xs, ys) \<turnstile> ?\<sigma> \<leadsto> apply_subst ?\<sigma> (xs, ys)"
-        by (rule var_2_sred) simp
+        using var_2_sred by (simp del: swap.simps)
       have "sred_fun (apply_subst ?\<sigma> (xs, ys), nabla, ?\<sigma> \<bullet> s) = None"
         using H unfolding \<open>t1 = Unit\<close> \<open>t2 = Susp pi X\<close> by (simp del: sred_fun.simps)
-      then show ?thesis 
-        using step unfolding \<open>t1 = Unit\<close> \<open>t2 = Susp pi X\<close> by - (rule disjI2, blast)
+      then have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
+        using step unfolding \<open>t1 = Unit\<close> \<open>t2 = Susp pi X\<close> by blast
+      then show ?thesis by simp
     next
       case (Atom b)
       \<comment> \<open>Clash: Unit vs. Atom.\<close>
-      show ?thesis unfolding \<open>t1 = Unit\<close> \<open>t2 = Atom b\<close>
-        by (rule disjI1, rule fail_sym, rule fail_atom_unit)
+      have "fail ((Unit \<approx>? Atom b) # xs, ys)"
+        using fail_sym[OF fail_atom_unit] by simp
+      then show ?thesis unfolding \<open>t1 = Unit\<close> \<open>t2 = Atom b\<close>
+        by simp
     next
       case (Paar v1 v2)
       \<comment> \<open>Clash: Unit vs. Paar.\<close>
-      show ?thesis unfolding \<open>t1 = Unit\<close> \<open>t2 = Paar v1 v2\<close>
-        by (rule disjI1, rule fail_sym, rule fail_paar_unit)
+      have "fail ((Unit \<approx>? Paar v1 v2) # xs, ys)"
+        using fail_sym[OF fail_paar_unit] by simp
+      then show ?thesis unfolding \<open>t1 = Unit\<close> \<open>t2 = Paar v1 v2\<close>
+        by simp
     next
       case (Func G v)
       \<comment> \<open>Clash: Unit vs. Func.\<close>
-      show ?thesis unfolding \<open>t1 = Unit\<close> \<open>t2 = Func G v\<close>
-        by (rule disjI1, rule fail_sym, rule fail_func_unit)
+      have "fail ((Unit \<approx>? Func G v) # xs, ys)"
+        using fail_sym[OF fail_func_unit] by simp
+      then show ?thesis unfolding \<open>t1 = Unit\<close> \<open>t2 = Func G v\<close>
+        by simp
     next
       case (Abst b v)
       \<comment> \<open>Clash: Unit vs. Abst.\<close>
-      show ?thesis unfolding \<open>t1 = Unit\<close> \<open>t2 = Abst b v\<close>
-        by (rule disjI1, rule fail_sym, rule fail_abst_unit)
+      have "fail ((Unit \<approx>? Abst b v) # xs, ys)"
+        using fail_sym[OF fail_abst_unit] by simp
+      then show ?thesis unfolding \<open>t1 = Unit\<close> \<open>t2 = Abst b v\<close>
+        by simp
     qed
   next
     case (Atom a)
@@ -79,44 +82,56 @@ proof -
         \<comment> \<open>Rule atom_sred: equal atoms are removed, the recursive call fails.\<close>
         have "sred_fun ((xs, ys), nabla, [] \<bullet> s) = None"
           using H unfolding \<open>t1 = Atom a\<close> \<open>t2 = Atom b\<close> \<open>a = b\<close> by (simp del: sred_fun.simps)
-        then show ?thesis 
-          using atom_sred unfolding \<open>t1 = Atom a\<close> \<open>t2 = Atom b\<close> \<open>a = b\<close> by - (rule disjI2, blast)
+        then have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
+          using atom_sred unfolding \<open>t1 = Atom a\<close> \<open>t2 = Atom b\<close> \<open>a = b\<close> by blast
+        then show ?thesis by simp
       next
         case False
         \<comment> \<open>Clash: different atoms.\<close>
-        show ?thesis unfolding \<open>t1 = Atom a\<close> \<open>t2 = Atom b\<close>
-          by (rule disjI1, rule fail_diff_atoms[OF False])
+        have "fail ((Atom a \<approx>? Atom b) # xs, ys)"
+          using False fail_diff_atoms by simp
+        then show ?thesis unfolding \<open>t1 = Atom a\<close> \<open>t2 = Atom b\<close>
+          by simp
       qed
     next
       case (Susp pi X)
       \<comment> \<open>Rule var_2_sred: X is instantiated with the (permuted) atom.\<close>
       let ?\<sigma> = "[(X, swap (rev pi) (Atom a))]"
       have step: "((Atom a \<approx>? Susp pi X) # xs, ys) \<turnstile> ?\<sigma> \<leadsto> apply_subst ?\<sigma> (xs, ys)"
-        by (rule var_2_sred) simp
+        using var_2_sred by (simp del: swap.simps)
       have "sred_fun (apply_subst ?\<sigma> (xs, ys), nabla, ?\<sigma> \<bullet> s) = None"
         using H unfolding \<open>t1 = Atom a\<close> \<open>t2 = Susp pi X\<close> by (simp del: sred_fun.simps)
-      then show ?thesis 
-        using step unfolding \<open>t1 = Atom a\<close> \<open>t2 = Susp pi X\<close> by - (rule disjI2, blast)
+      then have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
+        using step unfolding \<open>t1 = Atom a\<close> \<open>t2 = Susp pi X\<close> by blast
+      then show ?thesis by simp
     next
       case Unit
       \<comment> \<open>Clash: Atom vs. Unit.\<close>
-      show ?thesis unfolding \<open>t1 = Atom a\<close> \<open>t2 = Unit\<close>
-        by (rule disjI1, rule fail_atom_unit)
+      have "fail ((Atom a \<approx>? Unit) # xs, ys)"
+        using fail_atom_unit by simp
+      then show ?thesis unfolding \<open>t1 = Atom a\<close> \<open>t2 = Unit\<close>
+        by simp
     next
       case (Paar v1 v2)
       \<comment> \<open>Clash: Atom vs. Paar.\<close>
-      show ?thesis unfolding \<open>t1 = Atom a\<close> \<open>t2 = Paar v1 v2\<close>
-        by (rule disjI1, rule fail_atom_paar)
+      have "fail ((Atom a \<approx>? Paar v1 v2) # xs, ys)"
+        using fail_atom_paar by simp
+      then show ?thesis unfolding \<open>t1 = Atom a\<close> \<open>t2 = Paar v1 v2\<close>
+        by simp
     next
       case (Func G v)
       \<comment> \<open>Clash: Atom vs. Func.\<close>
-      show ?thesis unfolding \<open>t1 = Atom a\<close> \<open>t2 = Func G v\<close>
-        by (rule disjI1, rule fail_sym, rule fail_func_atom)
+      have "fail ((Atom a \<approx>? Func G v) # xs, ys)"
+        using fail_sym[OF fail_func_atom] by simp
+      then show ?thesis unfolding \<open>t1 = Atom a\<close> \<open>t2 = Func G v\<close>
+        by simp
     next
       case (Abst b v)
       \<comment> \<open>Clash: Atom vs. Abst.\<close>
-      show ?thesis unfolding \<open>t1 = Atom a\<close> \<open>t2 = Abst b v\<close>
-        by (rule disjI1, rule fail_sym, rule fail_abst_atom)
+      have "fail ((Atom a \<approx>? Abst b v) # xs, ys)"
+        using fail_sym[OF fail_abst_atom] by simp
+      then show ?thesis unfolding \<open>t1 = Atom a\<close> \<open>t2 = Abst b v\<close>
+        by simp
     qed
   next
     case (Paar u1 u2)
@@ -126,47 +141,61 @@ proof -
       \<comment> \<open>Rule paar_sred: split into two equations, the recursive call fails.\<close>
       have "sred_fun (((u1 \<approx>? v1) # (u2 \<approx>? v2) # xs, ys), nabla, [] \<bullet> s) = None"
         using H unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Paar v1 v2\<close> by (simp del: sred_fun.simps)
-      then show ?thesis 
-        using paar_sred unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Paar v1 v2\<close> by - (rule disjI2, blast)
+      then have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
+        using paar_sred unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Paar v1 v2\<close> by blast
+      then show ?thesis by simp
     next
       case (Susp pi X)
       show ?thesis
       proof (cases "occurs X (Paar u1 u2)")
         case True
         \<comment> \<open>Occurs check fails.\<close>
-        show ?thesis unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Susp pi X\<close>
-          by (rule disjI1, rule fail_sym, rule fail_occur_paar) (use True in \<open>simp split: if_splits\<close>)
+        have "fail ((Susp pi X \<approx>? Paar u1 u2) # xs, ys)"
+          using True fail_occur_paar by (simp split: if_splits)
+        then have "fail ((Paar u1 u2 \<approx>? Susp pi X) # xs, ys)"
+          using fail_sym by simp
+        then show ?thesis unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Susp pi X\<close>
+          by simp
       next
         case False
         \<comment> \<open>Rule var_2_sred: X is instantiated with the pair, the recursive call fails.\<close>
         let ?\<sigma> = "[(X, swap (rev pi) (Paar u1 u2))]"
         have step: "((Paar u1 u2 \<approx>? Susp pi X) # xs, ys) \<turnstile> ?\<sigma> \<leadsto> apply_subst ?\<sigma> (xs, ys)"
-          by (rule var_2_sred[OF False])
+          using False var_2_sred by (simp del: swap.simps)
         have "sred_fun (apply_subst ?\<sigma> (xs, ys), nabla, ?\<sigma> \<bullet> s) = None"
           using H False unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Susp pi X\<close> by (simp del: sred_fun.simps)
-        then show ?thesis 
-          using step unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Susp pi X\<close> by - (rule disjI2, blast)
+        then have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
+          using step unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Susp pi X\<close> by blast
+        then show ?thesis by simp
       qed
     next
       case Unit
       \<comment> \<open>Clash: Paar vs. Unit.\<close>
-      show ?thesis unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Unit\<close>
-        by (rule disjI1, rule fail_paar_unit)
+      have "fail ((Paar u1 u2 \<approx>? Unit) # xs, ys)"
+        using fail_paar_unit by simp
+      then show ?thesis unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Unit\<close>
+        by simp
     next
       case (Atom b)
       \<comment> \<open>Clash: Paar vs. Atom.\<close>
-      show ?thesis unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Atom b\<close>
-        by (rule disjI1, rule fail_sym, rule fail_atom_paar)
+      have "fail ((Paar u1 u2 \<approx>? Atom b) # xs, ys)"
+        using fail_sym[OF fail_atom_paar] by simp
+      then show ?thesis unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Atom b\<close>
+        by simp
     next
       case (Func G v)
       \<comment> \<open>Clash: Paar vs. Func.\<close>
-      show ?thesis unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Func G v\<close>
-        by (rule disjI1, rule fail_sym, rule fail_func_paar)
+      have "fail ((Paar u1 u2 \<approx>? Func G v) # xs, ys)"
+        using fail_sym[OF fail_func_paar] by simp
+      then show ?thesis unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Func G v\<close>
+        by simp
     next
       case (Abst b v)
       \<comment> \<open>Clash: Paar vs. Abst.\<close>
-      show ?thesis unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Abst b v\<close>
-        by (rule disjI1, rule fail_sym, rule fail_abst_paar)
+      have "fail ((Paar u1 u2 \<approx>? Abst b v) # xs, ys)"
+        using fail_sym[OF fail_abst_paar] by simp
+      then show ?thesis unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Abst b v\<close>
+        by simp
     qed
   next
     case (Func F u)
@@ -179,13 +208,16 @@ proof -
         \<comment> \<open>Rule func_sred: compare the arguments, the recursive call fails.\<close>
         have "sred_fun (((u \<approx>? v) # xs, ys), nabla, [] \<bullet> s) = None"
           using H unfolding \<open>t1 = Func F u\<close> \<open>t2 = Func G v\<close> \<open>F = G\<close> by (simp del: sred_fun.simps)
-        then show ?thesis 
-          using func_sred unfolding \<open>t1 = Func F u\<close> \<open>t2 = Func G v\<close> \<open>F = G\<close> by - (rule disjI2, blast)
+        then have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
+          using func_sred unfolding \<open>t1 = Func F u\<close> \<open>t2 = Func G v\<close> \<open>F = G\<close> by blast
+        then show ?thesis by simp
       next
         case False
         \<comment> \<open>Clash: different function symbols.\<close>
-        show ?thesis unfolding \<open>t1 = Func F u\<close> \<open>t2 = Func G v\<close>
-          by (rule disjI1, rule fail_diff_func[OF False])
+        have "fail ((Func F u \<approx>? Func G v) # xs, ys)"
+          using False fail_diff_func by simp
+        then show ?thesis unfolding \<open>t1 = Func F u\<close> \<open>t2 = Func G v\<close>
+          by simp
       qed
     next
       case (Susp pi X)
@@ -193,39 +225,52 @@ proof -
       proof (cases "occurs X (Func F u)")
         case True
         \<comment> \<open>Occurs check fails.\<close>
-        show ?thesis unfolding \<open>t1 = Func F u\<close> \<open>t2 = Susp pi X\<close>
-          by (rule disjI1, rule fail_sym, rule fail_occur_func) (use True in \<open>simp split: if_splits\<close>)
+        have "fail ((Susp pi X \<approx>? Func F u) # xs, ys)"
+          using True fail_occur_func by (simp split: if_splits)
+        then have "fail ((Func F u \<approx>? Susp pi X) # xs, ys)"
+          using fail_sym by simp
+        then show ?thesis unfolding \<open>t1 = Func F u\<close> \<open>t2 = Susp pi X\<close>
+          by simp
       next
         case False
         \<comment> \<open>Rule var_2_sred: X is instantiated with the function application.\<close>
         let ?\<sigma> = "[(X, swap (rev pi) (Func F u))]"
         have step: "((Func F u \<approx>? Susp pi X) # xs, ys) \<turnstile> ?\<sigma> \<leadsto> apply_subst ?\<sigma> (xs, ys)"
-          by (rule var_2_sred[OF False])
+          using False var_2_sred by (simp del: swap.simps)
         have "sred_fun (apply_subst ?\<sigma> (xs, ys), nabla, ?\<sigma> \<bullet> s) = None"
           using H False unfolding \<open>t1 = Func F u\<close> \<open>t2 = Susp pi X\<close> by (simp del: sred_fun.simps)
-        then show ?thesis 
-          using step unfolding \<open>t1 = Func F u\<close> \<open>t2 = Susp pi X\<close> by - (rule disjI2, blast)
+        then have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
+          using step unfolding \<open>t1 = Func F u\<close> \<open>t2 = Susp pi X\<close> by blast
+        then show ?thesis by simp
       qed
     next
       case Unit
       \<comment> \<open>Clash: Func vs. Unit.\<close>
-      show ?thesis unfolding \<open>t1 = Func F u\<close> \<open>t2 = Unit\<close>
-        by (rule disjI1, rule fail_func_unit)
+      have "fail ((Func F u \<approx>? Unit) # xs, ys)"
+        using fail_func_unit by simp
+      then show ?thesis unfolding \<open>t1 = Func F u\<close> \<open>t2 = Unit\<close>
+        by simp
     next
       case (Atom b)
       \<comment> \<open>Clash: Func vs. Atom.\<close>
-      show ?thesis unfolding \<open>t1 = Func F u\<close> \<open>t2 = Atom b\<close>
-        by (rule disjI1, rule fail_func_atom)
+      have "fail ((Func F u \<approx>? Atom b) # xs, ys)"
+        using fail_func_atom by simp
+      then show ?thesis unfolding \<open>t1 = Func F u\<close> \<open>t2 = Atom b\<close>
+        by simp
     next
       case (Paar v1 v2)
       \<comment> \<open>Clash: Func vs. Paar.\<close>
-      show ?thesis unfolding \<open>t1 = Func F u\<close> \<open>t2 = Paar v1 v2\<close>
-        by (rule disjI1, rule fail_func_paar)
+      have "fail ((Func F u \<approx>? Paar v1 v2) # xs, ys)"
+        using fail_func_paar by simp
+      then show ?thesis unfolding \<open>t1 = Func F u\<close> \<open>t2 = Paar v1 v2\<close>
+        by simp
     next
       case (Abst b v)
       \<comment> \<open>Clash: Func vs. Abst.\<close>
-      show ?thesis unfolding \<open>t1 = Func F u\<close> \<open>t2 = Abst b v\<close>
-        by (rule disjI1, rule fail_func_abst)
+      have "fail ((Func F u \<approx>? Abst b v) # xs, ys)"
+        using fail_func_abst by simp
+      then show ?thesis unfolding \<open>t1 = Func F u\<close> \<open>t2 = Abst b v\<close>
+        by simp
     qed
   next
     case (Abst a u)
@@ -238,17 +283,19 @@ proof -
         \<comment> \<open>Rule abst_aa_sred: same binder, compare the bodies.\<close>
         have "sred_fun (((u \<approx>? v) # xs, ys), nabla, [] \<bullet> s) = None"
           using H unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Abst b v\<close> \<open>a = b\<close> by (simp del: sred_fun.simps)
-        then show ?thesis 
-          using abst_aa_sred unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Abst b v\<close> \<open>a = b\<close> by - (rule disjI2, blast)
+        then have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
+          using abst_aa_sred unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Abst b v\<close> \<open>a = b\<close> by blast
+        then show ?thesis by simp
       next
         case False
         \<comment> \<open>Rule abst_ab_sred: different binders, swap in the right body and add a # v.\<close>
         have step: "((Abst a u \<approx>? Abst b v) # xs, ys) \<turnstile> [] \<leadsto> ((u \<approx>? swap [(a, b)] v) # xs, (a \<sharp>? v) # ys)"
-          by (rule abst_ab_sred[OF False])
+          using False abst_ab_sred by simp
         have "sred_fun (((u \<approx>? swap [(a, b)] v) # xs, (a \<sharp>? v) # ys), nabla, [] \<bullet> s) = None"
           using H False unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Abst b v\<close> by (simp del: sred_fun.simps)
-        then show ?thesis 
-          using step unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Abst b v\<close> by - (rule disjI2, blast)
+        then have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
+          using step unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Abst b v\<close> by blast
+        then show ?thesis by simp
       qed
     next
       case (Susp pi X)
@@ -256,39 +303,52 @@ proof -
       proof (cases "occurs X (Abst a u)")
         case True
         \<comment> \<open>Occurs check fails.\<close>
-        show ?thesis unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Susp pi X\<close>
-          by (rule disjI1, rule fail_sym, rule fail_occur_abst) (use True in \<open>simp split: if_splits\<close>)
+        have "fail ((Susp pi X \<approx>? Abst a u) # xs, ys)"
+          using True fail_occur_abst by (simp split: if_splits)
+        then have "fail ((Abst a u \<approx>? Susp pi X) # xs, ys)"
+          using fail_sym by simp
+        then show ?thesis unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Susp pi X\<close>
+          by simp
       next
         case False
         \<comment> \<open>Rule var_2_sred: X is instantiated with the abstraction.\<close>
         let ?\<sigma> = "[(X, swap (rev pi) (Abst a u))]"
         have step: "((Abst a u \<approx>? Susp pi X) # xs, ys) \<turnstile> ?\<sigma> \<leadsto> apply_subst ?\<sigma> (xs, ys)"
-          by (rule var_2_sred[OF False])
+          using False var_2_sred by (simp del: swap.simps)
         have "sred_fun (apply_subst ?\<sigma> (xs, ys), nabla, ?\<sigma> \<bullet> s) = None"
           using H False unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Susp pi X\<close> by (simp del: sred_fun.simps)
-        then show ?thesis 
-          using step unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Susp pi X\<close> by - (rule disjI2, blast)
+        then have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
+          using step unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Susp pi X\<close> by blast
+        then show ?thesis by simp
       qed
     next
       case Unit
       \<comment> \<open>Clash: Abst vs. Unit.\<close>
-      show ?thesis unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Unit\<close>
-        by (rule disjI1, rule fail_abst_unit)
+      have "fail ((Abst a u \<approx>? Unit) # xs, ys)"
+        using fail_abst_unit by simp
+      then show ?thesis unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Unit\<close>
+        by simp
     next
       case (Atom b)
       \<comment> \<open>Clash: Abst vs. Atom.\<close>
-      show ?thesis unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Atom b\<close>
-        by (rule disjI1, rule fail_abst_atom)
+      have "fail ((Abst a u \<approx>? Atom b) # xs, ys)"
+        using fail_abst_atom by simp
+      then show ?thesis unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Atom b\<close>
+        by simp
     next
       case (Paar v1 v2)
       \<comment> \<open>Clash: Abst vs. Paar.\<close>
-      show ?thesis unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Paar v1 v2\<close>
-        by (rule disjI1, rule fail_abst_paar)
+      have "fail ((Abst a u \<approx>? Paar v1 v2) # xs, ys)"
+        using fail_abst_paar by simp
+      then show ?thesis unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Paar v1 v2\<close>
+        by simp
     next
       case (Func G v)
       \<comment> \<open>Clash: Abst vs. Func.\<close>
-      show ?thesis unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Func G v\<close>
-        by (rule disjI1, rule fail_sym, rule fail_func_abst)
+      have "fail ((Abst a u \<approx>? Func G v) # xs, ys)"
+        using fail_sym[OF fail_func_abst] by simp
+      then show ?thesis unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Func G v\<close>
+        by simp
     qed
   next
     case (Susp pi X)
@@ -296,7 +356,14 @@ proof -
        variable or the occurs check fails, the step is var_1_sred.\<close>
     have var_1: "\<not> occurs X t2 \<Longrightarrow> sred_fun (apply_subst [(X, swap (rev pi) t2)] (xs, ys), nabla, 
                            [(X, swap (rev pi) t2)] \<bullet> s) = None \<Longrightarrow> ?thesis"
-      using var_1_sred unfolding \<open>t1 = Susp pi X\<close> by - (rule disjI2, blast)
+    proof -
+      assume nocc: "\<not> occurs X t2"
+        and rec: "sred_fun (apply_subst [(X, swap (rev pi) t2)] (xs, ys), nabla, 
+                           [(X, swap (rev pi) t2)] \<bullet> s) = None"
+      have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
+        using var_1_sred[OF nocc] rec unfolding \<open>t1 = Susp pi X\<close> by blast
+      then show ?thesis by simp
+    qed
     show ?thesis
     proof (cases t2)
       case (Susp pi2 Y)
@@ -307,14 +374,20 @@ proof -
         have "sred_fun ((xs, map (\<lambda>a. a \<sharp>? Susp [] X) (ds_list pi pi2) @ ys), nabla, [] \<bullet> s) = None"
           using H unfolding \<open>t1 = Susp pi X\<close> \<open>t2 = Susp pi2 Y\<close> \<open>X = Y\<close>[symmetric] 
           by (simp del: sred_fun.simps)
-        then show ?thesis 
-          using susp_sred unfolding \<open>t1 = Susp pi X\<close> \<open>t2 = Susp pi2 Y\<close> \<open>X = Y\<close>[symmetric] 
-          by - (rule disjI2, blast)
+        then have "\<exists>\<sigma> Q. ((t1 \<approx>? t2) # xs, ys) \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
+          using susp_sred unfolding \<open>t1 = Susp pi X\<close> \<open>t2 = Susp pi2 Y\<close> \<open>X = Y\<close>[symmetric] by blast
+        then show ?thesis by simp
       next
         case False
         \<comment> \<open>Different variables: var_1_sred, the occurs check holds trivially.\<close>
+        have nocc: "\<not> occurs X t2"
+          using False unfolding \<open>t2 = Susp pi2 Y\<close> by simp
+        have rec: "sred_fun (apply_subst [(X, swap (rev pi) t2)] (xs, ys), nabla,
+                             [(X, swap (rev pi) t2)] \<bullet> s) = None"
+          using H False unfolding \<open>t1 = Susp pi X\<close> \<open>t2 = Susp pi2 Y\<close>
+          by (simp del: sred_fun.simps)
         show ?thesis
-          using H False by (intro var_1) (simp_all add: \<open>t1 = Susp pi X\<close> \<open>t2 = Susp pi2 Y\<close> del: sred_fun.simps)
+          using var_1[OF nocc rec] by simp
       qed
     next
       case Unit
@@ -332,8 +405,10 @@ proof -
       proof (cases "occurs X (Paar v1 v2)")
         case True
         \<comment> \<open>Occurs check fails.\<close>
-        show ?thesis unfolding \<open>t1 = Susp pi X\<close> \<open>t2 = Paar v1 v2\<close>
-          by (rule disjI1, rule fail_occur_paar) (use True in \<open>simp split: if_splits\<close>)
+        have "fail ((Susp pi X \<approx>? Paar v1 v2) # xs, ys)"
+          using True fail_occur_paar by (simp split: if_splits)
+        then show ?thesis unfolding \<open>t1 = Susp pi X\<close> \<open>t2 = Paar v1 v2\<close>
+          by simp
       next
         case False
         \<comment> \<open>Rule var_1_sred: X is instantiated with the pair.\<close>
@@ -346,8 +421,10 @@ proof -
       proof (cases "occurs X (Func G v)")
         case True
         \<comment> \<open>Occurs check fails.\<close>
-        show ?thesis unfolding \<open>t1 = Susp pi X\<close> \<open>t2 = Func G v\<close>
-          by (rule disjI1, rule fail_occur_func) (use True in \<open>simp split: if_splits\<close>)
+        have "fail ((Susp pi X \<approx>? Func G v) # xs, ys)"
+          using True fail_occur_func by (simp split: if_splits)
+        then show ?thesis unfolding \<open>t1 = Susp pi X\<close> \<open>t2 = Func G v\<close>
+          by simp
       next
         case False
         \<comment> \<open>Rule var_1_sred: X is instantiated with the function application.\<close>
@@ -360,8 +437,10 @@ proof -
       proof (cases "occurs X (Abst b v)")
         case True
         \<comment> \<open>Occurs check fails.\<close>
-        show ?thesis unfolding \<open>t1 = Susp pi X\<close> \<open>t2 = Abst b v\<close>
-          by (rule disjI1, rule fail_occur_abst) (use True in \<open>simp split: if_splits\<close>)
+        have "fail ((Susp pi X \<approx>? Abst b v) # xs, ys)"
+          using True fail_occur_abst by (simp split: if_splits)
+        then show ?thesis unfolding \<open>t1 = Susp pi X\<close> \<open>t2 = Abst b v\<close>
+          by simp
       next
         case False
         \<comment> \<open>Rule var_1_sred: X is instantiated with the abstraction.\<close>
@@ -389,9 +468,9 @@ proof(induct P arbitrary: s rule: wf_induct[OF wf_rank_r])
     case (Cons e xs)
     obtain t1 t2 where e_def: "e = (t1 \<approx>? t2)" by (cases e)
     have H: "sred_fun (((t1 \<approx>? t2) # xs, ys), nabla, s) = None"
-      using 1(2) unfolding P_def Cons e_def .
+      using 1(2) unfolding P_def Cons e_def by simp
     have "fail P \<or> (\<exists>\<sigma> Q. P \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = None)"
-      unfolding P_def Cons e_def by (rule sred_fun_unfold_none[OF H])
+      using sred_fun_unfold_none[OF H] unfolding P_def Cons e_def by simp
     then show ?thesis
     proof
       assume "fail P"
@@ -401,7 +480,7 @@ proof(induct P arbitrary: s rule: wf_induct[OF wf_rank_r])
       then obtain \<sigma> Q where step: "P \<turnstile> \<sigma> \<leadsto> Q" and rec: "sred_fun (Q, nabla, \<sigma> \<bullet> s) = None"
         by blast
       have "(Q, P) \<in> rank_r"
-        using rank_r_sred[OF step] .
+        using rank_r_sred[OF step] by simp
       hence "U Q = {}"
         using 1(1) rec by blast
       then show ?thesis 

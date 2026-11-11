@@ -8,21 +8,7 @@ section \<open>Soundness of the computable algorithm\<close>
 
 text\<open>sred_fun is simulated by the reflexive-transitive closure of the equational reductions.\<close>
 
-lemma sred_rtc_prepend:
-  assumes "P1 \<turnstile> s1 \<leadsto> P2" and "P2 \<turnstile> s2 \<leadsto>\<^sup>* P3" and "s' = s2 \<bullet> (s1 \<bullet> s)"
-  shows "\<exists>s3. P1 \<turnstile> s3 \<leadsto>\<^sup>* P3 \<and> s' = s3 \<bullet> s"
-proof-
-  have "P1 \<turnstile> (s2 \<bullet> s1) \<leadsto>\<^sup>* P3" "s' = (s2 \<bullet> s1) \<bullet> s"
-    using assms comp_assoc by auto
-  thus ?thesis by blast
-qed
-
 text\<open>One unfolding of sred_fun on a non-empty equation list corresponds to one s_red step.\<close>
-
-lemma ex_sred_stepI:
-  assumes "P \<turnstile> \<sigma> \<leadsto> Q" and "sred_fun (Q, nabla, \<sigma> \<bullet> s) = Some r"
-  shows "\<exists>\<sigma> Q. P \<turnstile> \<sigma> \<leadsto> Q \<and> sred_fun (Q, nabla, \<sigma> \<bullet> s) = Some r"
-  using assms by blast
 
 lemma sred_fun_unfold_step:
   assumes "sred_fun (((t1 \<approx>? t2) # xs, ys), nabla, s) = Some r"
@@ -48,7 +34,7 @@ proof -
       \<comment> \<open>Rule var_2_sred: X is instantiated with Unit.\<close>
       let ?\<sigma> = "[(X, swap (rev pi) Unit)]"
       have step: "((Unit \<approx>? Susp pi X) # xs, ys) \<turnstile> ?\<sigma> \<leadsto> apply_subst ?\<sigma> (xs, ys)"
-        by (rule var_2_sred) simp
+        using var_2_sred by (simp del: swap.simps)
       have "sred_fun (apply_subst ?\<sigma> (xs, ys), nabla, ?\<sigma> \<bullet> s) = Some r"
         using H unfolding \<open>t1 = Unit\<close> \<open>t2 = Susp pi X\<close> by (simp del: sred_fun.simps)
       then show ?thesis unfolding \<open>t1 = Unit\<close> \<open>t2 = Susp pi X\<close> using step by blast
@@ -62,7 +48,7 @@ proof -
       have "a = b"
         using H \<open>t1 = Atom a\<close> \<open>t2 = Atom b\<close> by (simp del: sred_fun.simps split: if_splits)
       have step: "((Atom a \<approx>? Atom a) # xs, ys) \<turnstile> [] \<leadsto> (xs, ys)"
-        by (rule atom_sred)
+        using atom_sred by simp
       have "sred_fun ((xs, ys), nabla, [] \<bullet> s) = Some r"
         using H unfolding \<open>t1 = Atom a\<close> \<open>t2 = Atom b\<close> \<open>a = b\<close> by (simp del: sred_fun.simps)
       then show ?thesis unfolding \<open>t1 = Atom a\<close> \<open>t2 = Atom b\<close> \<open>a = b\<close> using step by blast
@@ -71,7 +57,7 @@ proof -
       \<comment> \<open>Rule var_2_sred: X is instantiated with the (permuted) atom.\<close>
       let ?\<sigma> = "[(X, swap (rev pi) (Atom a))]"
       have step: "((Atom a \<approx>? Susp pi X) # xs, ys) \<turnstile> ?\<sigma> \<leadsto> apply_subst ?\<sigma> (xs, ys)"
-        by (rule var_2_sred) simp
+        using var_2_sred by (simp del: swap.simps)
       have "sred_fun (apply_subst ?\<sigma> (xs, ys), nabla, ?\<sigma> \<bullet> s) = Some r"
         using H unfolding \<open>t1 = Atom a\<close> \<open>t2 = Susp pi X\<close> by (simp del: sred_fun.simps)
       then show ?thesis unfolding \<open>t1 = Atom a\<close> \<open>t2 = Susp pi X\<close> using step by blast
@@ -83,7 +69,7 @@ proof -
       case (Paar v1 v2)
       \<comment> \<open>Rule paar_sred: the pair equation is split into two equations.\<close>
       have step: "((Paar u1 u2 \<approx>? Paar v1 v2) # xs, ys) \<turnstile> [] \<leadsto> ((u1 \<approx>? v1) # (u2 \<approx>? v2) # xs, ys)"
-        by (rule paar_sred)
+        using paar_sred by simp
       have "sred_fun (((u1 \<approx>? v1) # (u2 \<approx>? v2) # xs, ys), nabla, [] \<bullet> s) = Some r"
         using H unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Paar v1 v2\<close> by (simp del: sred_fun.simps)
       then show ?thesis unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Paar v1 v2\<close> using step by blast
@@ -94,7 +80,7 @@ proof -
         using H \<open>t1 = Paar u1 u2\<close> \<open>t2 = Susp pi X\<close> by (auto simp del: sred_fun.simps split: if_splits)
       let ?\<sigma> = "[(X, swap (rev pi) (Paar u1 u2))]"
       have step: "((Paar u1 u2 \<approx>? Susp pi X) # xs, ys) \<turnstile> ?\<sigma> \<leadsto> apply_subst ?\<sigma> (xs, ys)"
-        by (rule var_2_sred[OF nocc])
+        using nocc var_2_sred by (simp del: swap.simps)
       have "sred_fun (apply_subst ?\<sigma> (xs, ys), nabla, ?\<sigma> \<bullet> s) = Some r"
         using H nocc unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Susp pi X\<close> by (simp del: sred_fun.simps)
       then show ?thesis unfolding \<open>t1 = Paar u1 u2\<close> \<open>t2 = Susp pi X\<close> using step by blast
@@ -108,7 +94,7 @@ proof -
       have "F = G"
         using H \<open>t1 = Func F u\<close> \<open>t2 = Func G v\<close> by (simp del: sred_fun.simps split: if_splits)
       have step: "((Func F u \<approx>? Func F v) # xs, ys) \<turnstile> [] \<leadsto> ((u \<approx>? v) # xs, ys)"
-        by (rule func_sred)
+        using func_sred by simp
       have "sred_fun (((u \<approx>? v) # xs, ys), nabla, [] \<bullet> s) = Some r"
         using H unfolding \<open>t1 = Func F u\<close> \<open>t2 = Func G v\<close> \<open>F = G\<close> by (simp del: sred_fun.simps)
       then show ?thesis unfolding \<open>t1 = Func F u\<close> \<open>t2 = Func G v\<close> \<open>F = G\<close> using step by blast
@@ -119,7 +105,7 @@ proof -
         using H \<open>t1 = Func F u\<close> \<open>t2 = Susp pi X\<close> by (auto simp del: sred_fun.simps split: if_splits)
       let ?\<sigma> = "[(X, swap (rev pi) (Func F u))]"
       have step: "((Func F u \<approx>? Susp pi X) # xs, ys) \<turnstile> ?\<sigma> \<leadsto> apply_subst ?\<sigma> (xs, ys)"
-        by (rule var_2_sred[OF nocc])
+        using nocc var_2_sred by (simp del: swap.simps)
       have "sred_fun (apply_subst ?\<sigma> (xs, ys), nabla, ?\<sigma> \<bullet> s) = Some r"
         using H nocc unfolding \<open>t1 = Func F u\<close> \<open>t2 = Susp pi X\<close> by (simp del: sred_fun.simps)
       then show ?thesis unfolding \<open>t1 = Func F u\<close> \<open>t2 = Susp pi X\<close> using step by blast
@@ -134,7 +120,7 @@ proof -
         case True
         \<comment> \<open>Rule abst_aa_sred: same binder, compare the bodies.\<close>
         have step: "((Abst a u \<approx>? Abst a v) # xs, ys) \<turnstile> [] \<leadsto> ((u \<approx>? v) # xs, ys)"
-          by (rule abst_aa_sred)
+          using abst_aa_sred by simp
         have "sred_fun (((u \<approx>? v) # xs, ys), nabla, [] \<bullet> s) = Some r"
           using H unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Abst b v\<close> \<open>a = b\<close> by (simp del: sred_fun.simps)
         then show ?thesis unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Abst b v\<close> \<open>a = b\<close> using step by blast
@@ -143,7 +129,7 @@ proof -
         \<comment> \<open>Rule abst_ab_sred: different binders, swap a and b in the right body
            and add the freshness constraint a # v.\<close>
         have step: "((Abst a u \<approx>? Abst b v) # xs, ys) \<turnstile> [] \<leadsto> ((u \<approx>? swap [(a, b)] v) # xs, (a \<sharp>? v) # ys)"
-          by (rule abst_ab_sred[OF False])
+          using False abst_ab_sred by simp
         have "sred_fun (((u \<approx>? swap [(a, b)] v) # xs, (a \<sharp>? v) # ys), nabla, [] \<bullet> s) = Some r"
           using H False unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Abst b v\<close> by (simp del: sred_fun.simps)
         then show ?thesis unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Abst b v\<close> using step by blast
@@ -155,7 +141,7 @@ proof -
         using H \<open>t1 = Abst a u\<close> \<open>t2 = Susp pi X\<close> by (auto simp del: sred_fun.simps split: if_splits)
       let ?\<sigma> = "[(X, swap (rev pi) (Abst a u))]"
       have step: "((Abst a u \<approx>? Susp pi X) # xs, ys) \<turnstile> ?\<sigma> \<leadsto> apply_subst ?\<sigma> (xs, ys)"
-        by (rule var_2_sred[OF nocc])
+        using nocc var_2_sred by (simp del: swap.simps)
       have "sred_fun (apply_subst ?\<sigma> (xs, ys), nabla, ?\<sigma> \<bullet> s) = Some r"
         using H nocc unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Susp pi X\<close> by (simp del: sred_fun.simps)
       then show ?thesis unfolding \<open>t1 = Abst a u\<close> \<open>t2 = Susp pi X\<close> using step by blast
@@ -171,7 +157,7 @@ proof -
                              [(X, swap (rev pi) t2)] \<bullet> s) = Some r"
         and nocc: "\<not> occurs X t2"
       have "((Susp pi X \<approx>? t2) # xs, ys) \<turnstile> [(X, swap (rev pi) t2)] \<leadsto> apply_subst [(X, swap (rev pi) t2)] (xs, ys)"
-        by (rule var_1_sred[OF nocc])
+        using nocc var_1_sred by simp
       then show ?thesis unfolding \<open>t1 = Susp pi X\<close> using rec by blast
     qed
     show ?thesis
@@ -184,7 +170,7 @@ proof -
            disagreement set of the two permutations.\<close>
         have step: "((Susp pi X \<approx>? Susp pi2 X) # xs, ys) \<turnstile> [] \<leadsto> 
                       (xs, map (\<lambda>a. a \<sharp>? Susp [] X) (ds_list pi pi2) @ ys)"
-          by (rule susp_sred)
+          using susp_sred by simp
         have "sred_fun ((xs, map (\<lambda>a. a \<sharp>? Susp [] X) (ds_list pi pi2) @ ys), nabla, [] \<bullet> s) = Some r"
           using H unfolding \<open>t1 = Susp pi X\<close> \<open>t2 = Susp pi2 Y\<close> \<open>X = Y\<close>[symmetric] 
           by (simp del: sred_fun.simps)
@@ -193,8 +179,14 @@ proof -
       next
         case False
         \<comment> \<open>Different variables: var_1_sred, the occurs check holds trivially.\<close>
+        have rec: "sred_fun (apply_subst [(X, swap (rev pi) t2)] (xs, ys), nabla,
+                             [(X, swap (rev pi) t2)] \<bullet> s) = Some r"
+          using H False unfolding \<open>t1 = Susp pi X\<close> \<open>t2 = Susp pi2 Y\<close>
+          by (simp del: sred_fun.simps)
+        have nocc: "\<not> occurs X t2"
+          using False unfolding \<open>t2 = Susp pi2 Y\<close> by simp
         show ?thesis
-          using H False by (intro var_1) (simp_all add: \<open>t1 = Susp pi X\<close> \<open>t2 = Susp pi2 Y\<close> del: sred_fun.simps)
+          using var_1[OF rec nocc] by simp
       qed
     qed (use H Susp in \<open>(intro var_1; simp del: sred_fun.simps split: if_splits)\<close>)+
   qed
@@ -223,7 +215,7 @@ proof(induct P arbitrary: s rule: wf_induct[OF wf_rank_r])
     obtain \<sigma> Q where step: "P \<turnstile> \<sigma> \<leadsto> Q" and rec: "sred_fun (Q, nabla, \<sigma> \<bullet> s) = Some (P', nabla', s')"
       using sred_fun_unfold_step 1(2) unfolding P_def Cons e_def by blast
     have "(Q, P) \<in> rank_r"
-      using rank_r_sred[OF step] .
+      using rank_r_sred[OF step] by simp
     then show ?thesis 
       using 1(1) rec by blast
   qed
@@ -246,24 +238,15 @@ proof(induct P arbitrary: s rule: wf_induct[OF wf_rank_r])
     obtain \<sigma> Q where step: "P \<turnstile> \<sigma> \<leadsto> Q" and rec: "sred_fun (Q, nabla, \<sigma> \<bullet> s) = Some (P', nabla', s')"
       using sred_fun_unfold_step 1(2) unfolding P_def Cons e_def by blast
     have "(Q, P) \<in> rank_r"
-      using rank_r_sred[OF step] .
+      using rank_r_sred[OF step] by simp
     hence "nabla' = nabla \<and> (\<exists>s1. Q \<turnstile> s1 \<leadsto>\<^sup>* P' \<and> s' = s1 \<bullet> (\<sigma> \<bullet> s))"
       using 1(1) rec by blast
     then show ?thesis
-      using sred_rtc_prepend[OF step] by blast
+      using sred_rtc_step[OF step] comp_assoc by metis
   qed
 qed
 
 text\<open>cred_fun is simulated by the reflexive-transitive closure of the freshness reductions.\<close>
-
-lemma cred_rtc_prepend:
-  assumes "P1 \<turnstile> n1 \<rightarrow> P2" and "P2 \<turnstile> n2 \<rightarrow>\<^sup>* P'" and "nabla' = n2 \<union> (n1 \<union> nabla)"
-  shows "\<exists>n3. P1 \<turnstile> n3 \<rightarrow>\<^sup>* P' \<and> nabla' = n3 \<union> nabla"
-proof-
-  have "P1 \<turnstile> (n2 \<union> n1) \<rightarrow>\<^sup>* P'" "nabla' = (n2 \<union> n1) \<union> nabla"
-    using assms by auto
-  thus ?thesis by blast
-qed
 
 lemma cred_fun_cred_rtc:
   assumes "cred_fun ((xs, ys), nabla, s) = Some (P', nabla', s')" and "xs = []"
@@ -271,24 +254,24 @@ lemma cred_fun_cred_rtc:
   using assms
 proof(induct "((xs, ys), nabla, s)" arbitrary: xs ys nabla s rule: cred_fun.induct)
   case (1 xs a ys nabla s)
-  then show ?case using cred_rtc_prepend[OF unit_cred] by auto
+  then show ?case using cred_rtc_step[OF unit_cred] by (auto simp: Un_assoc)
 next
   case (2 xs a t1 t2 ys nabla s)
-  then show ?case using cred_rtc_prepend[OF paar_cred] by auto
+  then show ?case using cred_rtc_step[OF paar_cred] by (auto simp: Un_assoc)
 next
   case (3 xs a F t ys nabla s)
-  then show ?case using cred_rtc_prepend[OF func_cred] by auto
+  then show ?case using cred_rtc_step[OF func_cred] by (auto simp: Un_assoc)
 next
   case (4 xs a b t ys nabla s)
   then show ?case 
-    using cred_rtc_prepend[OF abst_aa_cred] cred_rtc_prepend[OF abst_ab_cred]
-    by (cases "a = b") auto
+    using cred_rtc_step[OF abst_aa_cred] cred_rtc_step[OF abst_ab_cred]
+    by (cases "a = b") (auto simp: Un_assoc)
 next
   case (5 xs a b ys nabla s)
-  then show ?case using cred_rtc_prepend[OF atom_cred] by (auto split: if_splits)
+  then show ?case using cred_rtc_step[OF atom_cred] by (auto simp: Un_assoc split: if_splits)
 next
   case (6 xs a pi X ys nabla s)
-  then show ?case using cred_rtc_prepend[OF susp_cred] by auto
+  then show ?case using cred_rtc_step[OF susp_cred] by (auto simp: Un_assoc)
 next
   case (7 xs nabla s)
   then show ?case by force
@@ -374,7 +357,7 @@ proof-
     then have "P3 \<Turnstile> (nabla, []) \<Rightarrow> ([],[])" 
       using cred_rtc_red_plus[OF cred] by metis
     then show ?thesis 
-      by (rule sred_rtc_red_plus_append[OF sred])
+      using sred_rtc_red_plus_append[OF sred] by simp
   qed
 qed
 
@@ -384,32 +367,24 @@ unifier of the input problem.\<close>
 theorem nomu_unify_sound:
   assumes "nomu_unify P = Some (nabla, s)"
   shows "(nabla, s) \<in> U P \<and> mgu P (nabla, s) \<and> idem (nabla, s)"
-proof-
-  obtain P3 where sred: "P \<turnstile> s \<leadsto>\<^sup>* P3" and cred: "P3 \<turnstile> nabla \<rightarrow>\<^sup>* ([],[])"
-    using nomu_unify_some_rtc[OF assms] by blast
-  show ?thesis
-  proof(cases "P = ([],[])")
-    case True
-    have "P3 = P \<and> s = []"
-      using sred True by (cases rule: sred_rtc.cases) (auto dest: sred_eqs_not_empty)
-    moreover have "nabla = {}"
-      using cred True calculation by (cases rule: cred_rtc.cases) (auto elim: c_red.cases)
-    ultimately show ?thesis 
-      using True subst_equ_refl
-      unfolding all_solutions_def mgu_def idem_def ext_subst_def by auto
-  next
-    case False
-    have red: "P \<Turnstile> (nabla, s) \<Rightarrow> ([],[])"
-      using nomu_unify_some_red_plus[OF assms False] .
-    have "({}, []) \<in> U ([],[])" 
-      unfolding all_solutions_def by simp
-    hence "({} \<union> nabla, [] \<bullet> s) \<in> U P"
-      using P1_from_P2_red_plus[OF red _ ext_subst_id] by blast
-    then show ?thesis 
-      using mgu[OF red] by simp
-  qed
+proof(cases "P = ([],[])")
+  case True
+  have "nabla = {}" and "s = []"
+    using assms True by simp_all
+  then show ?thesis
+    using True subst_equ_refl
+    unfolding all_solutions_def mgu_def idem_def ext_subst_def by auto
+next
+  case False
+  have red: "P \<Turnstile> (nabla, s) \<Rightarrow> ([],[])"
+    using nomu_unify_some_red_plus[OF assms False] by simp
+  have "(nabla, s) \<in> U P"
+    using P1_from_P2_red_plus[OF red _ ext_subst_id, of "{}"]
+    by (simp add: all_solutions_def[of "([],[])"])
+  moreover have "mgu P (nabla, s) \<and> idem (nabla, s)"
+    using mgu[OF red] by simp
+  ultimately show ?thesis by simp
 qed
-
 
 (*<*)
 end
