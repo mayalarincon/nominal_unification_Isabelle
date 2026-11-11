@@ -588,16 +588,16 @@ next
   qed
 qed
 
-text\<open>Completeness in the style of @{thm [source] completeness}: whenever a (non-trivial) 
+text\<open>Completeness in the style of @{thm [source] completeness}: whenever a 
 problem has a solution, the algorithm returns a result that is reached by red_plus and is
 a most general unifier.\<close>
 
 theorem nomu_unify_complete:
-  assumes "P \<noteq> ([],[])" "U P \<noteq> {}"
+  assumes "U P \<noteq> {}"
   shows "\<exists>nabla s. nomu_unify P = Some (nabla, s) \<and> mgu P (nabla, s) \<and> idem (nabla, s)"
 proof-
   obtain nabla s where res: "nomu_unify P = Some (nabla, s)"
-    using assms(2) nomu_unify_none_iff by (cases "nomu_unify P") auto
+    using assms nomu_unify_none_iff by (cases "nomu_unify P") auto
   moreover have "mgu P (nabla, s)" "idem (nabla, s)"
     using nomu_unify_sound[OF res] by simp+
   ultimately show ?thesis using res by blast
