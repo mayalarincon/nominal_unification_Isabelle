@@ -69,6 +69,41 @@ value "nomu_unify ([Susp [] ''X'' \<approx>? Abst ''a'' (Susp [] ''Y'')], [''a''
 text \<open>\<open>X \<approx>? a,  a #? X\<close>: after \<open>X \<mapsto> a\<close> the constraint becomes \<open>a #? a\<close>, no solution: \<open>None\<close>.\<close>
 value "nomu_unify ([Susp [] ''X'' \<approx>? Atom ''a''], [''a'' \<sharp>? Susp [] ''X''])"
 
+subsection \<open>Repeated meta-variables\<close>
+
+text \<open>\<open>\<langle>X, X\<rangle> \<approx>? \<langle>a, a\<rangle>\<close>: both occurrences of \<open>X\<close> agree, solution \<open>X \<mapsto> a\<close>.\<close>
+value "nomu_unify ([Paar (Susp [] ''X'') (Susp [] ''X'') \<approx>? Paar (Atom ''a'') (Atom ''a'')], [])"
+
+text \<open>\<open>\<langle>X, X\<rangle> \<approx>? \<langle>a, b\<rangle>\<close>: after \<open>X \<mapsto> a\<close> the second component becomes \<open>a \<approx>? b\<close>, no solution: \<open>None\<close>.\<close>
+value "nomu_unify ([Paar (Susp [] ''X'') (Susp [] ''X'') \<approx>? Paar (Atom ''a'') (Atom ''b'')], [])"
+
+text \<open>\<open>(a b)\<cdot>X \<approx>? X\<close>: same variable on both sides, empty substitution under the freshness context \<open>a # X, b # X\<close> (the disagreement set of \<open>(a b)\<close> and \<open>id\<close>).\<close>
+value "nomu_unify ([Susp [(''a'', ''b'')] ''X'' \<approx>? Susp [] ''X''], [])"
+
+text \<open>\<open>(a b)\<cdot>X \<approx>? (b c)\<cdot>X\<close>: the two permutations disagree on \<open>a\<close>, \<open>b\<close> and \<open>c\<close>, empty substitution under \<open>a # X, b # X, c # X\<close>.\<close>
+value "nomu_unify ([Susp [(''a'', ''b'')] ''X'' \<approx>? Susp [(''b'', ''c'')] ''X''], [])"
+
+text \<open>\<open>\<langle>X, (a b)\<cdot>X\<rangle> \<approx>? \<langle>a, b\<rangle>\<close>: after \<open>X \<mapsto> a\<close> the second component becomes \<open>(a b)\<cdot>a = b \<approx>? b\<close>, solution \<open>X \<mapsto> a\<close>.\<close>
+value "nomu_unify ([Paar (Susp [] ''X'') (Susp [(''a'', ''b'')] ''X'') \<approx>? Paar (Atom ''a'') (Atom ''b'')], [])"
+
+text \<open>\<open>\<langle>X, (a b)\<cdot>X\<rangle> \<approx>? \<langle>a, a\<rangle>\<close>: after \<open>X \<mapsto> a\<close> the second component becomes \<open>b \<approx>? a\<close>, no solution: \<open>None\<close>.\<close>
+value "nomu_unify ([Paar (Susp [] ''X'') (Susp [(''a'', ''b'')] ''X'') \<approx>? Paar (Atom ''a'') (Atom ''a'')], [])"
+
+text \<open>\<open>\<langle>X, Y\<rangle> \<approx>? \<langle>(a b)\<cdot>Y, a\<rangle>\<close>: \<open>Y\<close> occurs on both sides, solution \<open>X \<mapsto> b, Y \<mapsto> a\<close>.\<close>
+value "nomu_unify ([Paar (Susp [] ''X'') (Susp [] ''Y'') \<approx>? Paar (Susp [(''a'', ''b'')] ''Y'') (Atom ''a'')], [])"
+
+text \<open>\<open>\<langle>X, Y\<rangle> \<approx>? \<langle>f Y, f X\<rangle>\<close>: after \<open>X \<mapsto> f Y\<close> the second component becomes \<open>Y \<approx>? f (f Y)\<close>, occurs check fails, no solution: \<open>None\<close>.\<close>
+value "nomu_unify ([Paar (Susp [] ''X'') (Susp [] ''Y'') \<approx>? Paar (Func ''f'' (Susp [] ''Y'')) (Func ''f'' (Susp [] ''X''))], [])"
+
+text \<open>\<open>[a]X \<approx>? [b](a b)\<cdot>X\<close>: reduces to \<open>X \<approx>? (a b)\<cdot>(a b)\<cdot>X\<close> and \<open>a #? (a b)\<cdot>X\<close>, empty substitution under \<open>b # X\<close>.\<close>
+value "nomu_unify ([Abst ''a'' (Susp [] ''X'') \<approx>? Abst ''b'' (Susp [(''a'', ''b'')] ''X'')], [])"
+
+text \<open>\<open>X \<approx>? Y,  Y \<approx>? [a]b,  b #? X\<close>: \<open>X\<close> and \<open>Y\<close> are both bound to \<open>[a]b\<close> and the constraint becomes \<open>b #? [a]b\<close>, no solution: \<open>None\<close>.\<close>
+value "nomu_unify ([Susp [] ''X'' \<approx>? Susp [] ''Y'', Susp [] ''Y'' \<approx>? Abst ''a'' (Atom ''b'')], [''b'' \<sharp>? Susp [] ''X''])"
+
+text \<open>\<open>X \<approx>? Y,  Y \<approx>? [a]a,  a #? X\<close>: solution \<open>X \<mapsto> [a]a, Y \<mapsto> [a]a\<close>; the constraint \<open>a #? [a]a\<close> holds.\<close>
+value "nomu_unify ([Susp [] ''X'' \<approx>? Susp [] ''Y'', Susp [] ''Y'' \<approx>? Abst ''a'' (Atom ''a'')], [''a'' \<sharp>? Susp [] ''X''])"
+
 (*<*)
 end
 (*>*)
