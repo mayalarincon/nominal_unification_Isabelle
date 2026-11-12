@@ -122,7 +122,7 @@ text \<open>\<open>([\<langle>X, Y\<rangle> \<approx>? \<langle>f Y, f X\<rangle
 value "nomu_unify ([Paar (Susp [] ''X'') (Susp [] ''Y'') \<approx>? Paar (Func ''f'' (Susp [] ''Y'')) (Func ''f'' (Susp [] ''X''))], [])"
 
 text \<open>\<open>([[a]X \<approx>? [b](a b)\<cdot>X], []) \<leadsto> ([X \<approx>? (a b)(a b)\<cdot>X], [a #? (a b)\<cdot>X]) \<leadsto> ([], [a #? (a b)\<cdot>X]) \<turnstile>{b # X} \<rightarrow> ([], [])\<close>
-  Here \<open>ds(id, (a b)(a b)) = []\<close> and \<open>(a b)\<^sup>-\<^sup>1\<cdot>a = b\<close>.
+  Here \<open>ds(id, (a b)(a b)) = {}\<close> and \<open>(a b)\<^sup>-\<^sup>1\<cdot>a = b\<close>.
   Result: \<open>Some ({b # X}, [])\<close>.\<close>
 value "nomu_unify ([Abst ''a'' (Susp [] ''X'') \<approx>? Abst ''b'' (Susp [(''a'', ''b'')] ''X'')], [])"
 
