@@ -231,7 +231,7 @@ proof(induct P arbitrary: s rule: wf_induct[OF wf_rank_r])
   show ?case
   proof(cases eqs)
     case Nil
-    then show ?thesis using 1(2) P_def by force
+    then show ?thesis using 1(2) P_def by auto
   next
     case (Cons e xs)
     obtain t1 t2 where e_def: "e = (t1 \<approx>? t2)" by (cases e)
@@ -242,7 +242,7 @@ proof(induct P arbitrary: s rule: wf_induct[OF wf_rank_r])
     hence "nabla' = nabla \<and> (\<exists>s1. Q \<turnstile> s1 \<leadsto>\<^sup>* P' \<and> s' = s1 \<bullet> (\<sigma> \<bullet> s))"
       using 1(1) rec by blast
     then show ?thesis
-      using sred_rtc_step[OF step] comp_assoc by metis
+      using comp_assoc step by auto
   qed
 qed
 
@@ -274,7 +274,7 @@ next
   then show ?case using cred_rtc_step[OF susp_cred] by (auto simp: Un_assoc)
 next
   case (7 xs nabla s)
-  then show ?case by force
+  then show ?case by auto
 qed
 
 lemma cred_fun_some_fst:
